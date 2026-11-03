@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/tb12as/serverman/internal/certs"
 	"github.com/tb12as/serverman/internal/collector"
 	"github.com/tb12as/serverman/internal/executor"
 	"github.com/tb12as/serverman/internal/hostfs"
@@ -158,7 +159,9 @@ type Env struct {
 	SetBruteforce func(on bool)
 	Latest        func() *collector.Snapshot
 	ExpectedPorts []int
-	ConfigPath    string // agent config.yaml (IPS-BRUTEFORCE fix persists there)
+	ConfigPath    string        // agent config.yaml (IPS-BRUTEFORCE fix persists there)
+	Certs         certs.Options // TLS-CERT-VALID discovery (collector.certs)
+	CertsOff      bool
 }
 
 var (

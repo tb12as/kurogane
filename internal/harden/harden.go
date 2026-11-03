@@ -14,6 +14,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/tb12as/serverman/internal/alert"
 	"github.com/tb12as/serverman/internal/audit"
+	"github.com/tb12as/serverman/internal/certs"
 	"github.com/tb12as/serverman/internal/collector"
 	"github.com/tb12as/serverman/internal/config"
 	"github.com/tb12as/serverman/internal/db"
@@ -63,7 +64,9 @@ func New(d Deps) *Service {
 		d.ServerID = "local"
 	}
 	env := &checks.Env{Ex: d.Ex, Latest: d.Latest, ExpectedPorts: cfg.Harden.ExpectedPorts,
-		ConfigPath: config.DefaultPath, SetBruteforce: func(on bool) { cfg.SSH.Bruteforce.Enabled = on }}
+		ConfigPath: config.DefaultPath, SetBruteforce: func(on bool) { cfg.SSH.Bruteforce.Enabled = on },
+		Certs:    certs.Options{Paths: cfg.Collector.Certs.Paths, Ports: cfg.Collector.Certs.ProbePorts},
+		CertsOff: !cfg.Collector.Certs.Enabled}
 	if d.SSH != nil {
 		env.Settings = d.SSH.Settings
 		env.Bruteforce = d.SSH.BruteforceActive
