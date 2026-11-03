@@ -64,7 +64,7 @@ dist:
 
 packages: dist
 	for a in amd64 arm64; do for p in deb rpm; do \
-	  GOARCH=$$a VERSION=$(VERSION:v%=%) go run github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.48.0 pkg \
+	  ARCH=$$a VERSION=$(VERSION:v%=%) go run github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.48.0 pkg \
 	    --packager $$p --config deploy/nfpm.yaml --target dist/; \
 	done; done
 

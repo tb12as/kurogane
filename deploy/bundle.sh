@@ -22,4 +22,5 @@ echo "agent: sudo serverkeeper init    central: sudo serverkeeper server init --
 SH
 chmod +x "$OUT/install-offline.sh"
 tar -C dist -czf "$OUT.tgz" "$(basename "$OUT")"
+rm -rf "$OUT"
 echo "$OUT.tgz"
