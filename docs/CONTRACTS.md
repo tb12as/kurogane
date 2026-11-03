@@ -36,12 +36,19 @@ Names are dotted; labels in braces. `_pct` = 0–100, `_bps` = bytes/s, `_ps` = 
 | Services | `service.active{unit}` (1 active, 0 otherwise) |
 | Agent self | `agent.cpu_pct`, `agent.rss_bytes`, `agent.collect_lag_ms`, `agent.goroutines`, `agent.store_bytes` |
 | HTTP (opt-in nginx tail) | `http.rps`, `http.4xx_ps`, `http.5xx_ps` |
+| TLS certificates (`collector.certs`) | `cert.days_left{name}` (negative once expired, recomputed every tick from an hourly scan), `cert.stale_served{name}` (1 when a probed port serves an older certificate for the same names) |
 
-Details that are not numbers live in `collector.Snapshot` (`System`, `TopCPU`, `TopMem`, `Conns`, `Services`, `Mounts`).
+Details that are not numbers live in `collector.Snapshot` (`System`, `TopCPU`, `TopMem`, `Conns`, `Services`, `Mounts`,
+`Certs`).
 
 ## Cross-package APIs
 
-- `collector.NewManager(cfg config.Collector, ex) *Manager`; `Run(ctx, sink func(*Snapshot))`; `Latest() *Snapshot`.
+- `collector.NewManager(cfg config.Collector, ex) *Manager`; `Run(ctx, sink func(*Snapshot))`; `Latest() *Snapshot`;
+  `Certs()` / `RescanCerts(ctx)` return the certificate scan and its time.
+- `certs.Scan(ctx, r certs.Reader, certs.Options) []certs.Cert`: discovery (Let's Encrypt renewal configs and `live/`,
+  nginx `ssl_certificate` with includes, extra paths), leaf inspection and local TLS probes. Reads go through the
+  executor so root-only certbot directories work under privsep. Only `CERTIFICATE` PEM blocks are decoded; paths
+  naming private keys are never read.
 - `firewall.New(ex) *Manager`; `Ban(ctx, ip, d, reason)`, `Unban(ctx, ip)`, `Bans() []Ban`, `Backend() string`.
 - `alert.NewEngine(Deps) (*Engine, error)`; `Run(ctx)`; `Eval(ctx, *collector.Snapshot)`; `Fire(ctx, alert.Event)`.
   One-shot events set `Once: true`; conditions detected elsewhere fire and later send `Resolve: true` with the same

@@ -52,6 +52,8 @@ serverkeeper alert silence --rule high_cpu --for 2h
 serverkeeper users add alice --role operator   # prints the TOTP enrollment URL
 serverkeeper tokens create ci --scopes read
 serverkeeper audit --since 24h
+serverkeeper certs list [--warn-days 14]  # TLS certificates; exits 1 if one is expiring, stale or unreadable
+serverkeeper certs rescan                 # scan now, e.g. right after a renewal
 sudo serverkeeper uninstall [--purge] [--yes]   # --purge also deletes data, config and the system user
 ```
 
@@ -72,8 +74,8 @@ reloaded and an alert is sent. Disabling password or root login is refused when 
 
 ## Hardening
 
-About 44 checks (SSH, accounts, firewall, updates, sysctl, file permissions, services, logging, intrusion
-protection, filesystem, time, malware basics), mapped to CIS IDs where one exists. Score =
+About 45 checks (SSH, accounts, firewall, updates, sysctl, file permissions, services, logging, intrusion
+protection, filesystem, time, malware basics, TLS certificates), mapped to CIS IDs where one exists. Score =
 100 × weighted passed / weighted applicable (Critical 10, High 5, Medium 3, Low 1); grades A ≥ 90, B ≥ 75,
 C ≥ 60, D < 60. Every fix shows a dry-run diff, takes a backup, re-runs the check, and can be reverted. Scans run
 daily (`harden.schedule`) and a passing check that starts failing raises a drift alert. Reports: JSON, Markdown,
@@ -92,6 +94,24 @@ logged.
 
 Host-level detection cannot stop volumetric DDoS: that needs upstream mitigation (provider or CDN). Optional
 auto-ban (`alerts.auto_ban`) is off by default.
+
+## TLS certificates
+
+The agent finds certificates on its own: Let's Encrypt lineages (`/etc/letsencrypt/renewal/*.conf`, falling back to
+`live/`), every `ssl_certificate` in the nginx configuration (includes followed), and any PEM files listed in
+`collector.certs.paths`. It rescans hourly and records `cert.days_left` per certificate. Local TLS handshakes on
+`collector.certs.probe_ports` (default 443) show which certificate each name is really served with. They catch a
+certificate renewed on disk but never reloaded, and certificates served without a file the agent could find (Apache,
+Caddy, HAProxy).
+
+- `cert_expiring` warns under 14 days (per-server threshold), turns critical under 3, and reminds daily.
+- `cert_stale_served` fires when a renewed certificate is still not served after an hour.
+- `TLS-CERT-VALID` (High) fails on certificates within 7 days of expiry, RSA keys under 2048 bits, SHA-1 signatures,
+  stale served certificates and nginx `server_name`s the certificate does not cover.
+
+The server page lists the certificates with a Rescan button; on the central server the dashboard shows each server's
+next expiry. Only `CERTIFICATE` PEM blocks are parsed and files named like private keys are never read. Turn the
+feature off with `collector.certs.enabled: false`.
 
 ## Fleet (central server)
 
