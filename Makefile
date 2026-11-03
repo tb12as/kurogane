@@ -24,8 +24,9 @@ build-go:
 proto:
 	cd proto && go run github.com/bufbuild/buf/cmd/buf@v1.74.0 generate
 
+# the race detector needs cgo; release builds stay CGO_ENABLED=0
 test:
-	go test -race ./...
+	CGO_ENABLED=1 go test -race ./...
 
 # fails if internal/ coverage < 80% (PRD §12)
 # -coverpkg counts code exercised by other packages' tests; generated protobuf code is excluded
