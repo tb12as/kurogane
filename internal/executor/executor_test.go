@@ -27,6 +27,32 @@ func TestAllowlist(t *testing.T) {
 	}
 }
 
+func TestUninstallAllowlist(t *testing.T) {
+	ok := [][]string{
+		append(append([]string{}, UninstallArgs...), "/usr/bin/serverkeeper", "uninstall", "--yes"),
+		append(append([]string{}, UninstallArgs...), "/usr/local/bin/serverkeeper", "uninstall", "--yes", "--purge"),
+	}
+	for _, a := range ok {
+		if err := Allowed("systemd-run", a); err != nil {
+			t.Fatalf("%v denied: %v", a, err)
+		}
+	}
+	bad := [][]string{
+		append(append([]string{}, UninstallArgs...), "/tmp/serverkeeper", "uninstall", "--yes"),
+		append(append([]string{}, UninstallArgs...), "/usr/bin/serverkeeper", "init", "--yes"),
+		append(append([]string{}, UninstallArgs...), "/usr/bin/serverkeeper", "uninstall", "--yes", "--x"),
+		append(append([]string{}, UninstallArgs...), "/usr/bin/serverkeeper", "uninstall", "--yes", "--purge", "x"),
+		{"--unit=evil", "--collect", "--on-active=3", "/usr/bin/serverkeeper", "uninstall", "--yes"},
+		{"/bin/sh", "-c", "id"},
+		nil,
+	}
+	for _, a := range bad {
+		if err := Allowed("systemd-run", a); err == nil {
+			t.Fatalf("%v allowed", a)
+		}
+	}
+}
+
 func TestRemoteRoundTrip(t *testing.T) {
 	dir := t.TempDir()
 	old := hostfs.Root

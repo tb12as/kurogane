@@ -52,7 +52,13 @@ serverkeeper alert silence --rule high_cpu --for 2h
 serverkeeper users add alice --role operator   # prints the TOTP enrollment URL
 serverkeeper tokens create ci --scopes read
 serverkeeper audit --since 24h
+sudo serverkeeper uninstall [--purge] [--yes]   # --purge also deletes data, config and the system user
 ```
+
+Settings → Storage shows the disk usage of `data_dir` and of each agent store bucket, and deletes metric history
+older than a chosen cutoff. The store file is compacted afterwards, so the freed space returns to the filesystem.
+Settings → About offers the same uninstall as the CLI; it runs as a transient systemd unit three seconds after the
+request. Uninstall leaves the sshd drop-in and applied hardening fixes in place.
 
 The CLI is a thin client over the REST API (`/api/v1`, spec at `/api/v1/openapi.yaml`). As root on the agent host it
 uses the local admin token in `/var/lib/serverkeeper/cli.token`; elsewhere pass `--api` and `--token`.

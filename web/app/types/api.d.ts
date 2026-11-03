@@ -2754,6 +2754,95 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/storage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Disk usage of data_dir (and VictoriaMetrics on central) plus agent store details */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Storage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/storage/history/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete metric history older than a cutoff and compact the agent store (admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description duration like 6h or 7d; 0 deletes all history */
+                        older_than?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description cleared */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            file_bytes?: number;
+                            freed_bytes?: number;
+                        };
+                    };
+                };
+                /** @description no local metrics store (central server) */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/stream": {
         parameters: {
             query?: never;
@@ -2922,6 +3011,53 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/uninstall": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Uninstall the agent from this host in 3 seconds; purge also deletes data, config and user (admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description the server name */
+                        confirm: string;
+                        purge?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description started */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            purge?: boolean;
+                            started?: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3561,6 +3697,33 @@ export interface components {
             /** Format: date-time */
             time?: string;
             version?: string;
+        };
+        Storage: {
+            agent_store?: {
+                buckets?: {
+                    bytes?: number;
+                    keys?: number;
+                    name?: string;
+                }[];
+                file_bytes?: number;
+                /** Format: date-time */
+                raw_newest?: string;
+                /** Format: date-time */
+                raw_oldest?: string;
+                reclaimable_bytes?: number;
+                /** Format: date-time */
+                rollup_newest?: string;
+                /** Format: date-time */
+                rollup_oldest?: string;
+            };
+            data_dir?: string;
+            entries?: {
+                bytes?: number;
+                dir?: boolean;
+                name?: string;
+                path?: string;
+            }[];
+            total_bytes?: number;
         };
         SystemInfo: {
             arch?: string;

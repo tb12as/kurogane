@@ -1,0 +1,35 @@
+paths:
+  /storage:
+    get:
+      summary: Disk usage of data_dir (and VictoriaMetrics on central) plus agent store details
+      responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/Storage"}}}}}
+  /storage/history/clear:
+    post:
+      summary: Delete metric history older than a cutoff and compact the agent store (admin)
+      requestBody: {required: true, content: {application/json: {schema: {type: object, properties: {older_than: {type: string, description: "duration like 6h or 7d; 0 deletes all history"}}}}}}
+      responses:
+        "200": {description: cleared, content: {application/json: {schema: {type: object, properties: {freed_bytes: {type: integer}, file_bytes: {type: integer}}}}}}
+        "503": {description: no local metrics store (central server)}
+  /uninstall:
+    post:
+      summary: Uninstall the agent from this host in 3 seconds; purge also deletes data, config and user (admin)
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [confirm], properties: {confirm: {type: string, description: the server name}, purge: {type: boolean}}}}}}
+      responses: {"200": {description: started, content: {application/json: {schema: {type: object, properties: {started: {type: boolean}, purge: {type: boolean}}}}}}}
+components:
+  schemas:
+    Storage:
+      type: object
+      properties:
+        data_dir: {type: string}
+        total_bytes: {type: integer}
+        entries: {type: array, items: {type: object, properties: {name: {type: string}, path: {type: string}, dir: {type: boolean}, bytes: {type: integer}}}}
+        agent_store:
+          type: object
+          properties:
+            file_bytes: {type: integer}
+            reclaimable_bytes: {type: integer}
+            buckets: {type: array, items: {type: object, properties: {name: {type: string}, keys: {type: integer}, bytes: {type: integer}}}}
+            raw_oldest: {type: string, format: date-time}
+            raw_newest: {type: string, format: date-time}
+            rollup_oldest: {type: string, format: date-time}
+            rollup_newest: {type: string, format: date-time}

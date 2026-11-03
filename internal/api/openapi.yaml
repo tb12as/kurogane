@@ -983,6 +983,56 @@ components:
                 version:
                     type: string
             type: object
+        Storage:
+            properties:
+                agent_store:
+                    properties:
+                        buckets:
+                            items:
+                                properties:
+                                    bytes:
+                                        type: integer
+                                    keys:
+                                        type: integer
+                                    name:
+                                        type: string
+                                type: object
+                            type: array
+                        file_bytes:
+                            type: integer
+                        raw_newest:
+                            format: date-time
+                            type: string
+                        raw_oldest:
+                            format: date-time
+                            type: string
+                        reclaimable_bytes:
+                            type: integer
+                        rollup_newest:
+                            format: date-time
+                            type: string
+                        rollup_oldest:
+                            format: date-time
+                            type: string
+                    type: object
+                data_dir:
+                    type: string
+                entries:
+                    items:
+                        properties:
+                            bytes:
+                                type: integer
+                            dir:
+                                type: boolean
+                            name:
+                                type: string
+                            path:
+                                type: string
+                        type: object
+                    type: array
+                total_bytes:
+                    type: integer
+            type: object
         SystemInfo:
             properties:
                 arch:
@@ -2428,6 +2478,43 @@ paths:
                                 $ref: '#/components/schemas/Status'
                     description: ok
             summary: Health summary - metrics, hardening score, active alerts
+    /storage:
+        get:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Storage'
+                    description: ok
+            summary: Disk usage of data_dir (and VictoriaMetrics on central) plus agent store details
+    /storage/history/clear:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                older_than:
+                                    description: duration like 6h or 7d; 0 deletes all history
+                                    type: string
+                            type: object
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                properties:
+                                    file_bytes:
+                                        type: integer
+                                    freed_bytes:
+                                        type: integer
+                                type: object
+                    description: cleared
+                "503":
+                    description: no local metrics store (central server)
+            summary: Delete metric history older than a cutoff and compact the agent store (admin)
     /stream:
         get:
             responses:
@@ -2505,6 +2592,35 @@ paths:
                 "200":
                     description: ok
             summary: Revoke API token (admin)
+    /uninstall:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                confirm:
+                                    description: the server name
+                                    type: string
+                                purge:
+                                    type: boolean
+                            required:
+                                - confirm
+                            type: object
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                properties:
+                                    purge:
+                                        type: boolean
+                                    started:
+                                        type: boolean
+                                type: object
+                    description: started
+            summary: Uninstall the agent from this host in 3 seconds; purge also deletes data, config and user (admin)
     /users:
         get:
             responses:

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import QRCode from 'qrcode'
+import { toast } from 'vue-sonner'
 import type { APIToken, User } from '~/types/models'
 
 useHead({ title: 'Settings · ServerKeeper' })
@@ -81,6 +82,37 @@ async function backup() {
   backing.value = false
   if (r) lastBackup.value = r
 }
+
+// storage: data_dir usage and metric history cleanup (agent store only)
+const {
+  data: storage,
+  pending: sPending,
+  error: sErr,
+  refresh: refreshStorage,
+} = useAsyncData('storage', () => api.get('/storage'), { lazy: true })
+const olderThan = ref('7d')
+const CUTOFFS = [
+  { value: '1h', label: 'Older than 1 hour' },
+  { value: '6h', label: 'Older than 6 hours' },
+  { value: '24h', label: 'Older than 24 hours' },
+  { value: '7d', label: 'Older than 7 days' },
+  { value: '0', label: 'All history' },
+]
+const cutoffLabel = computed(() => CUTOFFS.find(c => c.value === olderThan.value)?.label.toLowerCase())
+async function clearHistory() {
+  const r = await run(() => api.post('/storage/history/clear', { older_than: olderThan.value }))
+  if (r) toast.success(`History cleared, ${bytes(r.freed_bytes)} freed`)
+  refreshStorage()
+}
+
+// uninstall: runs `serverkeeper uninstall` as root 3 s after the response
+const purge = ref(false)
+const confirmName = ref('')
+const uninstalling = ref(false)
+async function uninstall() {
+  const r = await run(() => api.post('/uninstall', { confirm: confirmName.value, purge: purge.value }))
+  if (r) uninstalling.value = true
+}
 </script>
 
 <template>
@@ -89,6 +121,7 @@ async function backup() {
     <TabsList>
       <TabsTrigger value="users">Users</TabsTrigger>
       <TabsTrigger value="tokens">API tokens</TabsTrigger>
+      <TabsTrigger value="storage">Storage</TabsTrigger>
       <TabsTrigger value="about">About</TabsTrigger>
     </TabsList>
 
@@ -183,6 +216,83 @@ async function backup() {
       </template>
     </TabsContent>
 
+    <TabsContent value="storage" class="space-y-4">
+      <LoadState :pending="sPending" :error="sErr" :empty="!storage">
+        <Card>
+          <CardHeader>
+            <CardTitle>Disk usage</CardTitle>
+            <CardDescription>
+              {{ bytes(storage?.total_bytes) }} in <span class="font-mono">{{ storage?.data_dir }}</span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Path</TableHead>
+                  <TableHead class="text-right">Size</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="e in storage?.entries" :key="e.path">
+                  <TableCell class="font-medium">{{ e.name }}{{ e.dir ? '/' : '' }}</TableCell>
+                  <TableCell class="font-mono text-xs text-muted-foreground">{{ e.path }}</TableCell>
+                  <TableCell class="text-right tabular-nums">{{ bytes(e.bytes) }}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card v-if="storage?.agent_store">
+          <CardHeader>
+            <CardTitle>Metric history (agent.db)</CardTitle>
+            <CardDescription>
+              {{ bytes(storage.agent_store.file_bytes) }} on disk,
+              {{ bytes(storage.agent_store.reclaimable_bytes) }} free inside the file.
+              Raw samples since {{ fmtDate(storage.agent_store.raw_oldest) }},
+              1-minute rollups since {{ fmtDate(storage.agent_store.rollup_oldest) }}.
+            </CardDescription>
+          </CardHeader>
+          <CardContent class="space-y-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Bucket</TableHead>
+                  <TableHead class="text-right">Keys</TableHead>
+                  <TableHead class="text-right">Size</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="b in storage.agent_store.buckets" :key="b.name">
+                  <TableCell class="font-mono">{{ b.name }}</TableCell>
+                  <TableCell class="text-right tabular-nums">{{ num(b.keys) }}</TableCell>
+                  <TableCell class="text-right tabular-nums">{{ bytes(b.bytes) }}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+            <div v-if="admin && !useFleet().value" class="flex flex-wrap items-end gap-2">
+              <div class="space-y-1">
+                <Label for="st-cut">Delete graph history</Label>
+                <FormSelect id="st-cut" v-model="olderThan" :options="CUTOFFS" />
+              </div>
+              <ConfirmButton
+                :title="`Delete metric history ${cutoffLabel}?`"
+                confirm="Delete"
+                variant="destructive"
+                size="default"
+                description="Graphs lose this range permanently. The store file is then compacted to free disk space."
+                :action="clearHistory"
+              >
+                Delete and compact
+              </ConfirmButton>
+            </div>
+          </CardContent>
+        </Card>
+      </LoadState>
+    </TabsContent>
+
     <TabsContent value="about">
       <Card>
         <CardContent>
@@ -211,6 +321,43 @@ async function backup() {
             Written to <span class="font-mono">{{ lastBackup.path }}</span>
             ({{ Object.keys(lastBackup.manifest?.files || {}).length }} files)
           </p>
+        </CardContent>
+      </Card>
+      <Card v-if="admin && !useFleet().value" class="mt-4 border-destructive">
+        <CardHeader>
+          <CardTitle>Uninstall</CardTitle>
+          <CardDescription>
+            Stops ServerKeeper and removes its units and binary from this server. Data and config are kept unless
+            you purge them. The sshd drop-in and hardening changes are left in place.
+          </CardDescription>
+        </CardHeader>
+        <CardContent class="space-y-3 text-sm">
+          <p v-if="uninstalling" role="status">Uninstalling. This page stops responding in a few seconds.</p>
+          <template v-else>
+            <label class="flex items-center gap-2">
+              <Switch v-model="purge" />
+              Also delete data, config and the serverkeeper user
+            </label>
+            <div class="space-y-1">
+              <Label for="un-name">Type the server name ({{ status?.server_name }}) to confirm</Label>
+              <Input id="un-name" v-model="confirmName" autocomplete="off" class="max-w-xs" />
+            </div>
+            <ConfirmButton
+              :title="`Uninstall ServerKeeper from ${status?.server_name}?`"
+              confirm="Uninstall"
+              variant="destructive"
+              size="default"
+              :disabled="!status?.server_name || confirmName !== status?.server_name"
+              :description="
+                purge
+                  ? 'All metrics, users, audit log and config are deleted. This cannot be undone.'
+                  : 'Monitoring, alerts and SSH key management stop on this server.'
+              "
+              :action="uninstall"
+            >
+              Uninstall
+            </ConfirmButton>
+          </template>
         </CardContent>
       </Card>
     </TabsContent>

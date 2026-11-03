@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
@@ -71,5 +72,63 @@ func TestKV(t *testing.T) {
 	s.List("q", func(string, []byte) error { n++; return nil })
 	if n != 2 {
 		t.Fatal(n)
+	}
+}
+
+func TestClearCompact(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "a.db")
+	s, err := Open(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	batch := make([]collector.Sample, 200)
+	for i := range batch {
+		batch[i] = collector.Sample{Metric: "m.v", Labels: map[string]string{"id": fmt.Sprint(i)}, Value: float64(i)}
+	}
+	now := time.Now()
+	for i := 0; i < 720; i++ { // 2h at 10s
+		if err := s.Append(now.Add(-2*time.Hour+time.Duration(i)*10*time.Second), batch); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := s.Put("kv", "k", 1); err != nil {
+		t.Fatal(err)
+	}
+
+	before, _ := s.Stats()
+	if err := s.ClearHistory(30 * time.Minute); err != nil {
+		t.Fatal(err)
+	}
+	freed, err := s.Compact()
+	if err != nil {
+		t.Fatal(err)
+	}
+	after, _ := s.Stats()
+	if freed <= 0 || after.FileBytes >= before.FileBytes {
+		t.Fatalf("not compacted: freed %d, %d -> %d bytes", freed, before.FileBytes, after.FileBytes)
+	}
+	if after.RawOldest == nil || after.RawOldest.Before(now.Add(-31*time.Minute)) {
+		t.Fatalf("old raw samples kept: %v", after.RawOldest)
+	}
+
+	res, err := s.Query(Query{Names: []string{"m"}, From: now.Add(-20 * time.Minute), To: now,
+		Step: 10 * time.Second}, 24*time.Hour)
+	if err != nil || len(res) != 200 {
+		t.Fatalf("query after compact: %d series, %v", len(res), err)
+	}
+	var v int
+	if err := s.Get("kv", "k", &v); err != nil || v != 1 {
+		t.Fatalf("kv lost: %d %v", v, err)
+	}
+	if err := s.Append(now, batch); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.ClearHistory(0); err != nil {
+		t.Fatal(err)
+	}
+	if st, _ := s.Stats(); st.RawOldest != nil || st.RollupOldest != nil {
+		t.Fatalf("clear all left history: %+v", st)
 	}
 }
