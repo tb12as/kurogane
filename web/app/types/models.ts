@@ -45,6 +45,25 @@ export interface Snapshot {
   conns: { states: Record<string, number>; top_ips: { ip: string; count: number }[]; syn_cookies: boolean }
   services: { unit: string; active: string; sub: string }[]
   mounts: Mount[]
+  certs?: Cert[]
+}
+export interface Cert {
+  name: string
+  path?: string
+  origin: 'letsencrypt' | 'nginx' | 'config' | 'live'
+  server_names?: string[]
+  subject?: string
+  issuer?: string
+  dns_names?: string[]
+  not_after?: string
+  key_type?: string
+  key_bits?: number
+  sig_alg?: string
+  days_left: number
+  served_port?: number
+  stale: boolean
+  served_not_after?: string
+  error?: string
 }
 export interface Series {
   metric: string

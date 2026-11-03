@@ -42,6 +42,21 @@ export function num(n?: number | null, d = 0) {
   return n === undefined || n === null ? '-' : n.toLocaleString(undefined, { maximumFractionDigits: d })
 }
 
+// TLS certificate expiry: "12 days", "expired 3 days ago"; mirrors the cert_expiring rule (14 / 3 days)
+export function daysLeft(n?: number | null) {
+  if (n === undefined || n === null || isNaN(n)) return '-'
+  const d = Math.abs(n) < 10 ? Math.abs(n).toFixed(1) : Math.round(Math.abs(n)).toString()
+  return n < 0 ? `expired ${d} days ago` : `${d} days`
+}
+
+export function certState(c: { days_left?: number | null; stale?: boolean; error?: string }) {
+  if (c.error) return 'error'
+  const d = c.days_left ?? 0
+  if (d < 3) return 'critical' // expired included: the days column says "expired N days ago"
+  if (d < 14) return 'warning'
+  return c.stale ? 'stale' : 'ok'
+}
+
 export function uptime(s?: number) {
   if (!s) return '-'
   const d = Math.floor(s / 86400),

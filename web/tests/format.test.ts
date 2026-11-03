@@ -1,7 +1,7 @@
 // run: pnpm test (node strips the types natively)
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { bytes, dur, parseDur, when } from '../app/composables/format.ts'
+import { bytes, certState, daysLeft, dur, parseDur, when } from '../app/composables/format.ts'
 
 test('parseDur', () => {
   assert.equal(parseDur('90s'), 90_000)
@@ -27,4 +27,17 @@ test('when treats go zero time as never', () => {
 test('bytes', () => {
   assert.equal(bytes(1536), '1.5 KB')
   assert.equal(bytes(2048, '/s'), '2.0 KB/s')
+})
+
+test('certificate expiry', () => {
+  assert.equal(daysLeft(42.4), '42 days')
+  assert.equal(daysLeft(2.26), '2.3 days')
+  assert.equal(daysLeft(-3), 'expired 3.0 days ago')
+  assert.equal(daysLeft(undefined), '-')
+  assert.equal(certState({ days_left: 60 }), 'ok')
+  assert.equal(certState({ days_left: 60, stale: true }), 'stale')
+  assert.equal(certState({ days_left: 10 }), 'warning')
+  assert.equal(certState({ days_left: 1 }), 'critical')
+  assert.equal(certState({ days_left: -1 }), 'critical')
+  assert.equal(certState({ error: 'file not found' }), 'error')
 })

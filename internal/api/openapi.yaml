@@ -497,7 +497,7 @@ components:
                     latest:
                         additionalProperties:
                             type: number
-                        description: cpu, mem, disk (max over mounts) percent
+                        description: 'cpu, mem, disk (max over mounts) percent; cert_days: days until the soonest TLS certificate expiry'
                         type: object
                   type: object
         FleetServer:
