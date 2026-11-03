@@ -1,0 +1,126 @@
+// Agent <-> central link (PRD §9, §11.1). The central server can only send the typed operations
+// defined in Op; there is deliberately no message that runs an arbitrary command.
+syntax = "proto3";
+
+package serverkeeper.v1;
+
+option go_package = "github.com/serverkeeper/serverkeeper/internal/pb;pb";
+
+service Fleet {
+  // Enroll exchanges a one-time token and a CSR for a client certificate. Server-auth TLS only.
+  rpc Enroll(EnrollRequest) returns (EnrollResponse);
+  // Connect is the long-lived agent stream. Requires the client certificate issued by Enroll.
+  rpc Connect(stream AgentMessage) returns (stream CentralMessage);
+}
+
+message EnrollRequest {
+  string token = 1;
+  bytes csr_pem = 2;
+  string name = 3;
+  repeated string tags = 4;
+}
+
+message EnrollResponse {
+  string server_id = 1;
+  string name = 2;
+  bytes cert_pem = 3;
+  bytes ca_pem = 4;
+}
+
+message AgentMessage {
+  oneof msg {
+    Hello hello = 1;
+    Heartbeat heartbeat = 2;
+    Samples samples = 3;
+    AlertEvent alert = 4;
+    AuditEntry audit = 5;
+    OpResult op_result = 6;
+    ScanResult scan = 7;
+  }
+}
+
+message Hello {
+  string name = 1;
+  repeated string tags = 2;
+  string os = 3;
+  string kernel = 4;
+  string agent_version = 5;
+}
+
+message Heartbeat {
+  int64 ts_ms = 1;
+}
+
+// Samples is one collection: parallel arrays of series keys (metric{k="v"}) and values.
+message Samples {
+  int64 ts_ms = 1;
+  repeated string keys = 2;
+  repeated double values = 3;
+}
+
+message AlertEvent {
+  string id = 1;
+  string rule = 2;
+  string fingerprint = 3;
+  string state = 4;
+  string severity = 5;
+  string summary = 6;
+  int64 started_at = 7;
+  int64 resolved_at = 8;
+  string payload = 9;
+}
+
+message AuditEntry {
+  string actor = 1;
+  string action = 2;
+  string target = 3;
+  string before = 4;
+  string after = 5;
+  int64 ts = 6;
+  string source_ip = 7;
+}
+
+message OpResult {
+  string op_id = 1;
+  bool ok = 2;
+  string error = 3;
+  string result = 4;
+}
+
+message ScanResult {
+  string id = 1;
+  double score = 2;
+  string grade = 3;
+  int64 started_at = 4;
+  int32 passed = 5;
+  int32 failed = 6;
+}
+
+message CentralMessage {
+  oneof msg {
+    Op op = 1;
+  }
+}
+
+message Op {
+  string id = 1;
+  oneof kind {
+    AddKey add_key = 2;
+    RemoveKey remove_key = 3;
+    RunScan run_scan = 4;
+  }
+}
+
+message AddKey {
+  string user = 1;
+  string public_key = 2;
+  string label = 3;
+  int64 expires_at = 4;
+}
+
+message RemoveKey {
+  string fingerprint = 1;
+  string user = 2;
+}
+
+message RunScan {}

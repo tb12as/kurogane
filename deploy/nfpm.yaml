@@ -1,0 +1,32 @@
+# nfpm package spec: nfpm pkg --packager deb|rpm --config deploy/nfpm.yaml --target dist/
+name: serverkeeper
+arch: ${GOARCH}
+platform: linux
+version: ${VERSION}
+section: admin
+priority: optional
+maintainer: ServerKeeper <maintainers@serverkeeper.dev>
+description: |
+  Single-binary Linux server monitoring, SSH key management, hardening and
+  Slack/Discord alerts.
+homepage: https://github.com/serverkeeper/serverkeeper
+license: TBD
+contents:
+  - src: dist/serverkeeper-linux-${GOARCH}
+    dst: /usr/bin/serverkeeper
+    expand: true
+    file_info: {mode: 0755}
+  - src: deploy/serverkeeper.service
+    dst: /lib/systemd/system/serverkeeper.service
+  - src: deploy/serverkeeper-server.service
+    dst: /lib/systemd/system/serverkeeper-server.service
+  - src: deploy/config.example.yaml
+    dst: /usr/share/serverkeeper/config.example.yaml
+scripts:
+  postinstall: deploy/postinstall.sh
+  preremove: deploy/preremove.sh
+overrides:
+  rpm:
+    depends: [systemd]
+  deb:
+    depends: [systemd]

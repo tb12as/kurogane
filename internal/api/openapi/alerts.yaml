@@ -1,0 +1,97 @@
+paths:
+  /alerts/rules:
+    get:
+      summary: List alert rules (built-in and custom)
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/AlertRule"}}}}}}
+    post:
+      summary: Create a rule (admin)
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/AlertRuleInput"}}}}
+      responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/AlertRule"}}}}}
+  /alerts/rules/{id}:
+    parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+    put:
+      summary: Edit a rule; only fields given change (admin)
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/AlertRuleInput"}}}}
+      responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/AlertRule"}}}}}
+    delete:
+      summary: Delete a custom rule (built-ins can only be disabled) (admin)
+      responses: {"200": {description: ok}}
+  /alerts/events:
+    get:
+      summary: Alert history
+      parameters:
+        - {name: state, in: query, schema: {type: string, enum: [open, firing, acknowledged, resolved]}}
+        - {name: rule, in: query, schema: {type: string}}
+        - {name: server, in: query, schema: {type: string}}
+        - {name: since, in: query, schema: {type: string}, description: "duration, e.g. 7d"}
+        - {name: limit, in: query, schema: {type: integer}}
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/AlertEvent"}}}}}}
+  /alerts/events/export:
+    get:
+      summary: Export alert history (AL-7)
+      parameters: [{name: format, in: query, schema: {type: string, enum: [csv, json]}}, {name: since, in: query, schema: {type: string}}]
+      responses: {"200": {description: file, content: {text/csv: {schema: {type: string}}, application/json: {schema: {type: array, items: {$ref: "#/components/schemas/AlertEvent"}}}}}}
+  /alerts/events/{id}/ack:
+    post:
+      summary: Acknowledge (stops reminders) (admin)
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/AlertEvent"}}}}}
+  /alerts/events/{id}/noise:
+    post:
+      summary: Mark as noise / false positive (admin)
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      requestBody: {content: {application/json: {schema: {type: object, properties: {noise: {type: boolean}}}}}}
+      responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/AlertEvent"}}}}}
+  /alerts/silences:
+    get:
+      summary: List silences
+      parameters: [{name: active, in: query, schema: {type: boolean}}]
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/Silence"}}}}}}
+    post:
+      summary: Create a silence / maintenance window (admin)
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, properties: {server: {type: string}, rule: {type: string}, tag: {type: string}, for: {type: string}, starts_at: {type: string, format: date-time}, ends_at: {type: string, format: date-time}, reason: {type: string}}}}}
+      responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/Silence"}}}}}
+  /alerts/silences/{id}:
+    delete:
+      summary: Delete a silence (admin)
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      responses: {"200": {description: ok}}
+  /alerts/channels:
+    get:
+      summary: List channels (secrets are never returned)
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/ChannelInfo"}}}}}}
+    post:
+      summary: Add a channel; webhook_url is encrypted at rest (admin)
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [name, type], properties: {name: {type: string}, type: {type: string, enum: [slack, discord, telegram, email, pagerduty, webhook]}, webhook_url: {type: string}, webhook_url_env: {type: string}, chat_id: {type: string}, to: {type: array, items: {type: string}}, smtp_addr: {type: string}, smtp_user: {type: string}, from: {type: string}}}}}
+      responses: {"200": {description: ok}}
+  /alerts/channels/{name}:
+    delete:
+      summary: Delete an API-managed channel (admin)
+      parameters: [{name: name, in: path, required: true, schema: {type: string}}]
+      responses: {"200": {description: ok}}
+  /alerts/channels/{name}/test:
+    post:
+      summary: Send a test message (admin)
+      parameters: [{name: name, in: path, required: true, schema: {type: string}}]
+      responses: {"200": {description: ok}, "502": {description: delivery failed}}
+components:
+  schemas:
+    AlertRule:
+      type: object
+      properties: {id: {type: string}, name: {type: string}, expr: {type: string}, for: {type: integer, description: nanoseconds}, severity: {type: string}, channels: {type: array, items: {type: string}}, enabled: {type: boolean}, tags: {type: array, items: {type: string}}, builtin: {type: boolean}}
+    AlertRuleInput:
+      type: object
+      properties: {id: {type: string}, name: {type: string}, expr: {type: string}, for: {type: string, description: "duration, e.g. 5m"}, severity: {type: string, enum: [info, warning, critical]}, channels: {type: array, items: {type: string}}, enabled: {type: boolean}, tags: {type: array, items: {type: string}}}
+    AlertEvent:
+      type: object
+      properties: {id: {type: string}, rule_id: {type: string}, server_id: {type: string}, fingerprint: {type: string}, state: {type: string, enum: [firing, acknowledged, resolved]}, severity: {type: string}, summary: {type: string}, started_at: {type: string, format: date-time}, acked_at: {type: string, format: date-time}, acked_by: {type: string}, resolved_at: {type: string, format: date-time}, last_sent_at: {type: string, format: date-time}, noise: {type: boolean}, payload: {type: object}}
+    Silence:
+      type: object
+      properties: {id: {type: string}, matcher: {type: object, properties: {server: {type: string}, rule: {type: string}, tag: {type: string}}}, starts_at: {type: string, format: date-time}, ends_at: {type: string, format: date-time}, created_by: {type: string}, reason: {type: string}}
+    ChannelInfo:
+      type: object
+      properties: {name: {type: string}, type: {type: string}, has_secret: {type: boolean}, webhook_url_env: {type: string}, source: {type: string, enum: [config, api]}, ready: {type: boolean}}

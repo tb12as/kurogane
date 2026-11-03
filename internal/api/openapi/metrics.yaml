@@ -1,0 +1,119 @@
+paths:
+  /metrics/current:
+    get:
+      summary: Latest sample of all metric groups plus details (top processes, connections, services, mounts)
+      responses:
+        "200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/Snapshot"}}}}
+        "503": {description: no sample collected yet or no local collector, content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
+  /metrics/history:
+    get:
+      summary: Time series for metrics matching names (exact name or dotted prefix)
+      parameters:
+        - {name: names, in: query, schema: {type: string}, description: "comma-separated names or prefixes, e.g. cpu,mem,disk.used_pct; empty = all"}
+        - {name: from, in: query, schema: {type: string}, description: "RFC3339, unix seconds, or relative duration ago (6h, 7d); default to-1h"}
+        - {name: to, in: query, schema: {type: string}, description: "same formats as from; default now"}
+        - {name: step, in: query, schema: {type: string}, description: "Go duration bucket (10s, 1m); default ~360 points. Steps >= 1m or windows past raw retention read 1-minute rollups"}
+      responses:
+        "200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/MetricHistory"}}}}
+        "400": {description: invalid from/to/step, content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
+        "503": {description: no local metrics store, content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
+  /metrics:
+    get:
+      summary: "Prometheus text exposition (opt-in: collector.prometheus: true). Served at the root path /metrics, not under /api/v1; Bearer token with read scope"
+      servers: [{url: /}]
+      responses:
+        "200": {description: "metrics such as serverkeeper_cpu_total_pct, serverkeeper_cpu_core_pct{core=\"0\"}", content: {text/plain: {schema: {type: string}}}}
+        "503": {description: no sample collected yet, content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
+components:
+  schemas:
+    Sample:
+      type: object
+      required: [metric, ts, value]
+      properties:
+        metric: {type: string, example: cpu.total_pct}
+        labels: {type: object, additionalProperties: {type: string}}
+        ts: {type: integer, description: unix ms}
+        value: {type: number}
+    SystemInfo:
+      type: object
+      properties:
+        hostname: {type: string}
+        os: {type: string}
+        kernel: {type: string}
+        arch: {type: string}
+        boot_time: {type: string, format: date-time}
+        uptime_s: {type: number}
+        reboot_required: {type: boolean}
+        security_updates: {type: integer}
+        pending_updates: {type: integer}
+        cpus: {type: integer}
+        mem_total: {type: integer}
+    Proc:
+      type: object
+      properties:
+        pid: {type: integer}
+        name: {type: string}
+        user: {type: string}
+        cpu_pct: {type: number, description: percent of one core}
+        rss: {type: integer}
+        state: {type: string}
+        cmd: {type: string}
+    IPCount:
+      type: object
+      properties: {ip: {type: string, description: "address, or subnet with /24 (v4) or /64 (v6)"}, count: {type: integer}}
+    ConnInfo:
+      type: object
+      properties:
+        states: {type: object, additionalProperties: {type: integer}}
+        top_ips: {type: array, items: {$ref: "#/components/schemas/IPCount"}}
+        top_subnets: {type: array, items: {$ref: "#/components/schemas/IPCount"}}
+        top_ports:
+          type: array
+          items: {type: object, properties: {port: {type: integer}, count: {type: integer}}}
+        listening:
+          type: array
+          items:
+            type: object
+            properties: {proto: {type: string}, addr: {type: string}, port: {type: integer}, process: {type: string}}
+        syn_cookies: {type: boolean}
+    ServiceState:
+      type: object
+      properties: {unit: {type: string}, active: {type: string}, sub: {type: string}}
+    Mount:
+      type: object
+      properties:
+        path: {type: string}
+        device: {type: string}
+        fstype: {type: string}
+        opts: {type: string}
+        total: {type: integer}
+        used: {type: integer}
+        used_pct: {type: number}
+    Snapshot:
+      type: object
+      properties:
+        ts: {type: string, format: date-time}
+        samples: {type: array, items: {$ref: "#/components/schemas/Sample"}}
+        system: {$ref: "#/components/schemas/SystemInfo"}
+        top_cpu: {type: array, items: {$ref: "#/components/schemas/Proc"}}
+        top_mem: {type: array, items: {$ref: "#/components/schemas/Proc"}}
+        conns: {$ref: "#/components/schemas/ConnInfo"}
+        services: {type: array, items: {$ref: "#/components/schemas/ServiceState"}}
+        mounts: {type: array, items: {$ref: "#/components/schemas/Mount"}}
+        lag_ns: {type: integer, description: collection lag in nanoseconds}
+    Series:
+      type: object
+      properties:
+        metric: {type: string}
+        labels: {type: object, additionalProperties: {type: string}}
+        points:
+          type: array
+          description: "[unix ms, avg, max]"
+          items: {type: array, items: {type: number}, minItems: 3, maxItems: 3}
+    MetricHistory:
+      type: object
+      properties:
+        from: {type: string, format: date-time}
+        to: {type: string, format: date-time}
+        step: {type: string}
+        series: {type: array, items: {$ref: "#/components/schemas/Series"}}

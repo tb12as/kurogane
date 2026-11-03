@@ -1,0 +1,175 @@
+paths:
+  /servers:
+    get:
+      summary: Enrolled servers (central server)
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/FleetServer"}}}}}}
+  /servers/{id}:
+    parameters: [{name: id, in: path, required: true, schema: {type: string}, description: server id or name}]
+    get:
+      summary: One server
+      responses:
+        "200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/FleetServer"}}}}
+        "404": {description: not found, content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
+    delete:
+      summary: Remove a server; its client certificate is rejected from then on (admin)
+      responses: {"200": {description: removed}}
+  /servers/{id}/metrics/history:
+    get:
+      summary: Fleet time series from VictoriaMetrics, same shape as /metrics/history
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+        - {name: names, in: query, schema: {type: string}, description: "comma separated; cpu matches cpu and cpu.*"}
+        - {name: from, in: query, schema: {type: string}, description: "RFC 3339, unix seconds or a duration back (6h); default 1h ago"}
+        - {name: to, in: query, schema: {type: string}, description: default now}
+        - {name: step, in: query, schema: {type: string}, description: "Go duration; default range/300, min 10s"}
+      responses:
+        "200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/MetricHistory"}}}}
+        "502": {description: VictoriaMetrics unreachable, content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
+  /fleet/overview:
+    get:
+      summary: All servers with status, last seen, grade, active alerts and latest cpu/mem/disk
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/FleetOverviewRow"}}}}}}
+  /fleet/enrollment-tokens:
+    post:
+      summary: Create a one-time agent enrollment token valid for 1 h (admin)
+      requestBody: {content: {application/json: {schema: {type: object, properties: {name: {type: string, description: bind to this server name}}}}}}
+      responses:
+        "200":
+          description: token shown once; format "<secret>.<sha256 of the central CA>"
+          content: {application/json: {schema: {type: object, properties: {token: {type: string}, name: {type: string}, expires_at: {type: string, format: date-time}}}}}
+  /fleet/people:
+    get:
+      summary: People who own SSH keys
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/Person"}}}}}}
+    post:
+      summary: Add a person (admin)
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [name], properties: {name: {type: string}, email: {type: string}, groups: {type: array, items: {type: string}}}}}}
+      responses:
+        "200": {description: created, content: {application/json: {schema: {$ref: "#/components/schemas/Person"}}}}
+        "409": {description: name taken, content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
+  /fleet/people/{id}:
+    delete:
+      summary: Delete a person (admin); keys already on servers stay until revoked
+      parameters: [{name: id, in: path, required: true, schema: {type: string}, description: id or name}]
+      responses: {"200": {description: deleted}}
+  /fleet/people/{id}/keys:
+    post:
+      summary: Assign a public key to a person (admin)
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [public_key], properties: {public_key: {type: string, description: one authorized_keys line}, login_user: {type: string}}}}}
+      responses: {"200": {description: added, content: {application/json: {schema: {$ref: "#/components/schemas/PersonKey"}}}}}
+  /fleet/people/{id}/keys/{fp}:
+    delete:
+      summary: Unassign a key from a person (admin); use /fleet/keys/revoke to remove it from servers
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+        - {name: fp, in: path, required: true, schema: {type: string}, description: "SHA256:... (may contain '/')"}
+      responses: {"200": {description: removed}}
+  /fleet/people/{id}/groups:
+    post:
+      summary: Add a person to or remove them from a group (admin)
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [group], properties: {group: {type: string}, member: {type: boolean}}}}}
+      responses: {"200": {description: ok}}
+  /fleet/groups:
+    get:
+      summary: Groups and their member names
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: object, additionalProperties: {type: array, items: {type: string}}}}}}}
+  /fleet/keys/push:
+    post:
+      summary: Queue AddKey on every server (or servers with tag) for a person's or group's keys (admin)
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, properties: {person: {type: string}, group: {type: string}, user: {type: string, description: login user; default each key's login_user}, tag: {type: string}}}}}
+      responses:
+        "200": {description: queued, content: {application/json: {schema: {type: object, properties: {ops: {type: array, items: {$ref: "#/components/schemas/FleetOp"}}, servers: {type: integer}, people: {type: integer}}}}}}
+  /fleet/keys/revoke:
+    post:
+      summary: Remove a fingerprint from every server (all users) and every person (admin)
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [fingerprint], properties: {fingerprint: {type: string}}}}}
+      responses:
+        "200": {description: queued, content: {application/json: {schema: {type: object, properties: {ops: {type: array, items: {$ref: "#/components/schemas/FleetOp"}}, servers: {type: integer}}}}}}
+  /fleet/ops:
+    get:
+      summary: Recent typed fleet operations (pending, sent, done, failed)
+      parameters: [{name: limit, in: query, schema: {type: integer}}]
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/FleetOp"}}}}}}
+  /fleet/scans:
+    post:
+      summary: Queue RunScan on every server (or servers with tag) (admin)
+      requestBody: {content: {application/json: {schema: {type: object, properties: {tag: {type: string}}}}}}
+      responses: {"200": {description: queued, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/FleetOp"}}}}}}
+  /backup:
+    post:
+      summary: Back up SQLite, the agent store and (central) a VictoriaMetrics snapshot (admin)
+      requestBody: {content: {application/json: {schema: {type: object, properties: {dest: {type: string, description: default server.backup.dest}}}}}}
+      responses:
+        "200": {description: written, content: {application/json: {schema: {type: object, properties: {path: {type: string}, manifest: {$ref: "#/components/schemas/BackupManifest"}}}}}}
+components:
+  schemas:
+    FleetServer:
+      type: object
+      properties:
+        id: {type: string}
+        name: {type: string}
+        tags: {type: array, items: {type: string}}
+        os: {type: string}
+        kernel: {type: string}
+        agent_version: {type: string}
+        last_seen: {type: string, format: date-time}
+        cert_fingerprint: {type: string}
+        enrolled_at: {type: string, format: date-time}
+        status: {type: string, enum: [online, offline, unknown]}
+        score: {type: number, description: "-1 = never scanned"}
+        grade: {type: string}
+    FleetOverviewRow:
+      allOf:
+        - {$ref: "#/components/schemas/FleetServer"}
+        - type: object
+          properties:
+            connected: {type: boolean}
+            active_alerts: {type: integer}
+            latest: {type: object, description: "cpu, mem, disk (max over mounts) percent", additionalProperties: {type: number}}
+    Person:
+      type: object
+      properties:
+        id: {type: string}
+        name: {type: string}
+        email: {type: string}
+        groups: {type: array, items: {type: string}}
+        keys: {type: array, items: {$ref: "#/components/schemas/PersonKey"}}
+        created_at: {type: string, format: date-time}
+    PersonKey:
+      type: object
+      properties:
+        fingerprint: {type: string}
+        public_key: {type: string}
+        login_user: {type: string}
+    FleetOp:
+      type: object
+      properties:
+        id: {type: string}
+        server_id: {type: string}
+        kind: {type: string, enum: [add_key, remove_key, run_scan]}
+        payload: {type: object}
+        status: {type: string, enum: [pending, sent, done, failed]}
+        result: {type: string}
+        created_by: {type: string}
+        created_at: {type: string, format: date-time}
+        done_at: {type: string, format: date-time}
+    BackupManifest:
+      type: object
+      properties:
+        created_at: {type: string, format: date-time}
+        server: {type: string}
+        files: {type: object, additionalProperties: {type: string}, description: name -> sha256}
+        vm_snapshot: {type: string}
+        vm_bytes: {type: integer}

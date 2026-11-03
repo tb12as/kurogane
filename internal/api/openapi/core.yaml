@@ -1,0 +1,113 @@
+paths:
+  /health:
+    get:
+      summary: Liveness
+      security: []
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: object, properties: {ok: {type: boolean}, version: {type: string}}}}}}}
+  /auth/login:
+    post:
+      summary: Log in with password and mandatory TOTP; sets sk_session and sk_csrf cookies
+      security: []
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/LoginRequest"}}}
+      responses:
+        "200": {description: logged in, content: {application/json: {schema: {$ref: "#/components/schemas/LoginResponse"}}}}
+        "401": {description: bad credentials, content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
+        "423": {description: locked after 5 failures, content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
+  /auth/logout:
+    post: {summary: Log out, responses: {"200": {description: ok}}}
+  /auth/me:
+    get:
+      summary: Current principal
+      responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/Me"}}}}}
+  /auth/oidc/login:
+    get: {summary: Redirect to the OIDC provider, security: [], responses: {"302": {description: redirect}}}
+  /auth/oidc/callback:
+    get: {summary: OIDC callback, security: [], responses: {"302": {description: redirect to /}}}
+  /stream:
+    get:
+      summary: Server-Sent Events (metrics, alert, ssh, harden)
+      responses: {"200": {description: event stream, content: {text/event-stream: {schema: {type: string}}}}}
+  /status:
+    get:
+      summary: Health summary - metrics, hardening score, active alerts
+      responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/Status"}}}}}
+  /audit:
+    get:
+      summary: Audit log of every change
+      parameters:
+        - {name: since, in: query, schema: {type: string}, description: "Go duration, e.g. 24h"}
+        - {name: actor, in: query, schema: {type: string}}
+        - {name: action, in: query, schema: {type: string}, description: prefix match}
+        - {name: limit, in: query, schema: {type: integer}}
+        - {name: offset, in: query, schema: {type: integer}}
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/AuditEntry"}}}}}}
+  /users:
+    get:
+      summary: List users (admin)
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/User"}}}}}}
+    post:
+      summary: Create user (admin); returns TOTP enrollment URL
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [username, password], properties: {username: {type: string}, password: {type: string}, role: {type: string, enum: [admin, operator, viewer]}}}}}}
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: object, properties: {user: {$ref: "#/components/schemas/User"}, totp_url: {type: string}}}}}}}
+  /users/{id}:
+    delete:
+      summary: Delete user (admin)
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      responses: {"200": {description: ok}}
+  /users/{name}/unlock:
+    post:
+      summary: Clear login lockout (admin)
+      parameters: [{name: name, in: path, required: true, schema: {type: string}}]
+      responses: {"200": {description: ok}}
+  /tokens:
+    get:
+      summary: List API tokens (admin)
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/APIToken"}}}}}}
+    post:
+      summary: Create scoped API token (admin); plaintext returned once
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [name, scopes], properties: {name: {type: string}, scopes: {type: array, items: {type: string, enum: [read, "ssh:write", "harden:write", admin]}}, ttl: {type: string}}}}}}
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: object, properties: {token: {type: string}, info: {$ref: "#/components/schemas/APIToken"}}}}}}}
+  /tokens/{id}:
+    delete:
+      summary: Revoke API token (admin)
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      responses: {"200": {description: ok}}
+  /telemetry/first-dashboard:
+    post: {summary: Record opt-in onboarding timing, responses: {"200": {description: ok}}}
+components:
+  schemas:
+    Error:
+      type: object
+      properties: {error: {type: string, description: cause and next step}}
+    LoginRequest:
+      type: object
+      required: [username, password, totp]
+      properties: {username: {type: string}, password: {type: string}, totp: {type: string}}
+    LoginResponse:
+      type: object
+      properties: {user: {$ref: "#/components/schemas/User"}, csrf: {type: string}, expires_at: {type: string, format: date-time}}
+    Me:
+      type: object
+      properties: {actor: {type: string}, role: {type: string}, scopes: {type: array, items: {type: string}}, csrf: {type: string}, oidc: {type: boolean}}
+    User:
+      type: object
+      properties: {id: {type: string}, username: {type: string}, totp_enabled: {type: boolean}, role: {type: string}, failed_logins: {type: integer}, locked_until: {type: string, format: date-time}, created_at: {type: string, format: date-time}}
+    APIToken:
+      type: object
+      properties: {id: {type: string}, name: {type: string}, scopes: {type: array, items: {type: string}}, created_by: {type: string}, created_at: {type: string, format: date-time}, expires_at: {type: string, format: date-time}, last_used_at: {type: string, format: date-time}}
+    AuditEntry:
+      type: object
+      properties: {id: {type: integer}, actor: {type: string}, action: {type: string}, target: {type: string}, before: {type: string}, after: {type: string}, ts: {type: string, format: date-time}, source_ip: {type: string}, server_id: {type: string}}
+    Status:
+      type: object
+      properties:
+        server_name: {type: string}
+        version: {type: string}
+        time: {type: string, format: date-time}
+        metrics: {type: object, additionalProperties: {type: number}}
+        system: {type: object}
+        mounts: {type: array, items: {type: object}}
+        hardening: {type: object, properties: {score: {type: number}, grade: {type: string}, scanned_at: {type: string, format: date-time}, id: {type: string}}}
+        active_alerts: {type: array, items: {type: object}}

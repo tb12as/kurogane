@@ -1,0 +1,6 @@
+/bin/
+/dist/
+/cover.out
+/serverkeeper
+*.test
+/.codegraph/

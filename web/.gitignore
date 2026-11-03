@@ -1,0 +1,8 @@
+node_modules
+.nuxt
+.data
+.cache
+dist
+# the Go build embeds .output/public; only nitro's server bits are ignored
+.output/*
+!.output/public

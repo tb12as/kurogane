@@ -1,0 +1,269 @@
+package alert
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"path/filepath"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/serverkeeper/serverkeeper/internal/collector"
+	"github.com/serverkeeper/serverkeeper/internal/config"
+	"github.com/serverkeeper/serverkeeper/internal/db"
+	"github.com/serverkeeper/serverkeeper/internal/store"
+)
+
+type hookSink struct {
+	mu   sync.Mutex
+	msgs []map[string]any
+	code int
+}
+
+func (h *hookSink) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var m map[string]any
+	json.NewDecoder(r.Body).Decode(&m)
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.code != 0 {
+		w.WriteHeader(h.code)
+		return
+	}
+	h.msgs = append(h.msgs, m)
+}
+
+func (h *hookSink) n() int {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return len(h.msgs)
+}
+
+func setup(t *testing.T, mut func(*config.Config)) (*Engine, *hookSink, *time.Time) {
+	t.Helper()
+	dir := t.TempDir()
+	d, err := db.Open(filepath.Join(dir, "m.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(filepath.Join(dir, "a.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { st.Close(); d.Close() })
+	sink := &hookSink{}
+	srv := httptest.NewServer(sink)
+	t.Cleanup(srv.Close)
+	cfg := &config.Config{ServerName: "web-01"}
+	cfg.Alerts.Channels = []config.Channel{{Name: "ops", Type: "webhook", WebhookURL: srv.URL}}
+	cfg.Alerts.RepeatInterval = 30 * time.Minute
+	if mut != nil {
+		mut(cfg)
+	}
+	e, err := NewEngine(Deps{Cfg: cfg, DB: d, Store: st})
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 11, 3, 23, 0, 0, 0, time.Local)
+	e.now = func() time.Time { return now }
+	return e, sink, &now
+}
+
+func snap(kv ...any) *collector.Snapshot {
+	s := &collector.Snapshot{}
+	for i := 0; i < len(kv); i += 2 {
+		s.Samples = append(s.Samples, collector.Sample{Metric: kv[i].(string), Value: kv[i+1].(float64)})
+	}
+	return s
+}
+
+func TestExpr(t *testing.T) {
+	ss := []collector.Sample{
+		{Metric: "disk.used_pct", Labels: map[string]string{"mount": "/"}, Value: 90},
+		{Metric: "disk.used_pct", Labels: map[string]string{"mount": "/data"}, Value: 50},
+		{Metric: "cpu.total_pct", Value: 60},
+	}
+	for expr, want := range map[string]int{
+		`disk.used_pct > 85`:                          1,
+		`disk.used_pct{mount="/data"} > 40`:           1,
+		`disk.used_pct > 85 and cpu.total_pct > 50`:   1,
+		`disk.used_pct > 95 or cpu.total_pct > 50`:    2,
+		`(cpu.total_pct < 10 || cpu.total_pct >= 60)`: 1,
+	} {
+		n, err := parse(expr)
+		if err != nil {
+			t.Fatal(expr, err)
+		}
+		got := 0
+		for _, in := range n.eval(ss) {
+			if in.ok {
+				got++
+			}
+		}
+		if got != want {
+			t.Errorf("%s: %d firing, want %d", expr, got, want)
+		}
+	}
+	for _, bad := range []string{"cpu >", "cpu.total_pct ~ 3", `disk{mount=/} > 1`, "(cpu > 1"} {
+		if _, err := parse(bad); err == nil {
+			t.Errorf("%q must fail", bad)
+		}
+	}
+}
+
+func TestLifecycleDedupRepeatResolve(t *testing.T) {
+	e, sink, now := setup(t, nil)
+	ctx := context.Background()
+	high := snap("cpu.total_pct", 95.0)
+
+	e.Eval(ctx, high)
+	*now = now.Add(4 * time.Minute)
+	e.Eval(ctx, high)
+	e.Flush(ctx)
+	if sink.n() != 0 {
+		t.Fatal("fired before for: 5m")
+	}
+	*now = now.Add(time.Minute + time.Second)
+	e.Eval(ctx, high)
+	e.Eval(ctx, high) // dedup
+	e.Flush(ctx)
+	if sink.n() != 1 {
+		t.Fatalf("want 1 firing message, got %d", sink.n())
+	}
+	*now = now.Add(31 * time.Minute)
+	e.Eval(ctx, high)
+	e.Flush(ctx)
+	if sink.n() != 2 || sink.msgs[1]["state"] != "reminder" {
+		t.Fatalf("want reminder, got %v", sink.msgs)
+	}
+	evs, _ := e.d.DB.ListEvents(ctx, db.EventFilter{State: "open"})
+	if len(evs) != 1 {
+		t.Fatal("one open event expected")
+	}
+	if _, err := e.Ack(ctx, evs[0].ID, "admin"); err != nil {
+		t.Fatal(err)
+	}
+	*now = now.Add(31 * time.Minute)
+	e.Eval(ctx, high)
+	e.Flush(ctx)
+	if sink.n() != 2 {
+		t.Fatal("acked alert must not repeat")
+	}
+	e.Eval(ctx, snap("cpu.total_pct", 20.0))
+	e.Flush(ctx)
+	if sink.n() != 3 || sink.msgs[2]["state"] != "resolved" {
+		t.Fatalf("want resolved message, got %v", sink.msgs)
+	}
+}
+
+func TestEscalationAndText(t *testing.T) {
+	e, sink, now := setup(t, nil)
+	ctx := context.Background()
+	s := snap("mem.available_pct", 8.0, "mem.available_bytes", 3.2e8, "mem.total_bytes", 4e9, "swap.used_pct", 0.0)
+	s.TopMem = []collector.Proc{{Name: "java", RSS: 2.1e9}, {Name: "mysqld", RSS: 1.2e9}}
+	e.Eval(ctx, s)
+	*now = now.Add(6 * time.Minute)
+	e.Eval(ctx, s)
+	e.Flush(ctx)
+	if sink.n() != 1 || sink.msgs[0]["severity"] != "warning" {
+		t.Fatalf("want warning: %v", sink.msgs)
+	}
+	raw, _ := json.Marshal(sink.msgs[0])
+	if !strings.Contains(string(raw), "Available memory 8.0%") || !strings.Contains(string(raw), "java 2.0 GB") {
+		t.Fatalf("message: %s", raw)
+	}
+	s.Samples[0].Value = 4
+	e.Eval(ctx, s)
+	e.Flush(ctx)
+	if sink.n() != 2 || sink.msgs[1]["severity"] != "critical" {
+		t.Fatalf("want escalation to critical: %v", sink.msgs)
+	}
+}
+
+func TestSilenceAndRateLimit(t *testing.T) {
+	e, sink, now := setup(t, func(c *config.Config) { c.Alerts.RateLimit = 3 })
+	ctx := context.Background()
+	if _, err := e.Silence(ctx, db.Silence{Matcher: db.Matcher{Rule: "ssh_login"}, EndsAt: now.Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	e.Fire(ctx, Event{Rule: "ssh_login", Once: true, Text: "root from 1.2.3.4"})
+	e.Flush(ctx)
+	if sink.n() != 0 {
+		t.Fatal("silenced alert was sent")
+	}
+	for i := 0; i < 6; i++ {
+		e.Fire(ctx, Event{Rule: "hardening_drift", Once: true, Text: "x"})
+	}
+	e.Flush(ctx)
+	if sink.n() != 3 {
+		t.Fatalf("rate limit: %d sent", sink.n())
+	}
+	*now = now.Add(61 * time.Second)
+	e.Flush(ctx)
+	if sink.n() != 4 || sink.msgs[3]["state"] != "summary" {
+		t.Fatalf("want overflow summary: %v", sink.msgs[len(sink.msgs)-1])
+	}
+}
+
+func TestQueueRetry(t *testing.T) {
+	e, sink, now := setup(t, nil)
+	ctx := context.Background()
+	sink.code = 503
+	e.Fire(ctx, Event{Rule: "ssh_rolled_back", Once: true, Text: "rolled back"})
+	e.Flush(ctx)
+	sink.mu.Lock()
+	sink.code = 0
+	sink.mu.Unlock()
+	e.Flush(ctx) // backoff not elapsed
+	if sink.n() != 0 {
+		t.Fatal("retried before backoff")
+	}
+	*now = now.Add(3 * time.Second)
+	e.Flush(ctx)
+	if sink.n() != 1 {
+		t.Fatal("not retried after backoff")
+	}
+	n := 0
+	e.d.Store.List(queueBucket, func(string, []byte) error { n++; return nil })
+	if n != 0 {
+		t.Fatal("queue not drained")
+	}
+}
+
+func TestBaselineZScore(t *testing.T) {
+	var b baseline
+	t0 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	b.First = t0
+	for i := 0; i < 8*24*60; i++ {
+		ts := t0.Add(time.Duration(i) * time.Minute)
+		b.EWMA.add(1e6+float64(i%10)*1e4, ewmaN)
+		b.Week[hourOfWeek(ts)].add(1e6+float64(i%10)*1e4, weekN)
+	}
+	now := t0.Add(8 * 24 * time.Hour)
+	if !b.ready(now) {
+		t.Fatal("baseline should be ready after 7 days")
+	}
+	mean, sd := b.expect(now)
+	if z := zscore(5e7, mean, sd); z < zLimit {
+		t.Fatalf("spike z=%v", z)
+	}
+	e := &Engine{base: map[string]*baseline{"net.rx_bps_total": &b}}
+	if _, bad := e.anomalous("net.rx_bps_total", 5e6, now); bad {
+		t.Fatal("below the absolute floor must not alert")
+	}
+	if _, bad := e.anomalous("net.rx_bps_total", 5e7, now); !bad {
+		t.Fatal("spike above floor must alert")
+	}
+}
+
+func TestDDoSBody(t *testing.T) {
+	s := snap("net.tcp.syn_recv", 900.0)
+	s.Conns.TopIPs = []collector.IPCount{{IP: "198.51.100.7", Count: 300}}
+	s.Conns.SynCookies = true
+	txt, f := ddosText(s)
+	if !strings.Contains(txt, "upstream mitigation") || f[0].Value != "198.51.100.7 (300)" || f[3].Value != "on" {
+		t.Fatal(txt, f)
+	}
+}

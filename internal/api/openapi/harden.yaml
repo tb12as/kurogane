@@ -1,0 +1,169 @@
+paths:
+  /harden/scans:
+    get:
+      summary: List hardening scans (newest first, without per-check results)
+      parameters: [{name: limit, in: query, schema: {type: integer}}]
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/Scan"}}}}}}
+    post:
+      summary: Run a read-only hardening scan and store it (harden:write)
+      responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/Scan"}}}}}
+  /harden/scans/{id}:
+    get:
+      summary: Fetch a scan with results
+      parameters: [{name: id, in: path, required: true, description: 'scan id or "latest"', schema: {type: string}}]
+      responses:
+        "200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/Scan"}}}}
+        "404": {description: no such scan}
+  /harden/scans/{id}/report:
+    get:
+      summary: Export a scan report (HD-4) as attachment
+      parameters:
+        - {name: id, in: path, required: true, description: 'scan id or "latest"', schema: {type: string}}
+        - {name: format, in: query, schema: {type: string, enum: [json, md, pdf], default: json}}
+      responses:
+        "200":
+          description: report file (Content-Disposition attachment)
+          content:
+            application/json: {schema: {$ref: "#/components/schemas/HardenReport"}}
+            text/markdown: {schema: {type: string}}
+            application/pdf: {schema: {type: string, format: binary}}
+  /harden/checks:
+    get:
+      summary: Check catalog (built-in and YAML packs) with ignore state
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/HardenCheck"}}}}}}
+  /harden/fixes:
+    get:
+      summary: List applied fixes
+      parameters: [{name: limit, in: query, schema: {type: integer}}]
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/Fix"}}}}}}
+    post:
+      summary: Dry-run or apply fixes (harden:write). Applying requires confirm=true; firewall fixes are skipped by all=true.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                check_id: {type: string}
+                all: {type: boolean}
+                severity: {type: string, enum: [critical, high, medium, low], description: "with all: this severity and above"}
+                dry_run: {type: boolean}
+                confirm: {type: boolean}
+      responses:
+        "200": {description: diffs (dry run) or applied fixes with verification, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/FixResult"}}}}}
+        "400": {description: missing confirm, report-only check or bad severity}
+        "404": {description: unknown check}
+  /harden/fixes/{id}/revert:
+    post:
+      summary: Restore a fix's backup and undo its commands (harden:write)
+      parameters: [{name: id, in: path, required: true, schema: {type: string}}]
+      responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/Fix"}}}}}
+  /harden/ignores:
+    get:
+      summary: Accepted risks (config.yaml harden.ignore plus API-created)
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/Ignore"}}}}}}
+    post:
+      summary: Ignore a check with a mandatory reason (HD-6) (harden:write)
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [check_id, reason], properties: {check_id: {type: string}, reason: {type: string, minLength: 1}}}}}
+      responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/Ignore"}}}}}
+  /harden/ignores/{id}:
+    delete:
+      summary: Remove an API-created ignore; config.yaml ignores answer 409 (harden:write)
+      parameters: [{name: id, in: path, required: true, description: check id, schema: {type: string}}]
+      responses: {"200": {description: ok}, "404": {description: not ignored}, "409": {description: defined in config.yaml}}
+components:
+  schemas:
+    Scan:
+      type: object
+      properties:
+        id: {type: string}
+        server_id: {type: string}
+        started_at: {type: string, format: date-time}
+        finished_at: {type: string, format: date-time}
+        score: {type: number}
+        grade: {type: string, enum: [A, B, C, D]}
+        results: {type: array, items: {$ref: "#/components/schemas/CheckResult"}}
+    CheckResult:
+      type: object
+      properties:
+        check_id: {type: string}
+        status: {type: string, enum: [pass, fail, na, error, ignored]}
+        evidence: {type: string}
+        title: {type: string}
+        category: {type: string}
+        severity: {type: string, enum: [critical, high, medium, low]}
+        cis: {type: string}
+        rationale: {type: string}
+        remediation: {type: string}
+        auto_fix: {type: string, enum: [yes, partial, confirm, report-only]}
+        ignore_reason: {type: string}
+    HardenCheck:
+      type: object
+      properties:
+        id: {type: string}
+        title: {type: string}
+        category: {type: string}
+        severity: {type: string}
+        cis: {type: string}
+        rationale: {type: string}
+        remediation: {type: string}
+        auto_fix: {type: string}
+        fixable: {type: boolean}
+        ignored: {type: boolean}
+        ignore_reason: {type: string}
+    HardenReport:
+      type: object
+      properties:
+        server: {type: string}
+        scan_id: {type: string}
+        started_at: {type: string, format: date-time}
+        score: {type: number}
+        grade: {type: string}
+        counts: {type: object, additionalProperties: {type: integer}}
+        results: {type: array, items: {$ref: "#/components/schemas/CheckResult"}}
+    FixDiff:
+      type: object
+      properties:
+        check_id: {type: string}
+        diff: {type: string, description: unified diff plus commands, shown before applying}
+        files: {type: array, items: {type: object, properties: {path: {type: string}, new: {type: string}, mode: {type: integer}, remove: {type: boolean}}}}
+        modes: {type: array, items: {type: object, properties: {path: {type: string}, old: {type: integer}, new: {type: integer}}}}
+        sysctl: {type: object, additionalProperties: {type: string}}
+        ssh: {type: object, additionalProperties: {type: string}}
+        cmds: {type: array, items: {type: array, items: {type: string}}}
+        undo: {type: array, items: {type: array, items: {type: string}}}
+        confirm: {type: boolean}
+        note: {type: string}
+    FixResult:
+      type: object
+      properties:
+        check_id: {type: string}
+        dry_run: {type: boolean}
+        diff: {$ref: "#/components/schemas/FixDiff"}
+        fix: {$ref: "#/components/schemas/Fix"}
+        verify: {$ref: "#/components/schemas/CheckResult"}
+        skipped: {type: string}
+        error: {type: string}
+    Fix:
+      type: object
+      properties:
+        id: {type: string}
+        server_id: {type: string}
+        check_id: {type: string}
+        diff: {type: string}
+        backup_path: {type: string}
+        applied_by: {type: string}
+        applied_at: {type: string, format: date-time}
+        reverted_at: {type: string, format: date-time}
+        status: {type: string, enum: [applied, applied_unverified, failed, reverted]}
+    Ignore:
+      type: object
+      properties:
+        server_id: {type: string}
+        check_id: {type: string}
+        reason: {type: string}
+        created_by: {type: string}
+        created_at: {type: string, format: date-time}

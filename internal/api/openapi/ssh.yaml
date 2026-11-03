@@ -1,0 +1,105 @@
+paths:
+  /ssh/keys:
+    get:
+      summary: Authorized key inventory for every local user (SSH-1)
+      parameters: [{name: user, in: query, schema: {type: string}}]
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/SSHKeyInfo"}}}}}}
+    post:
+      summary: Add a key from text, GitHub or GitLab (ssh:write)
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [user], properties: {user: {type: string}, public_key: {type: string}, github: {type: string}, gitlab: {type: string}, label: {type: string}, expires_at: {type: string, description: "YYYY-MM-DD or RFC3339"}}}}}
+      responses: {"200": {description: added key (or list for imports)}}
+  /ssh/keys/{fp}:
+    parameters: [{name: fp, in: path, required: true, schema: {type: string}, description: "SHA256:... (URL-escaped)"}]
+    delete:
+      summary: Remove a key from all users or ?user= (ssh:write)
+      parameters: [{name: user, in: query, schema: {type: string}}]
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: object, properties: {removed: {type: integer}}}}}}}
+    patch:
+      summary: Update label, owner or expiry (ssh:write)
+      requestBody: {content: {application/json: {schema: {type: object, properties: {user: {type: string}, label: {type: string}, owner_person: {type: string}, expires_at: {type: string, description: "empty clears"}}}}}}
+      responses: {"200": {description: ok}}
+  /ssh/config:
+    get:
+      summary: Managed sshd settings, current vs recommended, plus any pending change
+      responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/SSHConfig"}}}}}
+    patch:
+      summary: Safe-apply settings with rollback timer; dry_run returns the plan only (ssh:write)
+      requestBody:
+        required: true
+        content: {application/json: {schema: {type: object, required: [set], properties: {set: {type: object, additionalProperties: {type: string}}, rollback: {type: string, default: 120s}, dry_run: {type: boolean}, ssh_connection: {type: string, description: "SSH_CONNECTION of the caller; confirm must come from another session"}}}}}
+      responses:
+        "200": {description: "SSHChange (apply) or SSHPlan (dry_run)", content: {application/json: {schema: {oneOf: [{$ref: "#/components/schemas/SSHChange"}, {$ref: "#/components/schemas/SSHPlan"}]}}}}
+        "400": {description: "validation failed, unsafe (SSH-4) or sshd -t error", content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
+  /ssh/config/confirm:
+    post:
+      summary: Confirm the pending change (ssh:write)
+      requestBody: {content: {application/json: {schema: {type: object, properties: {ssh_connection: {type: string}}}}}}
+      responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/SSHChange"}}}}}
+  /ssh/changes:
+    get:
+      summary: sshd change history
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/SSHChange"}}}}}}
+  /ssh/sessions:
+    get:
+      summary: Active sessions
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/SSHSession"}}}}}}
+  /ssh/sessions/{pid}:
+    delete:
+      summary: Kill a session (ssh:write)
+      parameters: [{name: pid, in: path, required: true, schema: {type: integer}}]
+      responses: {"200": {description: ok}}
+  /ssh/logins:
+    get:
+      summary: Login history with top failing IPs and users
+      parameters: [{name: since, in: query, schema: {type: string, default: 24h}}]
+      responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/LoginSummary"}}}}}
+  /ssh/bans:
+    get:
+      summary: Brute-force bans and firewall backend
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: object, properties: {backend: {type: string}, bans: {type: array, items: {$ref: "#/components/schemas/Ban"}}}}}}}}
+  /ssh/bans/{ip}:
+    delete:
+      summary: Unban an IP (ssh:write)
+      parameters: [{name: ip, in: path, required: true, schema: {type: string}}]
+      responses: {"200": {description: ok}}
+  /ssh/ca/init:
+    post:
+      summary: Create the SSH CA and trust it via safe-apply (ssh:write)
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: object, properties: {ca_public_key: {type: string}, path: {type: string}}}}}}}
+  /ssh/ca/sign:
+    post:
+      summary: Issue a short-lived user certificate (ssh:write)
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [public_key, principals], properties: {public_key: {type: string}, principals: {type: array, items: {type: string}}, ttl: {type: string}, key_id: {type: string}}}}}}
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: object, properties: {certificate: {type: string}}}}}}}
+components:
+  schemas:
+    SSHKeyInfo:
+      type: object
+      properties: {server_id: {type: string}, fingerprint: {type: string}, type: {type: string}, bits: {type: integer}, user: {type: string}, label: {type: string}, comment: {type: string}, options: {type: string}, public_key: {type: string}, owner_person: {type: string}, added_at: {type: string, format: date-time}, expires_at: {type: string, format: date-time}, last_used_at: {type: string, format: date-time}, file: {type: string}, line: {type: integer}, flags: {type: array, items: {type: string, enum: [weak-rsa, dsa, duplicate, no-label]}}}
+    SSHConfig:
+      type: object
+      properties:
+        settings: {type: array, items: {type: object, properties: {name: {type: string}, recommended: {type: string}, notes: {type: string}, current: {type: string}, ok: {type: boolean}}}}
+        pending: {$ref: "#/components/schemas/SSHChange"}
+    SSHPlan:
+      type: object
+      properties: {set: {type: object, additionalProperties: {type: string}}, old: {type: object, additionalProperties: {type: string}}, diff: {type: string}, mode: {type: string, enum: [drop-in, in-place]}, impact: {type: array, items: {type: string}}}
+    SSHChange:
+      type: object
+      properties: {id: {type: string}, server_id: {type: string}, actor: {type: string}, setting: {type: string}, old_value: {type: string}, new_value: {type: string}, status: {type: string, enum: [pending, confirmed, rolled_back, failed]}, ts: {type: string, format: date-time}, deadline: {type: string, format: date-time}, backup_path: {type: string}}
+    SSHSession:
+      type: object
+      properties: {user: {type: string}, tty: {type: string}, from: {type: string}, started: {type: string, format: date-time}, pid: {type: integer}}
+    LoginSummary:
+      type: object
+      properties:
+        logins: {type: array, items: {type: object, properties: {ts: {type: string, format: date-time}, user: {type: string}, ip: {type: string}, success: {type: boolean}, method: {type: string}, invalid_user: {type: boolean}, fingerprint: {type: string}}}}
+        success: {type: integer}
+        failed: {type: integer}
+        top_failing_ips: {type: array, items: {type: object, properties: {key: {type: string}, count: {type: integer}}}}
+        top_failing_users: {type: array, items: {type: object, properties: {key: {type: string}, count: {type: integer}}}}
+    Ban:
+      type: object
+      properties: {ip: {type: string}, reason: {type: string}, created_at: {type: string, format: date-time}, expires_at: {type: string, format: date-time}}

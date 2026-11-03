@@ -1,0 +1,56 @@
+# /etc/serverkeeper/config.yaml
+server_name: web-01
+tags: [prod, web]
+listen: 127.0.0.1:9443
+# dashboard_url: https://web-01.example.com:9443   # used for links in alert messages
+
+collector:
+  interval: 10s
+  retention_raw: 24h
+  retention_rollup: 7d
+  watch_services: [nginx, mysql, docker]
+  # nginx_log: /var/log/nginx/access.log          # optional HTTP 4xx/5xx rate
+  # prometheus: false                             # opt-in /metrics endpoint
+
+ssh:
+  rollback_timeout: 120s
+  bruteforce:
+    enabled: true
+    max_failures: 5
+    window: 10m
+    ban_for: 1h
+    allowlist: [203.0.113.10/32]
+
+harden:
+  schedule: "0 3 * * *"
+  ignore:
+    - id: SSH-PORT-NONDEFAULT
+      reason: "Port 22 required by provider console"
+
+alerts:
+  channels:
+    - name: ops
+      type: slack
+      webhook_url_env: SK_SLACK_OPS      # secret read from env / encrypted store
+    - name: phone
+      type: discord
+      webhook_url_env: SK_DISCORD_ME
+  rules:
+    - id: mem_available_low
+      expr: mem.available_pct < 10
+      for: 5m
+      severity: warning
+      channels: [ops, phone]
+    - id: syn_flood
+      expr: net.tcp.syn_recv > 500
+      for: 1m
+      severity: critical
+      channels: [ops, phone]
+  repeat_interval: 30m
+  # routing: {critical: [ops], info: [phone]}
+  # auto_ban: {enabled: false, duration: 30m, max_bans: 50, allowlist: []}
+
+# v1 fleet: connect this agent to a central server
+# central:
+#   addr: central.example.com:9444
+#   enrollment_token: <one-time token from `serverkeeper server token create`>

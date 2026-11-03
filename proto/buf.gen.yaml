@@ -1,0 +1,9 @@
+# make proto: cd proto && go run github.com/bufbuild/buf/cmd/buf@v1.74.0 generate
+version: v2
+plugins:
+  - local: ["go", "run", "google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12"]
+    out: ..
+    opt: module=github.com/serverkeeper/serverkeeper
+  - local: ["go", "run", "google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.1"]
+    out: ..
+    opt: module=github.com/serverkeeper/serverkeeper

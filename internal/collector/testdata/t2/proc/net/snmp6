@@ -1,0 +1,3 @@
+Ip6InReceives                   	100
+Udp6InDatagrams                 	1500
+Udp6NoPorts                     	0

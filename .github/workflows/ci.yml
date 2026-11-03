@@ -1,0 +1,85 @@
+name: ci
+on:
+  push: {branches: [main]}
+  pull_request:
+
+permissions: {contents: read}
+
+jobs:
+  go:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: {go-version: "1.27.x", check-latest: true}
+      - name: vet + staticcheck
+        run: make lint
+      - name: unit tests (race)
+        run: make test
+      - name: coverage >= 80% in internal/
+        run: make cover
+      - name: govulncheck
+        run: make vuln
+      - name: gosec
+        run: make gosec
+      - name: binary size < 30 MB (amd64, arm64)
+        run: |
+          make size
+          GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o /tmp/sk-arm64 ./cmd/serverkeeper
+          [ $(stat -c %s /tmp/sk-arm64) -lt 31457280 ]
+      - name: openapi spec up to date
+        run: make openapi && git diff --exit-code internal/api/openapi.yaml
+
+  web:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: 10}
+      - uses: actions/setup-node@v4
+        with: {node-version: 24, cache: pnpm, cache-dependency-path: web/pnpm-lock.yaml}
+      - run: cd web && pnpm install --frozen-lockfile && pnpm gen:api && pnpm typecheck && pnpm generate
+
+  # integration per supported distro (HD-7, §12): every hardening check scan/fix/revert, lockout rollback test
+  integration:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["ubuntu:22.04", "ubuntu:24.04", "debian:12", "rockylinux:9", "almalinux:9"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: {go-version: "1.27.x", check-latest: true}
+      - name: build test binaries
+        run: |
+          CGO_ENABLED=0 go test -c -tags integration -o /tmp/it-harden ./internal/harden/
+          CGO_ENABLED=0 go test -c -tags integration -o /tmp/it-ssh ./internal/sshmgr/
+      - name: run in ${{ matrix.image }}
+        # --privileged lets sysctl fixes run; acceptable only on an ephemeral CI VM (it writes the VM kernel)
+        run: |
+          docker run --rm --privileged -v /tmp:/t:ro ${{ matrix.image }} sh -c '
+            (command -v apt-get >/dev/null && apt-get update -qq &&
+              DEBIAN_FRONTEND=noninteractive apt-get install -y -qq openssh-server procps iproute2 sudo) ||
+            dnf install -y -q openssh-server openssh-clients procps-ng iproute sudo passwd
+            mkdir -p /run/sshd && ssh-keygen -A
+            SK_INTEGRATION=1 /t/it-ssh -test.run Integration -test.v &&
+            SK_INTEGRATION=1 /t/it-harden -test.run Integration -test.v'
+
+  # lockout test every release: SSH change with no confirm must roll back within the timeout
+  lockout:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: {go-version: "1.27.x", check-latest: true}
+      - run: go test -run 'Lockout|Rollback' -v ./internal/sshmgr/
+
+  # agent CPU/RAM budget tracked per commit; fails if exceeded by > 10%
+  bench:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: {go-version: "1.27.x", check-latest: true}
+      - run: make build-go && DURATION=180 ./deploy/bench.sh
