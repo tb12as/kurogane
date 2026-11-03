@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -25,6 +26,7 @@ var (
 // Store wraps bbolt.
 type Store struct {
 	db *bolt.DB
+	rw sync.RWMutex // exclusive only while Compact swaps db; lock order is mu then rw
 
 	mu     sync.Mutex
 	ids    map[string]uint64
@@ -38,9 +40,11 @@ type agg struct {
 	n        int
 }
 
+var opts = &bolt.Options{Timeout: 5 * time.Second, NoFreelistSync: true}
+
 // Open opens (or creates) the store at path with mode 0600.
 func Open(path string) (*Store, error) {
-	db, err := bolt.Open(path, 0o600, &bolt.Options{Timeout: 5 * time.Second, NoFreelistSync: true})
+	db, err := bolt.Open(path, 0o600, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -67,12 +71,18 @@ func Open(path string) (*Store, error) {
 func (s *Store) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.rw.Lock()
+	defer s.rw.Unlock()
 	_ = s.flushRollup(0)
 	return s.db.Close()
 }
 
 // DB exposes bbolt for tests and backups.
-func (s *Store) DB() *bolt.DB { return s.db }
+func (s *Store) DB() *bolt.DB {
+	s.rw.RLock()
+	defer s.rw.RUnlock()
+	return s.db
+}
 
 func tsKey(t int64) []byte {
 	var b [8]byte
@@ -100,6 +110,8 @@ func (s *Store) seriesID(tx *bolt.Tx, key string) (uint64, error) {
 func (s *Store) Append(ts time.Time, samples []collector.Sample) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.rw.RLock()
+	defer s.rw.RUnlock()
 	min := ts.Unix() / 60 * 60
 	if s.minute != 0 && min != s.minute {
 		if err := s.flushRollup(min); err != nil {
@@ -134,7 +146,7 @@ func (s *Store) Append(ts time.Time, samples []collector.Sample) error {
 	})
 }
 
-// flushRollup writes the accumulated minute and starts next.
+// flushRollup writes the accumulated minute and starts next; callers hold mu and rw.
 func (s *Store) flushRollup(next int64) error {
 	if len(s.acc) == 0 || s.minute == 0 {
 		s.minute = next
@@ -212,6 +224,7 @@ func (s *Store) Query(q Query, rawRetention time.Duration) ([]Series, error) {
 	}
 	step := q.Step.Milliseconds()
 	data := map[uint64]map[int64]*bucketAgg{}
+	s.rw.RLock()
 	err := s.db.View(func(tx *bolt.Tx) error {
 		c := tx.Bucket(bucket).Cursor()
 		end := q.To.UnixMilli()
@@ -252,6 +265,7 @@ func (s *Store) Query(q Query, rawRetention time.Duration) ([]Series, error) {
 		}
 		return nil
 	})
+	s.rw.RUnlock()
 	if err != nil {
 		return nil, err
 	}
@@ -282,6 +296,8 @@ func autoStep(d time.Duration) time.Duration {
 
 // Prune deletes raw samples older than raw and rollups older than rollup.
 func (s *Store) Prune(raw, rollup time.Duration) error {
+	s.rw.RLock()
+	defer s.rw.RUnlock()
 	return s.db.Update(func(tx *bolt.Tx) error {
 		for _, p := range []struct {
 			b   []byte
@@ -308,6 +324,8 @@ func (s *Store) Put(bucket, key string, v any) error {
 	if err != nil {
 		return err
 	}
+	s.rw.RLock()
+	defer s.rw.RUnlock()
 	return s.db.Update(func(tx *bolt.Tx) error {
 		bk, err := tx.CreateBucketIfNotExists([]byte(bucket))
 		if err != nil {
@@ -318,6 +336,8 @@ func (s *Store) Put(bucket, key string, v any) error {
 }
 
 func (s *Store) Get(bucket, key string, v any) error {
+	s.rw.RLock()
+	defer s.rw.RUnlock()
 	return s.db.View(func(tx *bolt.Tx) error {
 		bk := tx.Bucket([]byte(bucket))
 		if bk == nil {
@@ -332,6 +352,8 @@ func (s *Store) Get(bucket, key string, v any) error {
 }
 
 func (s *Store) Delete(bucket, key string) error {
+	s.rw.RLock()
+	defer s.rw.RUnlock()
 	return s.db.Update(func(tx *bolt.Tx) error {
 		bk := tx.Bucket([]byte(bucket))
 		if bk == nil {
@@ -343,6 +365,8 @@ func (s *Store) Delete(bucket, key string) error {
 
 // List calls fn for each key/value in bucket in key order.
 func (s *Store) List(bucket string, fn func(key string, raw []byte) error) error {
+	s.rw.RLock()
+	defer s.rw.RUnlock()
 	return s.db.View(func(tx *bolt.Tx) error {
 		bk := tx.Bucket([]byte(bucket))
 		if bk == nil {
@@ -359,6 +383,8 @@ func (s *Store) Enqueue(bucket string, v any) (string, error) {
 		return "", err
 	}
 	var key string
+	s.rw.RLock()
+	defer s.rw.RUnlock()
 	err = s.db.Update(func(tx *bolt.Tx) error {
 		bk, err := tx.CreateBucketIfNotExists([]byte(bucket))
 		if err != nil {
@@ -373,7 +399,131 @@ func (s *Store) Enqueue(bucket string, v any) (string, error) {
 
 // Size returns the on-disk size of the store in bytes.
 func (s *Store) Size() int64 {
+	s.rw.RLock()
+	defer s.rw.RUnlock()
 	var n int64
 	_ = s.db.View(func(tx *bolt.Tx) error { n = tx.Size(); return nil })
 	return n
+}
+
+// ClearHistory deletes raw samples and rollups older than d (0 = all, including the open minute).
+func (s *Store) ClearHistory(d time.Duration) error {
+	if d <= 0 {
+		s.mu.Lock()
+		s.acc, s.minute = map[uint64]*agg{}, 0
+		s.mu.Unlock()
+	}
+	return s.Prune(d, d)
+}
+
+// Compact rewrites the file without free pages; bbolt never shrinks its file on delete.
+// It returns the bytes given back to the filesystem.
+func (s *Store) Compact() (int64, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.rw.Lock()
+	defer s.rw.Unlock()
+	// the open rollup minute stays in memory (s.acc) and is flushed into the new file later
+
+	p := s.db.Path()
+	before := fileSize(p)
+	tmp := p + ".compact"
+	_ = os.Remove(tmp)
+	dst, err := bolt.Open(tmp, 0o600, opts)
+	if err != nil {
+		return 0, err
+	}
+	if err := bolt.Compact(dst, s.db, 64<<20); err != nil {
+		dst.Close()
+		os.Remove(tmp)
+		return 0, err
+	}
+	if err := dst.Close(); err != nil {
+		os.Remove(tmp)
+		return 0, err
+	}
+
+	if err := s.db.Close(); err != nil {
+		os.Remove(tmp)
+		return 0, err
+	}
+	rerr := os.Rename(tmp, p)
+	if rerr != nil {
+		os.Remove(tmp)
+	}
+	// reopen either the compacted file or, if the rename failed, the untouched original
+	if s.db, err = bolt.Open(p, 0o600, opts); err != nil {
+		return 0, err
+	}
+	if rerr != nil {
+		return 0, rerr
+	}
+	return before - fileSize(p), nil
+}
+
+func fileSize(p string) int64 {
+	st, err := os.Stat(p)
+	if err != nil {
+		return 0
+	}
+	return st.Size()
+}
+
+// BucketStat is the space one bucket uses.
+type BucketStat struct {
+	Name  string `json:"name"`
+	Keys  int    `json:"keys"`
+	Bytes int64  `json:"bytes"`
+}
+
+// Stats describes the store file for the storage page.
+type Stats struct {
+	FileBytes        int64        `json:"file_bytes"`
+	ReclaimableBytes int64        `json:"reclaimable_bytes"`
+	Buckets          []BucketStat `json:"buckets"`
+	RawOldest        *time.Time   `json:"raw_oldest,omitempty"`
+	RawNewest        *time.Time   `json:"raw_newest,omitempty"`
+	RollupOldest     *time.Time   `json:"rollup_oldest,omitempty"`
+	RollupNewest     *time.Time   `json:"rollup_newest,omitempty"`
+}
+
+func keyTime(k []byte) *time.Time {
+	if len(k) != 8 {
+		return nil
+	}
+	t := time.UnixMilli(int64(binary.BigEndian.Uint64(k))).UTC()
+	return &t
+}
+
+// Stats reports per-bucket usage, free pages and the time range of the history.
+func (s *Store) Stats() (Stats, error) {
+	s.rw.RLock()
+	defer s.rw.RUnlock()
+	var st Stats
+	err := s.db.View(func(tx *bolt.Tx) error {
+		st.FileBytes = fileSize(s.db.Path())
+		err := tx.ForEach(func(name []byte, b *bolt.Bucket) error {
+			bs := b.Stats()
+			st.Buckets = append(st.Buckets, BucketStat{Name: string(name), Keys: bs.KeyN,
+				Bytes: int64(bs.BranchInuse + bs.LeafInuse + bs.InlineBucketInuse)})
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+		c := tx.Bucket(bRaw).Cursor()
+		k, _ := c.First()
+		st.RawOldest = keyTime(k)
+		k, _ = c.Last()
+		st.RawNewest = keyTime(k)
+		c = tx.Bucket(bRollup).Cursor()
+		k, _ = c.First()
+		st.RollupOldest = keyTime(k)
+		k, _ = c.Last()
+		st.RollupNewest = keyTime(k)
+		return nil
+	})
+	ds := s.db.Stats()
+	st.ReclaimableBytes = int64(ds.FreePageN+ds.PendingPageN) * int64(s.db.Info().PageSize)
+	return st, err
 }

@@ -4,3 +4,4 @@
 /serverkeeper
 *.test
 /.codegraph/
+/.local-run/

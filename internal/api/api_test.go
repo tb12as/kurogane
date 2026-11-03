@@ -361,6 +361,34 @@ func TestMetricsRoutesAndProm(t *testing.T) {
 	s.do("GET", "/metrics", s.read, nil, 503)
 }
 
+func TestStorageRoutes(t *testing.T) {
+	s := newStack(t)
+	now := time.Now()
+	for i := 0; i < 360; i++ {
+		s.srv.Store.Append(now.Add(-time.Hour+time.Duration(i)*10*time.Second),
+			[]collector.Sample{{Metric: "cpu.total_pct", Value: float64(i)}})
+	}
+	st := decode[StorageResponse](t, s.do("GET", "/api/v1/storage", s.read, nil, 200))
+	if st.AgentStore == nil || st.AgentStore.RawOldest == nil || len(st.Entries) == 0 || st.TotalBytes == 0 {
+		t.Fatalf("storage: %+v", st)
+	}
+
+	s.do("POST", "/api/v1/storage/history/clear", s.read, map[string]any{"older_than": "0"}, 403)
+	s.do("POST", "/api/v1/storage/history/clear", s.admin, map[string]any{"older_than": "x"}, 400)
+	s.do("POST", "/api/v1/storage/history/clear", s.admin, map[string]any{"older_than": "0"}, 200)
+	st = decode[StorageResponse](t, s.do("GET", "/api/v1/storage", s.read, nil, 200))
+	if st.AgentStore.RawOldest != nil {
+		t.Fatalf("history not cleared: %+v", st.AgentStore)
+	}
+
+	s.do("POST", "/api/v1/uninstall", s.admin, map[string]any{"confirm": "nope"}, 400)
+	// the test binary is not an allowlisted install path, so the executor refuses it
+	b := s.do("POST", "/api/v1/uninstall", s.admin, map[string]any{"confirm": "web-01"}, 500)
+	if !strings.Contains(string(b), "not allowlisted") {
+		t.Fatalf("uninstall: %s", b)
+	}
+}
+
 // opt-in onboarding telemetry sends only timing + version, once, and only when enabled with a URL
 func TestTelemetryOptIn(t *testing.T) {
 	got := make(chan map[string]any, 2)

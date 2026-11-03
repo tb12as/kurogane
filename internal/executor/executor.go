@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -109,6 +110,25 @@ var commands = map[string][]string{
 	"uname":              {"-r", "-a"},
 	"chown":              {"-h"},
 	"stat":               {"-c"},
+	"systemd-run":        {UninstallArgs[0]},
+}
+
+// UninstallArgs is the only systemd-run the worker may ask for: a delayed transient unit outside
+// serverkeeper.service, so `serverkeeper uninstall` survives stopping the agent. The binary path follows.
+var UninstallArgs = []string{"--unit=serverkeeper-uninstall", "--collect", "--on-active=3"}
+
+func uninstallCmd(args []string) bool {
+	n := len(UninstallArgs)
+	if len(args) < n+3 || len(args) > n+4 || !slices.Equal(args[:n], UninstallArgs) {
+		return false
+	}
+	if bin := args[n]; bin != "/usr/bin/serverkeeper" && bin != "/usr/local/bin/serverkeeper" {
+		return false
+	}
+	if args[n+1] != "uninstall" || args[n+2] != "--yes" {
+		return false
+	}
+	return len(args) == n+3 || args[n+3] == "--purge"
 }
 
 // Allowed validates a command and its args against the allowlist.
@@ -126,6 +146,9 @@ func Allowed(cmd string, args []string) error {
 	if cmd == "chown" && (len(args) != 3 || args[0] != "-h" || !ownerSpec.MatchString(args[1]) ||
 		!writable(args[2]) || !strings.Contains(args[2], "/.ssh")) {
 		return fmt.Errorf("%w: chown %s", ErrDenied, strings.Join(args, " "))
+	}
+	if cmd == "systemd-run" && !uninstallCmd(args) {
+		return fmt.Errorf("%w: systemd-run %s", ErrDenied, strings.Join(args, " "))
 	}
 	if first == nil || len(args) == 0 {
 		return nil
