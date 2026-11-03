@@ -1,8 +1,12 @@
 # Central server image (v1). VictoriaMetrics runs as a child process (server.vm.mode: child).
-FROM golang:1.27 AS build
+# cross-compiles on the build host, so multi-arch images need no emulation
+FROM --platform=$BUILDPLATFORM golang:1.27 AS build
+ARG TARGETARCH
+ARG VERSION=dev
 WORKDIR /src
 COPY . .
-RUN CGO_ENABLED=0 go build -trimpath -buildvcs=false -ldflags "-s -w" -o /out/serverkeeper ./cmd/serverkeeper
+RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -trimpath -buildvcs=false \
+    -ldflags "-s -w -X main.version=$VERSION" -o /out/serverkeeper ./cmd/serverkeeper
 
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /out/serverkeeper /usr/bin/serverkeeper
