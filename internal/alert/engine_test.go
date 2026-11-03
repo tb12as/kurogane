@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/tb12as/serverman/internal/audit"
+	"github.com/tb12as/serverman/internal/certs"
 	"github.com/tb12as/serverman/internal/collector"
 	"github.com/tb12as/serverman/internal/config"
 	"github.com/tb12as/serverman/internal/db"
@@ -299,5 +300,84 @@ func TestAutoBan(t *testing.T) {
 	}
 	if !allowed([]string{"10.0.0.0/8"}, "10.1.2.3") || allowed([]string{"10.0.0.0/8"}, "11.1.2.3") {
 		t.Fatal("allowlist matching")
+	}
+}
+
+func certSnap(now time.Time, list ...certs.Cert) *collector.Snapshot {
+	s := &collector.Snapshot{Certs: list}
+	for _, c := range list {
+		l := map[string]string{"name": c.Name}
+		stale := 0.0
+		if c.Stale {
+			stale = 1
+		}
+		s.Samples = append(s.Samples,
+			collector.Sample{Metric: "cert.days_left", Labels: l, Value: certs.Days(c.NotAfter, now)},
+			collector.Sample{Metric: "cert.stale_served", Labels: l, Value: stale})
+	}
+	return s
+}
+
+func TestCertRules(t *testing.T) {
+	e, sink, now := setup(t, nil)
+	ctx := context.Background()
+	day := 24 * time.Hour
+	le := certs.Cert{Name: "example.com", Origin: certs.OriginLetsEncrypt, Path: "/etc/letsencrypt/live/example.com/fullchain.pem",
+		Info: certs.Info{NotAfter: now.Add(10 * day), Issuer: "Let's Encrypt R11"}}
+	shop := certs.Cert{Name: "shop.example.org", Origin: certs.OriginNginx, Info: certs.Info{NotAfter: now.Add(60 * day)},
+		Stale: true, ServedNotAfter: now.Add(2 * day), ServedPort: 443}
+	ok := certs.Cert{Name: "ok.example", Info: certs.Info{NotAfter: now.Add(80 * day)}}
+	le.DaysLeft = 10
+
+	e.Eval(ctx, certSnap(*now, le, shop, ok))
+	e.Flush(ctx)
+	if sink.n() != 1 || sink.msgs[0]["severity"] != "warning" {
+		t.Fatalf("want one expiring warning (stale waits 1h): %v", sink.msgs)
+	}
+	raw, _ := json.Marshal(sink.msgs[0])
+	for _, want := range []string{"example.com expires in 10.0 days", "certbot renew --dry-run", "Let's Encrypt R11",
+		"/etc/letsencrypt/live/example.com/fullchain.pem"} {
+		if !strings.Contains(string(raw), want) {
+			t.Fatalf("message lacks %q: %s", want, raw)
+		}
+	}
+
+	// the stale certificate fires after an hour; expiring does not remind at 30 minutes
+	*now = now.Add(time.Hour + time.Minute)
+	e.Eval(ctx, certSnap(*now, le, shop, ok))
+	e.Flush(ctx)
+	if sink.n() != 2 {
+		t.Fatalf("want stale alert: %v", sink.msgs)
+	}
+	raw, _ = json.Marshal(sink.msgs[1])
+	if !strings.Contains(string(raw), "still sends the old certificate") || !strings.Contains(string(raw), "127.0.0.1:443") {
+		t.Fatalf("stale message: %s", raw)
+	}
+
+	// under 3 days escalates to critical, and an expired certificate says so
+	le.NotAfter = now.Add(-2 * day)
+	le.DaysLeft = -2
+	e.Eval(ctx, certSnap(*now, le, shop, ok))
+	e.Flush(ctx)
+	if sink.n() != 3 || sink.msgs[2]["severity"] != "critical" {
+		t.Fatalf("want critical: %v", sink.msgs)
+	}
+	if raw, _ = json.Marshal(sink.msgs[2]); !strings.Contains(string(raw), "expired 2.0 days ago") {
+		t.Fatalf("expired message: %s", raw)
+	}
+
+	// renewed and reloaded: both resolve
+	le.NotAfter, le.DaysLeft = now.Add(90*day), 90
+	shop.Stale = false
+	e.Eval(ctx, certSnap(*now, le, shop, ok))
+	e.Flush(ctx)
+	if sink.n() != 5 || sink.msgs[3]["state"] != "resolved" || sink.msgs[4]["state"] != "resolved" {
+		t.Fatalf("want two resolves: %v", sink.msgs)
+	}
+	if repeatOverride["cert_expiring"] != 24*time.Hour {
+		t.Fatal("cert_expiring must remind daily")
+	}
+	if txt, _ := certText("cert_expiring", "gone", &collector.Snapshot{}); txt != "Certificate gone is expiring" {
+		t.Fatal(txt)
 	}
 }
