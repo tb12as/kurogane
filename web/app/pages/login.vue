@@ -37,7 +37,10 @@ async function submit() {
   <main class="flex min-h-dvh items-center justify-center p-4">
     <Card class="w-full max-w-sm">
       <CardHeader>
-        <CardTitle class="text-xl">ServerKeeper</CardTitle>
+        <CardTitle class="flex items-center gap-2 text-xl">
+          <Logo class="size-7" />
+          ServerKeeper
+        </CardTitle>
         <CardDescription>Sign in with your password and authenticator code.</CardDescription>
       </CardHeader>
       <CardContent>

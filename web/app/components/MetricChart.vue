@@ -21,33 +21,44 @@ const PAL = {
 }
 
 function fmt(v: number) {
-  if (props.unit === 'pct') return `${v.toFixed(v < 10 ? 1 : 0)}%`
+  if (props.unit === 'pct') return `${Number.isInteger(v) ? v : v.toFixed(v < 10 ? 1 : 0)}%`
   if (props.unit === 'bytes') return bytes(v)
   if (props.unit === 'bps') return bytes(v, '/s')
   return num(v, v < 10 ? 2 : 0)
 }
 
 const option = computed(() => {
-  const ink = dark.value ? '#c3c2b7' : '#52514e'
-  const grid = dark.value ? '#2e2e2c' : '#ececea'
+  const ink = dark.value ? '#9db4ba' : '#4a6572'
+  const grid = dark.value ? '#12394a' : '#e3e8e9'
   // shortcut: more than 8 series (many mounts/ifaces) keep the first 8, upgrade to "Other" folding if fleets need it
   const lines = props.lines.slice(0, 8)
   return {
     aria: { enabled: true, label: { description: `${props.title} over time` } },
     color: dark.value ? PAL.dark : PAL.light,
     animation: false,
+    // canvas text does not inherit CSS fonts
+    textStyle: { fontFamily: '"IBM Plex Sans Variable", ui-sans-serif, system-ui, sans-serif' },
     grid: { left: 8, right: 12, top: lines.length > 1 ? 32 : 12, bottom: 8, containLabel: true },
     legend:
       lines.length > 1
-        ? { top: 0, left: 0, textStyle: { color: ink }, icon: 'roundRect', itemWidth: 12, itemHeight: 4 }
+        ? {
+            type: 'scroll',
+            top: 0,
+            left: 0,
+            textStyle: { color: ink },
+            pageTextStyle: { color: ink },
+            icon: 'roundRect',
+            itemWidth: 12,
+            itemHeight: 4,
+          }
         : undefined,
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'line' },
       valueFormatter: (v: number) => fmt(v),
-      backgroundColor: dark.value ? '#1a1a19' : '#fff',
+      backgroundColor: dark.value ? '#0e3142' : '#fff',
       borderColor: grid,
-      textStyle: { color: dark.value ? '#f0efec' : '#0b0b0b' },
+      textStyle: { color: dark.value ? '#f3f4f4' : '#061e29' },
     },
     xAxis: {
       type: 'time',
@@ -59,6 +70,8 @@ const option = computed(() => {
       type: 'value',
       min: 0,
       max: props.unit === 'pct' ? 100 : undefined,
+      // byte counts below 1/s would label the axis 0 B, 1 B, 1 B, 1 B
+      minInterval: props.unit === 'bytes' || props.unit === 'bps' ? 1 : undefined,
       axisLabel: { color: ink, formatter: (v: number) => fmt(v) },
       splitLine: { lineStyle: { color: grid } },
     },

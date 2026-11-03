@@ -117,32 +117,41 @@ async function createEnroll() {
 
     <TabsContent value="people" class="space-y-3">
       <div class="flex"><Button v-if="admin" class="ml-auto" @click="pOpen = true">Add person</Button></div>
-      <LoadState :pending="pPending" :error="pErr" :empty="!people?.length" empty-text="No people yet.">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Groups</TableHead>
-              <TableHead>Keys</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-for="x in people" :key="x.id">
-              <TableCell class="font-medium">{{ x.name }}</TableCell>
-              <TableCell>{{ x.email }}</TableCell>
-              <TableCell>
-                <Badge v-for="g in x.groups" :key="g" variant="secondary" class="mr-1">{{ g }}</Badge>
-              </TableCell>
-              <TableCell class="font-mono text-xs">
-                <div v-for="k in x.keys" :key="k.fingerprint" class="truncate" :title="k.fingerprint">
-                  {{ k.login_user }}: {{ k.fingerprint }}
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </LoadState>
+      <Card>
+        <CardContent>
+          <LoadState
+            :pending="pPending"
+            :error="pErr"
+            :empty="!people?.length"
+            empty-text="No people yet. Add a person to assign SSH keys and groups."
+          >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Groups</TableHead>
+                  <TableHead>Keys</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="x in people" :key="x.id">
+                  <TableCell class="font-medium">{{ x.name }}</TableCell>
+                  <TableCell>{{ x.email }}</TableCell>
+                  <TableCell>
+                    <Badge v-for="g in x.groups" :key="g" variant="secondary" class="mr-1">{{ g }}</Badge>
+                  </TableCell>
+                  <TableCell class="font-mono text-xs">
+                    <div v-for="k in x.keys" :key="k.fingerprint" class="truncate" :title="k.fingerprint">
+                      {{ k.login_user }}: {{ k.fingerprint }}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </LoadState>
+        </CardContent>
+      </Card>
       <Card v-if="groups?.length">
         <CardHeader><CardTitle class="text-sm">Groups</CardTitle></CardHeader>
         <CardContent>
@@ -200,30 +209,34 @@ async function createEnroll() {
     </TabsContent>
 
     <TabsContent value="ops">
-      <LoadState :pending="oPending" :error="oErr" :empty="!ops?.length" empty-text="No fleet operations yet.">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Created</TableHead>
-              <TableHead>Kind</TableHead>
-              <TableHead>Server</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Result</TableHead>
-              <TableHead>By</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-for="o in ops" :key="o.id">
-              <TableCell class="whitespace-nowrap">{{ fmtDate(o.created_at) }}</TableCell>
-              <TableCell class="font-mono text-xs">{{ o.kind }}</TableCell>
-              <TableCell>{{ o.server_id }}</TableCell>
-              <TableCell><StateBadge :value="o.status" /></TableCell>
-              <TableCell class="max-w-md whitespace-normal text-xs">{{ o.result }}</TableCell>
-              <TableCell>{{ o.created_by }}</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </LoadState>
+      <Card>
+        <CardContent>
+          <LoadState :pending="oPending" :error="oErr" :empty="!ops?.length" empty-text="No fleet operations yet.">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Kind</TableHead>
+                  <TableHead>Server</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Result</TableHead>
+                  <TableHead>By</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="o in ops" :key="o.id">
+                  <TableCell class="whitespace-nowrap">{{ fmtDate(o.created_at) }}</TableCell>
+                  <TableCell class="font-mono text-xs">{{ o.kind }}</TableCell>
+                  <TableCell>{{ o.server_id }}</TableCell>
+                  <TableCell><StateBadge :value="o.status" /></TableCell>
+                  <TableCell class="max-w-md whitespace-normal text-xs">{{ o.result }}</TableCell>
+                  <TableCell>{{ o.created_by }}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </LoadState>
+        </CardContent>
+      </Card>
     </TabsContent>
 
     <TabsContent value="enroll">

@@ -20,7 +20,7 @@ onMounted(async () => {
   try {
     live.snap.value = (await api.get('/metrics/current')) as Snapshot
   } catch {
-    /* cards show — until the stream delivers */
+    /* cards show a placeholder until the stream delivers */
   }
 })
 
@@ -74,6 +74,40 @@ const hard = computed(() => status.value?.hardening)
     <AlertDescription>{{ errMsg(stErr) }}</AlertDescription>
   </Alert>
 
+  <div class="grid gap-4 lg:grid-cols-3">
+    <Card :class="fleet ? 'lg:col-span-3' : 'lg:col-span-2'">
+      <CardHeader><CardTitle>Active alerts</CardTitle></CardHeader>
+      <CardContent>
+        <p v-if="!alerts.length" class="text-sm text-muted-foreground">No active alerts.</p>
+        <ul v-else class="divide-y">
+          <li v-for="a in alerts.slice(0, 8)" :key="a.id" class="flex flex-wrap items-center gap-2 py-2 text-sm">
+            <StateBadge :value="a.severity" />
+            <!-- every active alert fires; only show the state when it differs -->
+            <StateBadge v-if="a.state !== 'firing'" :value="a.state" />
+            <span class="min-w-0 flex-1 truncate">{{ a.summary || a.rule_id }}</span>
+            <span class="text-xs text-muted-foreground">{{ ago(a.started_at) }}</span>
+          </li>
+        </ul>
+        <Button as-child variant="link" class="mt-2 px-0"><NuxtLink to="/alerts">All alerts</NuxtLink></Button>
+      </CardContent>
+    </Card>
+
+    <Card v-if="!fleet">
+      <CardHeader><CardTitle>Hardening</CardTitle></CardHeader>
+      <CardContent>
+        <div v-if="hard" class="flex items-center gap-4">
+          <span class="text-5xl font-bold" :aria-label="`Grade ${hard.grade}`">{{ hard.grade }}</span>
+          <div>
+            <p class="text-xl font-semibold tabular-nums">{{ Math.round(hard.score ?? 0) }} / 100</p>
+            <p class="text-xs text-muted-foreground">scanned {{ ago(hard.scanned_at) }}</p>
+          </div>
+        </div>
+        <p v-else class="text-sm text-muted-foreground">No scan yet.</p>
+        <Button as-child variant="link" class="mt-2 px-0"><NuxtLink to="/hardening">Open hardening</NuxtLink></Button>
+      </CardContent>
+    </Card>
+  </div>
+
   <section v-if="!fleet" aria-label="Current metrics" class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
     <StatCard
       label="CPU"
@@ -104,14 +138,14 @@ const hard = computed(() => status.value?.hardening)
       "
     />
     <StatCard
-      label="Load (1m)"
+      :label="`Load (1m), ${s?.system?.cpus || '?'} CPUs`"
       :value="num(m('load.1'), 2)"
-      :sub="`5m ${num(m('load.5'), 2)} · 15m ${num(m('load.15'), 2)} · ${s?.system?.cpus || '?'} CPUs`"
+      :sub="`5m ${num(m('load.5'), 2)} · 15m ${num(m('load.15'), 2)}`"
     />
     <StatCard
-      label="Network"
+      label="Network in"
       :value="bytes(m('net.rx_bps_total'), '/s')"
-      :sub="`rx · tx ${bytes(m('net.tx_bps_total'), '/s')}`"
+      :sub="`out ${bytes(m('net.tx_bps_total'), '/s')}`"
     />
     <StatCard
       label="TCP connections"
@@ -119,39 +153,6 @@ const hard = computed(() => status.value?.hardening)
       :sub="`syn_recv ${num(m('net.tcp.syn_recv'))} · new ${num(m('net.new_conns_ps'), 1)}/s`"
     />
   </section>
-
-  <div class="grid gap-4 lg:grid-cols-3">
-    <Card v-if="!fleet">
-      <CardHeader><CardTitle>Hardening</CardTitle></CardHeader>
-      <CardContent>
-        <div v-if="hard" class="flex items-center gap-4">
-          <span class="text-5xl font-bold" :aria-label="`Grade ${hard.grade}`">{{ hard.grade }}</span>
-          <div>
-            <p class="text-xl font-semibold tabular-nums">{{ Math.round(hard.score ?? 0) }} / 100</p>
-            <p class="text-xs text-muted-foreground">scanned {{ ago(hard.scanned_at) }}</p>
-          </div>
-        </div>
-        <p v-else class="text-sm text-muted-foreground">No scan yet.</p>
-        <Button as-child variant="link" class="mt-2 px-0"><NuxtLink to="/hardening">Open hardening</NuxtLink></Button>
-      </CardContent>
-    </Card>
-
-    <Card :class="fleet ? 'lg:col-span-3' : 'lg:col-span-2'">
-      <CardHeader><CardTitle>Active alerts</CardTitle></CardHeader>
-      <CardContent>
-        <p v-if="!alerts.length" class="text-sm text-muted-foreground">No active alerts.</p>
-        <ul v-else class="divide-y">
-          <li v-for="a in alerts.slice(0, 8)" :key="a.id" class="flex flex-wrap items-center gap-2 py-2 text-sm">
-            <StateBadge :value="a.severity" />
-            <StateBadge :value="a.state" />
-            <span class="min-w-0 flex-1 truncate">{{ a.summary || a.rule_id }}</span>
-            <span class="text-xs text-muted-foreground">{{ ago(a.started_at) }}</span>
-          </li>
-        </ul>
-        <Button as-child variant="link" class="mt-2 px-0"><NuxtLink to="/alerts">All alerts</NuxtLink></Button>
-      </CardContent>
-    </Card>
-  </div>
 
   <Card v-if="fleet">
     <CardHeader><CardTitle>Servers</CardTitle></CardHeader>
@@ -188,7 +189,7 @@ const hard = computed(() => status.value?.hardening)
               <TableCell class="tabular-nums">{{ pct(x.latest?.mem) }}</TableCell>
               <TableCell class="tabular-nums">{{ pct(x.latest?.disk) }}</TableCell>
               <TableCell class="tabular-nums">{{ x.active_alerts || 0 }}</TableCell>
-              <TableCell class="tabular-nums">{{ x.grade ? `${x.grade} · ${Math.round(x.score)}` : '—' }}</TableCell>
+              <TableCell class="tabular-nums">{{ x.grade ? `${x.grade} · ${Math.round(x.score)}` : '-' }}</TableCell>
               <TableCell>{{ ago(x.last_seen) }}</TableCell>
               <TableCell>
                 <Badge v-for="t in x.tags || []" :key="t" variant="secondary" class="mr-1">{{ t }}</Badge>

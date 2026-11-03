@@ -25,7 +25,11 @@ async function kill(pid: number) {
     <TabsContent value="config" class="space-y-4"><SshConfig /></TabsContent>
     <TabsContent value="changes"><SshChanges /></TabsContent>
     <TabsContent value="sessions">
-      <LoadState :error="sErr"><SshSessionsTable :rows="sessions || []" @kill="kill" /></LoadState>
+      <Card>
+        <CardContent>
+          <LoadState :error="sErr"><SshSessionsTable :rows="sessions || []" @kill="kill" /></LoadState>
+        </CardContent>
+      </Card>
     </TabsContent>
     <TabsContent value="logins"><SshLogins /></TabsContent>
     <TabsContent value="bans"><SshBans /></TabsContent>

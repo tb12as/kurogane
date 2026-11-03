@@ -55,8 +55,11 @@ onMounted(startStream)
       Skip to content
     </a>
 
-    <header class="flex items-center justify-between border-b px-4 py-3 md:hidden">
-      <span class="font-semibold">ServerKeeper</span>
+    <header class="dark flex items-center justify-between border-b bg-background px-4 py-3 text-foreground md:hidden">
+      <span class="flex items-center gap-2 font-semibold">
+        <Logo class="size-6" />
+        ServerKeeper
+      </span>
       <Button
         variant="ghost"
         size="icon"
@@ -72,17 +75,23 @@ onMounted(startStream)
 
     <aside
       id="sidenav"
-      :class="[navOpen ? 'block' : 'hidden', 'border-b md:sticky md:top-0 md:block md:h-dvh md:border-r md:border-b-0']"
+      :class="[
+        navOpen ? 'block' : 'hidden',
+        'dark border-b bg-background text-foreground md:sticky md:top-0 md:block md:h-dvh md:border-r md:border-b-0',
+      ]"
     >
       <div class="flex h-full flex-col gap-4 p-3">
-        <NuxtLink to="/" class="hidden px-2 pt-1 text-lg font-semibold md:block">ServerKeeper</NuxtLink>
+        <NuxtLink to="/" class="hidden items-center gap-2 px-2 pt-1 text-lg font-semibold md:flex">
+          <Logo class="size-7" />
+          ServerKeeper
+        </NuxtLink>
         <nav aria-label="Main" class="flex flex-col gap-0.5">
           <NuxtLink
             v-for="n in nav"
             :key="n.to"
             :to="n.to"
             :class="[
-              'flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent',
+              'flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent pointer-coarse:py-3',
               active(n.to) ? 'bg-accent font-medium' : 'text-muted-foreground',
             ]"
             :aria-current="active(n.to) ? 'page' : undefined"
@@ -99,10 +108,10 @@ onMounted(startStream)
             />
             {{ live.connected.value ? 'Live' : 'Reconnecting…' }}
           </p>
-          <p class="truncate px-2" :title="me?.actor">
-            {{ me?.actor }}
-            <span class="text-muted-foreground">· {{ me?.role }}</span>
-          </p>
+          <div class="px-2">
+            <p class="truncate" :title="me?.actor">{{ me?.actor }}</p>
+            <p class="text-xs text-muted-foreground">Role: {{ me?.role }}</p>
+          </div>
           <div class="flex gap-1">
             <Button
               variant="ghost"

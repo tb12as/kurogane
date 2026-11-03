@@ -52,29 +52,33 @@ const rows = computed(() => (data.value?.logins || []).slice().reverse().slice(0
         </CardContent>
       </Card>
     </div>
-    <Table class="mt-4">
-      <TableHeader>
-        <TableRow>
-          <TableHead>When</TableHead>
-          <TableHead>User</TableHead>
-          <TableHead>From</TableHead>
-          <TableHead>Method</TableHead>
-          <TableHead>Result</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow v-for="(x, i) in rows" :key="i">
-          <TableCell class="whitespace-nowrap">{{ fmtDate(x.ts) }}</TableCell>
-          <TableCell>
-            {{ x.user }}
-            <span v-if="x.invalid_user" class="text-xs text-muted-foreground">(unknown user)</span>
-          </TableCell>
-          <TableCell class="font-mono">{{ x.ip }}</TableCell>
-          <TableCell>{{ x.method || '—' }}</TableCell>
-          <TableCell><StateBadge :value="x.success ? 'success' : 'failed'" /></TableCell>
-        </TableRow>
-        <TableEmpty v-if="!rows.length" :colspan="5">No logins in this period.</TableEmpty>
-      </TableBody>
-    </Table>
+    <Card class="mt-4">
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>When</TableHead>
+              <TableHead>User</TableHead>
+              <TableHead>From</TableHead>
+              <TableHead>Method</TableHead>
+              <TableHead>Result</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="(x, i) in rows" :key="i">
+              <TableCell class="whitespace-nowrap">{{ fmtDate(x.ts) }}</TableCell>
+              <TableCell>
+                {{ x.user }}
+                <span v-if="x.invalid_user" class="text-xs text-muted-foreground">(unknown user)</span>
+              </TableCell>
+              <TableCell class="font-mono">{{ x.ip }}</TableCell>
+              <TableCell>{{ x.method || '-' }}</TableCell>
+              <TableCell><StateBadge :value="x.success ? 'success' : 'failed'" /></TableCell>
+            </TableRow>
+            <TableEmpty v-if="!rows.length" :colspan="5">No logins in this period.</TableEmpty>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   </LoadState>
 </template>

@@ -71,58 +71,67 @@ const toastErr = (m: string) => void toast.error(m)
 
 <template>
   <div class="flex"><Button v-if="admin" class="ml-auto" @click="openRule()">New rule</Button></div>
-  <LoadState :pending="pending" :error="error" :empty="!data?.length" empty-text="No alert rules.">
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Rule</TableHead>
-          <TableHead>Condition</TableHead>
-          <TableHead>For</TableHead>
-          <TableHead>Severity</TableHead>
-          <TableHead>Channels</TableHead>
-          <TableHead>Enabled</TableHead>
-          <TableHead class="sr-only">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow v-for="r in data" :key="r.id">
-          <TableCell>
-            <div class="font-medium">{{ r.name || r.id }}</div>
-            <div class="font-mono text-xs text-muted-foreground">
-              {{ r.id }}
-              <span v-if="r.builtin">· built-in</span>
-            </div>
-          </TableCell>
-          <TableCell class="font-mono text-xs">{{ r.expr }}</TableCell>
-          <TableCell>{{ dur(r.for) }}</TableCell>
-          <TableCell><StateBadge :value="r.severity" /></TableCell>
-          <TableCell>{{ (r.channels || []).join(', ') || '—' }}</TableCell>
-          <TableCell>
-            <Switch
-              :model-value="r.enabled"
-              :disabled="!admin"
-              :aria-label="`Enable ${r.id}`"
-              @update:model-value="toggle(r)"
-            />
-          </TableCell>
-          <TableCell class="whitespace-nowrap text-right">
-            <template v-if="admin">
-              <Button variant="ghost" size="sm" @click="openRule(r)">Edit</Button>
-              <ConfirmButton
-                v-if="!r.builtin"
-                :title="`Delete rule ${r.id}?`"
-                confirm="Delete"
-                description="Open alerts from this rule stop being re-sent."
-                :action="() => del(r)"
-              >
-                Delete
-              </ConfirmButton>
-            </template>
-          </TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
-  </LoadState>
+  <Card>
+    <CardContent>
+      <LoadState
+        :pending="pending"
+        :error="error"
+        :empty="!data?.length"
+        empty-text="No alert rules. Without rules, no alerts fire."
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Rule</TableHead>
+              <TableHead>Condition</TableHead>
+              <TableHead>For</TableHead>
+              <TableHead>Severity</TableHead>
+              <TableHead>Channels</TableHead>
+              <TableHead>Enabled</TableHead>
+              <TableHead><span class="sr-only">Actions</span></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="r in data" :key="r.id">
+              <TableCell>
+                <div class="font-medium">{{ r.name || r.id }}</div>
+                <div class="font-mono text-xs text-muted-foreground">
+                  {{ r.id }}
+                  <span v-if="r.builtin">· built-in</span>
+                </div>
+              </TableCell>
+              <TableCell class="font-mono text-xs">{{ r.expr }}</TableCell>
+              <TableCell>{{ dur(r.for) }}</TableCell>
+              <TableCell><StateBadge :value="r.severity" /></TableCell>
+              <TableCell>{{ (r.channels || []).join(', ') || '-' }}</TableCell>
+              <TableCell>
+                <Switch
+                  :model-value="r.enabled"
+                  :disabled="!admin"
+                  :aria-label="`Enable ${r.id}`"
+                  @update:model-value="toggle(r)"
+                />
+              </TableCell>
+              <TableCell class="whitespace-nowrap text-right">
+                <template v-if="admin">
+                  <Button variant="ghost" size="sm" @click="openRule(r)">Edit</Button>
+                  <ConfirmButton
+                    v-if="!r.builtin"
+                    :title="`Delete rule ${r.id}?`"
+                    confirm="Delete"
+                    description="Open alerts from this rule stop being re-sent."
+                    :action="() => del(r)"
+                  >
+                    Delete
+                  </ConfirmButton>
+                </template>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </LoadState>
+    </CardContent>
+  </Card>
 
   <Dialog v-model:open="open">
     <DialogScrollContent>

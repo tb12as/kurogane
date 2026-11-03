@@ -7,12 +7,12 @@ export function when(s?: string | null) {
 
 export function fmtDate(s?: string | null) {
   const d = when(s)
-  return d ? d.toLocaleString() : '—'
+  return d ? d.toLocaleString() : '-'
 }
 
 export function ago(s?: string | null) {
   const d = when(s)
-  if (!d) return '—'
+  if (!d) return '-'
   const sec = Math.round((Date.now() - d.getTime()) / 1000)
   const a = Math.abs(sec)
   let t: string
@@ -24,7 +24,7 @@ export function ago(s?: string | null) {
 }
 
 export function bytes(n?: number | null, suffix = '') {
-  if (n === undefined || n === null || isNaN(n)) return '—'
+  if (n === undefined || n === null || isNaN(n)) return '-'
   const u = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
   let i = 0
   while (Math.abs(n) >= 1024 && i < u.length - 1) {
@@ -35,15 +35,15 @@ export function bytes(n?: number | null, suffix = '') {
 }
 
 export function pct(n?: number | null) {
-  return n === undefined || n === null ? '—' : `${n.toFixed(1)}%`
+  return n === undefined || n === null ? '-' : `${n.toFixed(1)}%`
 }
 
 export function num(n?: number | null, d = 0) {
-  return n === undefined || n === null ? '—' : n.toLocaleString(undefined, { maximumFractionDigits: d })
+  return n === undefined || n === null ? '-' : n.toLocaleString(undefined, { maximumFractionDigits: d })
 }
 
 export function uptime(s?: number) {
-  if (!s) return '—'
+  if (!s) return '-'
   const d = Math.floor(s / 86400),
     h = Math.floor((s % 86400) / 3600),
     m = Math.floor((s % 3600) / 60)
@@ -52,7 +52,7 @@ export function uptime(s?: number) {
 
 // Go time.Duration marshals as nanoseconds
 export function dur(v?: number | string | null) {
-  if (v === undefined || v === null || v === '') return '—'
+  if (v === undefined || v === null || v === '') return '-'
   if (typeof v === 'string') return v
   let s = Math.round(v / 1e9)
   if (s % 3600 === 0 && s) return `${s / 3600}h`

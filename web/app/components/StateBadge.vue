@@ -43,5 +43,5 @@ const c = computed(() => cls[tone[(props.value || '').toLowerCase()] || 'none'])
 </script>
 
 <template>
-  <Badge variant="outline" :class="c">{{ (value || '—').replace(/_/g, ' ') }}</Badge>
+  <Badge variant="outline" :class="c">{{ (value || '-').replace(/_/g, ' ') }}</Badge>
 </template>

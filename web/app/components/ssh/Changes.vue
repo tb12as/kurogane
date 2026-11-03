@@ -12,28 +12,32 @@ watch(
 </script>
 
 <template>
-  <LoadState :pending="pending" :error="error" :empty="!data?.length" empty-text="No sshd changes recorded.">
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>When</TableHead>
-          <TableHead>Actor</TableHead>
-          <TableHead>Setting</TableHead>
-          <TableHead>Old</TableHead>
-          <TableHead>New</TableHead>
-          <TableHead>Status</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow v-for="c in data" :key="c.id">
-          <TableCell class="whitespace-nowrap">{{ fmtDate(c.ts) }}</TableCell>
-          <TableCell>{{ c.actor }}</TableCell>
-          <TableCell class="font-mono">{{ c.setting }}</TableCell>
-          <TableCell class="max-w-48 break-all font-mono text-xs">{{ c.old_value || '(unset)' }}</TableCell>
-          <TableCell class="max-w-48 break-all font-mono text-xs">{{ c.new_value }}</TableCell>
-          <TableCell><StateBadge :value="c.status" /></TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
-  </LoadState>
+  <Card>
+    <CardContent>
+      <LoadState :pending="pending" :error="error" :empty="!data?.length" empty-text="No sshd changes recorded.">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>When</TableHead>
+              <TableHead>Actor</TableHead>
+              <TableHead>Setting</TableHead>
+              <TableHead>Old</TableHead>
+              <TableHead>New</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="c in data" :key="c.id">
+              <TableCell class="whitespace-nowrap">{{ fmtDate(c.ts) }}</TableCell>
+              <TableCell>{{ c.actor }}</TableCell>
+              <TableCell class="font-mono">{{ c.setting }}</TableCell>
+              <TableCell class="max-w-48 break-all font-mono text-xs">{{ c.old_value || '(unset)' }}</TableCell>
+              <TableCell class="max-w-48 break-all font-mono text-xs">{{ c.new_value }}</TableCell>
+              <TableCell><StateBadge :value="c.status" /></TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </LoadState>
+    </CardContent>
+  </Card>
 </template>

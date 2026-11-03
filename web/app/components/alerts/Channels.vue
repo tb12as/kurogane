@@ -45,49 +45,53 @@ async function del(c: ChannelInfo) {
 
 <template>
   <div class="flex"><Button v-if="admin" class="ml-auto" @click="open = true">Add channel</Button></div>
-  <LoadState
-    :pending="pending"
-    :error="error"
-    :empty="!data?.length"
-    empty-text="No channels. Add a Slack or Discord webhook to receive alerts."
-  >
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Type</TableHead>
-          <TableHead>Secret</TableHead>
-          <TableHead>Defined in</TableHead>
-          <TableHead>State</TableHead>
-          <TableHead class="sr-only">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow v-for="c in data" :key="c.name">
-          <TableCell class="font-medium">{{ c.name }}</TableCell>
-          <TableCell class="capitalize">{{ c.type }}</TableCell>
-          <TableCell class="text-xs">
-            <span v-if="c.webhook_url_env" class="font-mono">env {{ c.webhook_url_env }}</span>
-            <span v-else>{{ c.has_secret ? 'stored encrypted' : 'none' }}</span>
-          </TableCell>
-          <TableCell>{{ c.source === 'config' ? 'config.yaml' : 'API / UI' }}</TableCell>
-          <TableCell><StateBadge :value="c.ready ? 'ready' : 'not ready'" /></TableCell>
-          <TableCell class="whitespace-nowrap text-right">
-            <Button v-if="admin" variant="outline" size="sm" @click="test(c)">Send test</Button>
-            <ConfirmButton
-              v-if="admin && c.source !== 'config'"
-              :title="`Delete channel ${c.name}?`"
-              confirm="Delete"
-              description="Rules routed only to this channel will no longer notify anyone."
-              :action="() => del(c)"
-            >
-              Delete
-            </ConfirmButton>
-          </TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
-  </LoadState>
+  <Card>
+    <CardContent>
+      <LoadState
+        :pending="pending"
+        :error="error"
+        :empty="!data?.length"
+        empty-text="No channels. Add a Slack or Discord webhook to receive alerts."
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Secret</TableHead>
+              <TableHead>Defined in</TableHead>
+              <TableHead>State</TableHead>
+              <TableHead><span class="sr-only">Actions</span></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="c in data" :key="c.name">
+              <TableCell class="font-medium">{{ c.name }}</TableCell>
+              <TableCell class="capitalize">{{ c.type }}</TableCell>
+              <TableCell class="text-xs">
+                <span v-if="c.webhook_url_env" class="font-mono">env {{ c.webhook_url_env }}</span>
+                <span v-else>{{ c.has_secret ? 'stored encrypted' : 'none' }}</span>
+              </TableCell>
+              <TableCell>{{ c.source === 'config' ? 'config.yaml' : 'API / UI' }}</TableCell>
+              <TableCell><StateBadge :value="c.ready ? 'ready' : 'not ready'" /></TableCell>
+              <TableCell class="whitespace-nowrap text-right">
+                <Button v-if="admin" variant="outline" size="sm" @click="test(c)">Send test</Button>
+                <ConfirmButton
+                  v-if="admin && c.source !== 'config'"
+                  :title="`Delete channel ${c.name}?`"
+                  confirm="Delete"
+                  description="Rules routed only to this channel will no longer notify anyone."
+                  :action="() => del(c)"
+                >
+                  Delete
+                </ConfirmButton>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </LoadState>
+    </CardContent>
+  </Card>
 
   <Dialog v-model:open="open">
     <DialogScrollContent>

@@ -33,34 +33,38 @@ const inverted = computed(() =>
 </script>
 
 <template>
-  <LoadState :pending="pending" :error="error" :empty="!data?.length" empty-text="No fixes applied yet.">
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Applied</TableHead>
-          <TableHead>Check</TableHead>
-          <TableHead>By</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Reverted</TableHead>
-          <TableHead class="sr-only">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow v-for="f in data" :key="f.id">
-          <TableCell class="whitespace-nowrap">{{ fmtDate(f.applied_at) }}</TableCell>
-          <TableCell class="font-mono">{{ f.check_id }}</TableCell>
-          <TableCell>{{ f.applied_by }}</TableCell>
-          <TableCell><StateBadge :value="when(f.reverted_at) ? 'reverted' : f.status || 'applied'" /></TableCell>
-          <TableCell>{{ fmtDate(f.reverted_at) }}</TableCell>
-          <TableCell class="text-right">
-            <Button v-if="can('harden:write') && !when(f.reverted_at)" variant="outline" size="sm" @click="sel = f">
-              Revert
-            </Button>
-          </TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
-  </LoadState>
+  <Card>
+    <CardContent>
+      <LoadState :pending="pending" :error="error" :empty="!data?.length" empty-text="No fixes applied yet.">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Applied</TableHead>
+              <TableHead>Check</TableHead>
+              <TableHead>By</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Reverted</TableHead>
+              <TableHead><span class="sr-only">Actions</span></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="f in data" :key="f.id">
+              <TableCell class="whitespace-nowrap">{{ fmtDate(f.applied_at) }}</TableCell>
+              <TableCell class="font-mono">{{ f.check_id }}</TableCell>
+              <TableCell>{{ f.applied_by }}</TableCell>
+              <TableCell><StateBadge :value="when(f.reverted_at) ? 'reverted' : f.status || 'applied'" /></TableCell>
+              <TableCell>{{ fmtDate(f.reverted_at) }}</TableCell>
+              <TableCell class="text-right">
+                <Button v-if="can('harden:write') && !when(f.reverted_at)" variant="outline" size="sm" @click="sel = f">
+                  Revert
+                </Button>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </LoadState>
+    </CardContent>
+  </Card>
 
   <RiskDialog
     v-model:open="open"

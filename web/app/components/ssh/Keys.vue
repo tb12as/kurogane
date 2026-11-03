@@ -102,57 +102,63 @@ async function revokePreview() {
     <Button v-if="can('ssh:write')" class="ml-auto" @click="addOpen = true">Add key</Button>
   </div>
 
-  <LoadState :pending="pending" :error="error" :empty="!rows.length" empty-text="No authorized keys found.">
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>User</TableHead>
-          <TableHead>Label / comment</TableHead>
-          <TableHead>Type</TableHead>
-          <TableHead>Fingerprint</TableHead>
-          <TableHead>Last used</TableHead>
-          <TableHead>Expires</TableHead>
-          <TableHead>Flags</TableHead>
-          <TableHead class="sr-only">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow v-for="k in rows" :key="k.user + k.fingerprint">
-          <TableCell>{{ k.user }}</TableCell>
-          <TableCell class="max-w-56">
-            <div class="truncate font-medium">{{ k.label || k.owner_person || '—' }}</div>
-            <div class="truncate text-xs text-muted-foreground">{{ k.comment }}</div>
-          </TableCell>
-          <TableCell class="whitespace-nowrap">
-            {{ k.type }}
-            <span v-if="k.bits" class="text-muted-foreground">{{ k.bits }}</span>
-          </TableCell>
-          <TableCell class="max-w-48 truncate font-mono text-xs" :title="k.fingerprint">{{ k.fingerprint }}</TableCell>
-          <TableCell>{{ ago(k.last_used_at) }}</TableCell>
-          <TableCell>{{ when(k.expires_at)?.toLocaleDateString() || 'never' }}</TableCell>
-          <TableCell>
-            <div class="flex flex-wrap gap-1">
-              <Badge
-                v-for="f in flags(k)"
-                :key="f"
-                variant="outline"
-                :class="f === 'no owner label' ? 'border-warn/40 text-warn' : 'border-crit/40 text-crit'"
-              >
-                {{ f }}
-              </Badge>
-              <span v-if="!flags(k).length" class="text-xs text-muted-foreground">ok</span>
-            </div>
-          </TableCell>
-          <TableCell class="whitespace-nowrap text-right">
-            <template v-if="can('ssh:write')">
-              <Button variant="ghost" size="sm" @click="openEdit(k)">Edit</Button>
-              <Button variant="outline" size="sm" @click="revoke = k">Revoke</Button>
-            </template>
-          </TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
-  </LoadState>
+  <Card>
+    <CardContent>
+      <LoadState :pending="pending" :error="error" :empty="!rows.length" empty-text="No authorized keys to show. Add a key to grant SSH access.">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>User</TableHead>
+              <TableHead>Label / comment</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Fingerprint</TableHead>
+              <TableHead>Last used</TableHead>
+              <TableHead>Expires</TableHead>
+              <TableHead>Flags</TableHead>
+              <TableHead><span class="sr-only">Actions</span></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="k in rows" :key="k.user + k.fingerprint">
+              <TableCell>{{ k.user }}</TableCell>
+              <TableCell class="max-w-56">
+                <div class="truncate font-medium">{{ k.label || k.owner_person || '-' }}</div>
+                <div class="truncate text-xs text-muted-foreground">{{ k.comment }}</div>
+              </TableCell>
+              <TableCell class="whitespace-nowrap">
+                {{ k.type }}
+                <span v-if="k.bits" class="text-muted-foreground">{{ k.bits }}</span>
+              </TableCell>
+              <TableCell class="max-w-48 truncate font-mono text-xs" :title="k.fingerprint">
+                {{ k.fingerprint }}
+              </TableCell>
+              <TableCell>{{ ago(k.last_used_at) }}</TableCell>
+              <TableCell>{{ when(k.expires_at)?.toLocaleDateString() || 'never' }}</TableCell>
+              <TableCell>
+                <div class="flex flex-wrap gap-1">
+                  <Badge
+                    v-for="f in flags(k)"
+                    :key="f"
+                    variant="outline"
+                    :class="f === 'no owner label' ? 'border-warn/40 text-warn' : 'border-crit/40 text-crit'"
+                  >
+                    {{ f }}
+                  </Badge>
+                  <span v-if="!flags(k).length" class="text-xs text-muted-foreground">ok</span>
+                </div>
+              </TableCell>
+              <TableCell class="whitespace-nowrap text-right">
+                <template v-if="can('ssh:write')">
+                  <Button variant="ghost" size="sm" @click="openEdit(k)">Edit</Button>
+                  <Button variant="outline" size="sm" @click="revoke = k">Revoke</Button>
+                </template>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </LoadState>
+    </CardContent>
+  </Card>
 
   <Dialog v-model:open="addOpen">
     <DialogContent>

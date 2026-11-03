@@ -67,49 +67,58 @@ const activeNow = (s: Silence) =>
 
 <template>
   <div class="flex"><Button class="ml-auto" @click="openNew()">New silence</Button></div>
-  <LoadState :pending="pending" :error="error" :empty="!data?.length" empty-text="No silences.">
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Matches</TableHead>
-          <TableHead>Starts</TableHead>
-          <TableHead>Ends</TableHead>
-          <TableHead>State</TableHead>
-          <TableHead>Reason</TableHead>
-          <TableHead>By</TableHead>
-          <TableHead class="sr-only">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow v-for="s in data" :key="s.id">
-          <TableCell class="font-mono text-xs">
-            <span v-for="(v, k) in s.matcher" :key="k" class="mr-2">{{ k }}={{ v }}</span>
-          </TableCell>
-          <TableCell class="whitespace-nowrap">{{ fmtDate(s.starts_at) }}</TableCell>
-          <TableCell class="whitespace-nowrap">{{ fmtDate(s.ends_at) }}</TableCell>
-          <TableCell>
-            <StateBadge
-              :value="
-                activeNow(s) ? 'active' : (when(s.ends_at)?.getTime() ?? 0) < Date.now() ? 'expired' : 'scheduled'
-              "
-            />
-          </TableCell>
-          <TableCell class="whitespace-normal">{{ s.reason }}</TableCell>
-          <TableCell>{{ s.created_by }}</TableCell>
-          <TableCell class="text-right">
-            <ConfirmButton
-              :title="'Delete silence?'"
-              confirm="Delete"
-              description="Matching alerts notify again immediately."
-              :action="() => del(s)"
-            >
-              Delete
-            </ConfirmButton>
-          </TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
-  </LoadState>
+  <Card>
+    <CardContent>
+      <LoadState
+        :pending="pending"
+        :error="error"
+        :empty="!data?.length"
+        empty-text="No silences. Create one to mute matching alerts during maintenance."
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Matches</TableHead>
+              <TableHead>Starts</TableHead>
+              <TableHead>Ends</TableHead>
+              <TableHead>State</TableHead>
+              <TableHead>Reason</TableHead>
+              <TableHead>By</TableHead>
+              <TableHead><span class="sr-only">Actions</span></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="s in data" :key="s.id">
+              <TableCell class="font-mono text-xs">
+                <span v-for="(v, k) in s.matcher" :key="k" class="mr-2">{{ k }}={{ v }}</span>
+              </TableCell>
+              <TableCell class="whitespace-nowrap">{{ fmtDate(s.starts_at) }}</TableCell>
+              <TableCell class="whitespace-nowrap">{{ fmtDate(s.ends_at) }}</TableCell>
+              <TableCell>
+                <StateBadge
+                  :value="
+                    activeNow(s) ? 'active' : (when(s.ends_at)?.getTime() ?? 0) < Date.now() ? 'expired' : 'scheduled'
+                  "
+                />
+              </TableCell>
+              <TableCell class="whitespace-normal">{{ s.reason }}</TableCell>
+              <TableCell>{{ s.created_by }}</TableCell>
+              <TableCell class="text-right">
+                <ConfirmButton
+                  :title="'Delete silence?'"
+                  confirm="Delete"
+                  description="Matching alerts notify again immediately."
+                  :action="() => del(s)"
+                >
+                  Delete
+                </ConfirmButton>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </LoadState>
+    </CardContent>
+  </Card>
 
   <Dialog v-model:open="open">
     <DialogScrollContent>

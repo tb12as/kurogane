@@ -13,14 +13,14 @@ const emit = defineEmits<{ kill: [pid: number] }>()
         <TableHead>TTY</TableHead>
         <TableHead>Started</TableHead>
         <TableHead>PID</TableHead>
-        <TableHead class="sr-only">Actions</TableHead>
+        <TableHead><span class="sr-only">Actions</span></TableHead>
       </TableRow>
     </TableHeader>
     <TableBody>
       <TableRow v-for="s in rows" :key="s.pid">
         <TableCell>{{ s.user }}</TableCell>
-        <TableCell class="font-mono">{{ s.ip || s.from || s.source_ip || '—' }}</TableCell>
-        <TableCell>{{ s.tty || '—' }}</TableCell>
+        <TableCell class="font-mono">{{ s.ip || s.from || s.source_ip || '-' }}</TableCell>
+        <TableCell>{{ s.tty || '-' }}</TableCell>
         <TableCell>{{ fmtDate(s.started_at || s.start || s.started) }}</TableCell>
         <TableCell class="tabular-nums">{{ s.pid }}</TableCell>
         <TableCell class="text-right">

@@ -90,32 +90,41 @@ const impact = computed(() => [
     </div>
   </div>
 
-  <LoadState :pending="pending" :error="error" :empty="!data?.rows.length">
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Setting</TableHead>
-          <TableHead>Current</TableHead>
-          <TableHead>Recommended</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Notes</TableHead>
-          <TableHead class="sr-only">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        <TableRow v-for="r in data!.rows" :key="r.key">
-          <TableCell class="font-mono">{{ r.key }}</TableCell>
-          <TableCell class="max-w-64 break-all font-mono text-xs">{{ r.current || '(default)' }}</TableCell>
-          <TableCell class="max-w-64 break-all font-mono text-xs">{{ r.recommended || '—' }}</TableCell>
-          <TableCell><StateBadge :value="r.recommended ? (r.ok ? 'ok' : 'warning') : ''" /></TableCell>
-          <TableCell class="text-xs text-muted-foreground">{{ r.note }}</TableCell>
-          <TableCell class="text-right">
-            <Button v-if="can('ssh:write')" variant="ghost" size="sm" @click="openChange([r])">Change</Button>
-          </TableCell>
-        </TableRow>
-      </TableBody>
-    </Table>
-  </LoadState>
+  <Card>
+    <CardContent>
+      <LoadState
+        :pending="pending"
+        :error="error"
+        :empty="!data?.rows.length"
+        empty-text="No sshd settings were returned for this host."
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Setting</TableHead>
+              <TableHead>Current</TableHead>
+              <TableHead>Recommended</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Notes</TableHead>
+              <TableHead><span class="sr-only">Actions</span></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="r in data!.rows" :key="r.key">
+              <TableCell class="font-mono">{{ r.key }}</TableCell>
+              <TableCell class="max-w-64 break-all font-mono text-xs">{{ r.current || '(default)' }}</TableCell>
+              <TableCell class="max-w-64 break-all font-mono text-xs">{{ r.recommended || '-' }}</TableCell>
+              <TableCell><StateBadge :value="r.recommended ? (r.ok ? 'ok' : 'warning') : ''" /></TableCell>
+              <TableCell class="text-xs text-muted-foreground">{{ r.note }}</TableCell>
+              <TableCell class="text-right">
+                <Button v-if="can('ssh:write')" variant="ghost" size="sm" @click="openChange([r])">Change</Button>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </LoadState>
+    </CardContent>
+  </Card>
 
   <Dialog v-model:open="formOpen">
     <DialogContent class="sm:max-w-xl">

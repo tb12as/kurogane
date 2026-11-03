@@ -7,7 +7,13 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   telemetry: false,
   modules: ['shadcn-nuxt'],
-  css: ['~/assets/css/main.css'],
+  // fonts are bundled into the binary; mono is latin-only because it renders machine values (IPs, keys, paths)
+  css: [
+    '@fontsource-variable/ibm-plex-sans/wght.css',
+    '@fontsource/ibm-plex-mono/latin-400.css',
+    '@fontsource/ibm-plex-mono/latin-500.css',
+    '~/assets/css/main.css',
+  ],
   shadcn: { prefix: '', componentDir: './app/components/ui' },
   app: {
     head: {

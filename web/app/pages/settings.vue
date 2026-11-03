@@ -129,45 +129,56 @@ async function uninstall() {
       <p v-if="!admin" class="text-sm text-muted-foreground">Managing users needs the admin role.</p>
       <template v-else>
         <div class="flex"><Button class="ml-auto" @click="uOpen = true">New user</Button></div>
-        <LoadState :pending="uPending" :error="uErr" :empty="!users?.length">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Username</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>2FA</TableHead>
-                <TableHead>Locked</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead class="sr-only">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-for="x in users" :key="x.id">
-                <TableCell class="font-medium">{{ x.username }}</TableCell>
-                <TableCell class="capitalize">{{ x.role }}</TableCell>
-                <TableCell><StateBadge :value="x.totp_enabled ? 'active' : 'pending'" /></TableCell>
-                <TableCell>
-                  {{ (when(x.locked_until)?.getTime() ?? 0) > Date.now() ? `until ${fmtDate(x.locked_until)}` : 'no' }}
-                </TableCell>
-                <TableCell>{{ fmtDate(x.created_at) }}</TableCell>
-                <TableCell class="whitespace-nowrap text-right">
-                  <Button v-if="x.failed_logins || when(x.locked_until)" variant="ghost" size="sm" @click="unlock(x)">
-                    Unlock
-                  </Button>
-                  <ConfirmButton
-                    :title="`Delete user ${x.username}?`"
-                    confirm="Delete"
-                    :disabled="x.username === useMe().value?.actor"
-                    description="Their sessions end and they can no longer sign in."
-                    :action="() => delUser(x)"
-                  >
-                    Delete
-                  </ConfirmButton>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </LoadState>
+        <Card>
+          <CardContent>
+            <LoadState :pending="uPending" :error="uErr" :empty="!users?.length">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Username</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>2FA</TableHead>
+                    <TableHead>Locked</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead><span class="sr-only">Actions</span></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow v-for="x in users" :key="x.id">
+                    <TableCell class="font-medium">{{ x.username }}</TableCell>
+                    <TableCell class="capitalize">{{ x.role }}</TableCell>
+                    <TableCell><StateBadge :value="x.totp_enabled ? 'active' : 'pending'" /></TableCell>
+                    <TableCell>
+                      {{
+                        (when(x.locked_until)?.getTime() ?? 0) > Date.now() ? `until ${fmtDate(x.locked_until)}` : 'no'
+                      }}
+                    </TableCell>
+                    <TableCell>{{ fmtDate(x.created_at) }}</TableCell>
+                    <TableCell class="whitespace-nowrap text-right">
+                      <Button
+                        v-if="x.failed_logins || when(x.locked_until)"
+                        variant="ghost"
+                        size="sm"
+                        @click="unlock(x)"
+                      >
+                        Unlock
+                      </Button>
+                      <ConfirmButton
+                        :title="`Delete user ${x.username}?`"
+                        confirm="Delete"
+                        :disabled="x.username === useMe().value?.actor"
+                        description="Their sessions end and they can no longer sign in."
+                        :action="() => delUser(x)"
+                      >
+                        Delete
+                      </ConfirmButton>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </LoadState>
+          </CardContent>
+        </Card>
       </template>
     </TabsContent>
 
@@ -175,44 +186,53 @@ async function uninstall() {
       <p v-if="!admin" class="text-sm text-muted-foreground">Managing API tokens needs the admin role.</p>
       <template v-else>
         <div class="flex"><Button class="ml-auto" @click="tOpen = true">New token</Button></div>
-        <LoadState :pending="tPending" :error="tErr" :empty="!tokens?.length">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Scopes</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Expires</TableHead>
-                <TableHead>Last used</TableHead>
-                <TableHead class="sr-only">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow v-for="x in tokens" :key="x.id">
-                <TableCell class="font-medium">{{ x.name }}</TableCell>
-                <TableCell>
-                  <Badge v-for="s in x.scopes" :key="s" variant="secondary" class="mr-1">{{ s }}</Badge>
-                </TableCell>
-                <TableCell>
-                  {{ fmtDate(x.created_at) }}
-                  <span class="text-xs text-muted-foreground">by {{ x.created_by }}</span>
-                </TableCell>
-                <TableCell>{{ when(x.expires_at) ? fmtDate(x.expires_at) : 'never' }}</TableCell>
-                <TableCell>{{ ago(x.last_used_at) }}</TableCell>
-                <TableCell class="text-right">
-                  <ConfirmButton
-                    :title="`Revoke token ${x.name}?`"
-                    confirm="Revoke"
-                    description="Scripts and CLIs using this token stop working immediately."
-                    :action="() => revokeToken(x)"
-                  >
-                    Revoke
-                  </ConfirmButton>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </LoadState>
+        <Card>
+          <CardContent>
+            <LoadState
+              :pending="tPending"
+              :error="tErr"
+              :empty="!tokens?.length"
+              empty-text="No API tokens. Create one for scripts that call the API."
+            >
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Scopes</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Expires</TableHead>
+                    <TableHead>Last used</TableHead>
+                    <TableHead><span class="sr-only">Actions</span></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow v-for="x in tokens" :key="x.id">
+                    <TableCell class="font-medium">{{ x.name }}</TableCell>
+                    <TableCell>
+                      <Badge v-for="s in x.scopes" :key="s" variant="secondary" class="mr-1">{{ s }}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {{ fmtDate(x.created_at) }}
+                      <span class="text-xs text-muted-foreground">by {{ x.created_by }}</span>
+                    </TableCell>
+                    <TableCell>{{ when(x.expires_at) ? fmtDate(x.expires_at) : 'never' }}</TableCell>
+                    <TableCell>{{ ago(x.last_used_at) }}</TableCell>
+                    <TableCell class="text-right">
+                      <ConfirmButton
+                        :title="`Revoke token ${x.name}?`"
+                        confirm="Revoke"
+                        description="Scripts and CLIs using this token stop working immediately."
+                        :action="() => revokeToken(x)"
+                      >
+                        Revoke
+                      </ConfirmButton>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </LoadState>
+          </CardContent>
+        </Card>
       </template>
     </TabsContent>
 
@@ -298,9 +318,9 @@ async function uninstall() {
         <CardContent>
           <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
             <dt class="text-muted-foreground">Version</dt>
-            <dd class="font-mono">{{ health?.version || status?.version || '—' }}</dd>
+            <dd class="font-mono">{{ health?.version || status?.version || '-' }}</dd>
             <dt class="text-muted-foreground">Server</dt>
-            <dd>{{ status?.server_name || '—' }}</dd>
+            <dd>{{ status?.server_name || '-' }}</dd>
             <dt class="text-muted-foreground">Mode</dt>
             <dd>{{ useFleet().value ? 'Central server (fleet)' : 'Agent (single server)' }}</dd>
             <dt class="text-muted-foreground">Signed in as</dt>

@@ -202,8 +202,8 @@ async function unignore(i: Ignore) {
     </div>
   </div>
 
-  <LoadState :pending="pending" :error="error" :empty="!scan" empty-text="No scan yet. Run a scan to get a score.">
-    <section aria-label="Score" class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+  <LoadState :pending="pending" :error="error">
+    <section v-if="scan" aria-label="Score" class="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <Card class="py-4">
         <CardContent class="flex items-center gap-3 px-4">
           <span class="text-4xl font-bold" :aria-label="`Grade ${scan?.grade}`">{{ scan?.grade }}</span>
@@ -230,119 +230,144 @@ async function unignore(i: Ignore) {
     </TabsList>
 
     <TabsContent value="results" class="space-y-3">
-      <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-end">
+      <div v-if="scan" class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-end">
         <Input v-model="f.q" placeholder="Search checks" aria-label="Search checks" class="col-span-2 sm:w-56" />
         <div class="sm:w-36"><FormSelect v-model="f.status" :options="opts('status')" label="Status" /></div>
         <div class="sm:w-36"><FormSelect v-model="f.severity" :options="opts('severity')" label="Severity" /></div>
         <div class="sm:w-40"><FormSelect v-model="f.category" :options="opts('category')" label="Category" /></div>
         <div v-if="can('harden:write')" class="col-span-2 flex gap-2 sm:ml-auto">
-          <div class="w-32">
-            <FormSelect v-model="fixAllSev" :options="['critical', 'high', 'medium', 'low']" label="Minimum severity" />
+          <div class="w-40">
+            <FormSelect
+              v-model="fixAllSev"
+              :options="[
+                { value: 'critical', label: 'Critical only' },
+                { value: 'high', label: 'High and above' },
+                { value: 'medium', label: 'Medium and above' },
+                { value: 'low', label: 'All severities' },
+              ]"
+              label="Minimum severity to fix"
+            />
           </div>
           <Button variant="outline" :disabled="!counts.fail" @click="openFix()">Fix all failing</Button>
         </div>
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead class="w-8"><span class="sr-only">Details</span></TableHead>
-            <TableHead>Check</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Severity</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>CIS</TableHead>
-            <TableHead class="sr-only">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <template v-for="r in shown" :key="r.id">
-            <TableRow>
-              <TableCell>
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  :aria-expanded="!!expanded[r.id]"
-                  :aria-controls="`d-${r.id}`"
-                  :aria-label="`Details for ${r.id}`"
-                  @click="expanded[r.id] = !expanded[r.id]"
-                >
-                  {{ expanded[r.id] ? '−' : '+' }}
-                </Button>
-              </TableCell>
-              <TableCell>
-                <div class="font-medium">{{ r.title }}</div>
-                <div class="font-mono text-xs text-muted-foreground">{{ r.id }}</div>
-              </TableCell>
-              <TableCell><StateBadge :value="r.status" /></TableCell>
-              <TableCell><StateBadge :value="r.severity" /></TableCell>
-              <TableCell>{{ r.category }}</TableCell>
-              <TableCell class="font-mono text-xs">{{ r.cis || '—' }}</TableCell>
-              <TableCell class="whitespace-nowrap text-right">
-                <template v-if="can('harden:write') && r.status !== 'pass' && r.status !== 'ignored'">
-                  <Button v-if="r.fixable" variant="outline" size="sm" @click="openFix(r)">Fix</Button>
-                  <Button variant="ghost" size="sm" @click="ign = r">Ignore</Button>
-                </template>
-              </TableCell>
-            </TableRow>
-            <TableRow v-if="expanded[r.id]" :id="`d-${r.id}`" class="bg-muted/30 hover:bg-muted/30">
-              <TableCell colspan="7" class="whitespace-normal">
-                <dl class="grid gap-3 py-2 text-sm md:grid-cols-3">
-                  <div>
-                    <dt class="font-medium">Why it matters</dt>
-                    <dd class="text-muted-foreground">{{ r.rationale || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="font-medium">How to fix</dt>
-                    <dd class="text-muted-foreground">{{ r.remediation || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt class="font-medium">Evidence</dt>
-                    <dd class="break-all font-mono text-xs text-muted-foreground">{{ r.evidence || '—' }}</dd>
-                  </div>
-                </dl>
-              </TableCell>
-            </TableRow>
-          </template>
-          <TableEmpty v-if="!shown.length" :colspan="7">No checks match these filters.</TableEmpty>
-        </TableBody>
-      </Table>
+      <Card>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead class="w-8"><span class="sr-only">Details</span></TableHead>
+                <TableHead>Check</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Severity</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>CIS</TableHead>
+                <TableHead><span class="sr-only">Actions</span></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <template v-for="r in shown" :key="r.id">
+                <TableRow>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      :aria-expanded="!!expanded[r.id]"
+                      :aria-controls="`d-${r.id}`"
+                      :aria-label="`Details for ${r.id}`"
+                      @click="expanded[r.id] = !expanded[r.id]"
+                    >
+                      {{ expanded[r.id] ? '−' : '+' }}
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <div class="font-medium">{{ r.title }}</div>
+                    <div class="font-mono text-xs text-muted-foreground">{{ r.id }}</div>
+                  </TableCell>
+                  <TableCell><StateBadge :value="r.status" /></TableCell>
+                  <TableCell><StateBadge :value="r.severity" /></TableCell>
+                  <TableCell>{{ r.category }}</TableCell>
+                  <TableCell class="font-mono text-xs">{{ r.cis || '-' }}</TableCell>
+                  <TableCell class="whitespace-nowrap text-right">
+                    <template v-if="can('harden:write') && r.status !== 'pass' && r.status !== 'ignored'">
+                      <Button v-if="r.fixable" variant="outline" size="sm" @click="openFix(r)">Fix</Button>
+                      <Button variant="ghost" size="sm" @click="ign = r">Ignore</Button>
+                    </template>
+                  </TableCell>
+                </TableRow>
+                <TableRow v-if="expanded[r.id]" :id="`d-${r.id}`" class="bg-muted/30 hover:bg-muted/30">
+                  <TableCell colspan="7" class="whitespace-normal">
+                    <dl class="grid gap-3 py-2 text-sm md:grid-cols-3">
+                      <div>
+                        <dt class="font-medium">Why it matters</dt>
+                        <dd class="text-muted-foreground">{{ r.rationale || '-' }}</dd>
+                      </div>
+                      <div>
+                        <dt class="font-medium">How to fix</dt>
+                        <dd class="text-muted-foreground">{{ r.remediation || '-' }}</dd>
+                      </div>
+                      <div>
+                        <dt class="font-medium">Evidence</dt>
+                        <dd class="break-all font-mono text-xs text-muted-foreground">{{ r.evidence || '-' }}</dd>
+                      </div>
+                    </dl>
+                  </TableCell>
+                </TableRow>
+              </template>
+              <TableEmpty v-if="!shown.length" :colspan="7">
+                <template v-if="scan">No checks match these filters.</template>
+                <template v-else>No scan yet. Run a scan to grade this server against the hardening checks.</template>
+              </TableEmpty>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </TabsContent>
 
     <TabsContent value="fixes"><HardenFixes /></TabsContent>
 
     <TabsContent value="ignores">
-      <LoadState :pending="ignPending" :error="ignErr" :empty="!ignores?.length" empty-text="No ignored checks.">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Check</TableHead>
-              <TableHead>Reason</TableHead>
-              <TableHead>By</TableHead>
-              <TableHead>When</TableHead>
-              <TableHead class="sr-only">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-for="i in ignores" :key="i.check_id">
-              <TableCell class="font-mono">{{ i.check_id }}</TableCell>
-              <TableCell class="whitespace-normal">{{ i.reason }}</TableCell>
-              <TableCell>{{ i.created_by }}</TableCell>
-              <TableCell>{{ fmtDate(i.created_at) }}</TableCell>
-              <TableCell class="text-right">
-                <ConfirmButton
-                  v-if="can('harden:write')"
-                  :title="`Stop ignoring ${i.check_id}?`"
-                  confirm="Remove ignore"
-                  description="The check counts toward the score again from the next scan."
-                  :action="() => unignore(i)"
-                >
-                  Remove
-                </ConfirmButton>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </LoadState>
+      <Card>
+        <CardContent>
+          <LoadState
+            :pending="ignPending"
+            :error="ignErr"
+            :empty="!ignores?.length"
+            empty-text="No ignored checks. Ignore a check from its row in Results to drop it from the score."
+          >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Check</TableHead>
+                  <TableHead>Reason</TableHead>
+                  <TableHead>By</TableHead>
+                  <TableHead>When</TableHead>
+                  <TableHead><span class="sr-only">Actions</span></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="i in ignores" :key="i.check_id">
+                  <TableCell class="font-mono">{{ i.check_id }}</TableCell>
+                  <TableCell class="whitespace-normal">{{ i.reason }}</TableCell>
+                  <TableCell>{{ i.created_by }}</TableCell>
+                  <TableCell>{{ fmtDate(i.created_at) }}</TableCell>
+                  <TableCell class="text-right">
+                    <ConfirmButton
+                      v-if="can('harden:write')"
+                      :title="`Stop ignoring ${i.check_id}?`"
+                      confirm="Remove ignore"
+                      description="The check counts toward the score again from the next scan."
+                      :action="() => unignore(i)"
+                    >
+                      Remove
+                    </ConfirmButton>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </LoadState>
+        </CardContent>
+      </Card>
     </TabsContent>
   </Tabs>
 
