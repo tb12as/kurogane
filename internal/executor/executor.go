@@ -138,6 +138,31 @@ func Allowed(cmd string, args []string) error {
 	return fmt.Errorf("%w: %s %s", ErrDenied, cmd, args[0])
 }
 
+// userControlled reports whether p lies in a home directory whose owner could plant symlinks.
+func userControlled(p string) bool {
+	return strings.HasPrefix(p, "/home/") || strings.HasPrefix(p, "/root/")
+}
+
+// noSymlink refuses paths in user-controlled homes with a symlink component, so a user cannot point
+// ~/.ssh at another directory and have root write or chown files there.
+func noSymlink(p string) error {
+	if !userControlled(p) {
+		return nil
+	}
+	cur := ""
+	for _, part := range strings.Split(strings.Trim(filepath.Clean(p), "/"), "/") {
+		cur += "/" + part
+		fi, err := os.Lstat(hostfs.P(cur))
+		if err != nil {
+			return nil // the rest does not exist yet
+		}
+		if fi.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("%w: %s is a symlink (refusing to follow it in a user home)", ErrDenied, cur)
+		}
+	}
+	return nil
+}
+
 // Local executes in-process; requires root for most writes.
 type Local struct{}
 
@@ -147,8 +172,11 @@ func (Local) WriteFile(p string, data []byte, mode os.FileMode) error {
 	if !writable(p) {
 		return fmt.Errorf("%w: write %s", ErrDenied, p)
 	}
+	if err := noSymlink(p); err != nil {
+		return err
+	}
 	real := hostfs.P(p)
-	if err := os.MkdirAll(filepath.Dir(real), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(real), 0o755); err != nil { // #nosec G301 -- system config dirs (e.g. /etc/ssh/sshd_config.d) are 0755
 		return err
 	}
 	// atomic replace so a crash never leaves a half-written config
@@ -171,6 +199,9 @@ func (Local) Chmod(p string, mode os.FileMode) error {
 	if !writable(p) && !chmodable(p) {
 		return fmt.Errorf("%w: chmod %s", ErrDenied, p)
 	}
+	if err := noSymlink(p); err != nil {
+		return err
+	}
 	slog.Info("executor chmod", "path", p, "mode", fmt.Sprintf("%o", mode))
 	return os.Chmod(hostfs.P(p), mode)
 }
@@ -189,6 +220,9 @@ func (Local) Remove(p string) error {
 	if !writable(p) {
 		return fmt.Errorf("%w: remove %s", ErrDenied, p)
 	}
+	if err := noSymlink(p); err != nil {
+		return err
+	}
 	slog.Info("executor remove", "path", p)
 	err := os.Remove(hostfs.P(p))
 	if errors.Is(err, os.ErrNotExist) {
@@ -201,12 +235,18 @@ func (Local) Chown(p string, uid, gid int) error {
 	if !writable(p) && !writable(p+"/") {
 		return fmt.Errorf("%w: chown %s", ErrDenied, p)
 	}
-	return os.Chown(hostfs.P(p), uid, gid)
+	if err := noSymlink(p); err != nil {
+		return err
+	}
+	return os.Lchown(hostfs.P(p), uid, gid)
 }
 
 func (Local) MkdirAll(p string, mode os.FileMode) error {
 	if !writable(strings.TrimSuffix(p, "/") + "/") {
 		return fmt.Errorf("%w: mkdir %s", ErrDenied, p)
+	}
+	if err := noSymlink(p); err != nil {
+		return err
 	}
 	return os.MkdirAll(hostfs.P(p), mode)
 }

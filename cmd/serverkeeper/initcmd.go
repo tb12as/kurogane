@@ -122,10 +122,10 @@ func init() {
 			if err := t.Execute(&b, d); err != nil {
 				return err
 			}
-			if err := os.MkdirAll(filepath.Dir(flagConfig), 0o755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(flagConfig), 0o755); err != nil { // #nosec G301 -- /etc/serverkeeper must be traversable
 				return err
 			}
-			if err := os.WriteFile(flagConfig, []byte(b.String()), 0o640); err != nil {
+			if err := os.WriteFile(flagConfig, []byte(b.String()), 0o640); err != nil { // #nosec G306 -- config is 0640 root:serverkeeper; secrets are sealed
 				return fmt.Errorf("write %s: %w (run as root)", flagConfig, err)
 			}
 			cfg, err := config.Load(flagConfig)

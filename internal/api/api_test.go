@@ -316,7 +316,7 @@ func TestSSHRoutes(t *testing.T) {
 	s.do("POST", "/api/v1/ssh/config/confirm", s.admin, map[string]string{}, 200)
 	s.do("POST", "/api/v1/ssh/config/confirm", s.admin, map[string]string{}, 400)
 	s.do("GET", "/api/v1/ssh/changes", s.read, nil, 200)
-	s.do("GET", "/api/v1/ssh/sessions", s.read, nil, 404)
+	s.do("GET", "/api/v1/ssh/sessions", s.read, nil, 200)
 	s.do("DELETE", "/api/v1/ssh/sessions/abc", s.admin, nil, 400)
 	s.do("GET", "/api/v1/ssh/logins?since=7d", s.read, nil, 200)
 	s.do("GET", "/api/v1/ssh/logins?since=x", s.read, nil, 400)
@@ -359,4 +359,63 @@ func TestMetricsRoutesAndProm(t *testing.T) {
 	s.do("GET", "/api/v1/metrics/history?names=cpu&from=1h", s.read, nil, 200)
 	s.do("GET", "/metrics", "", nil, 401)
 	s.do("GET", "/metrics", s.read, nil, 503)
+}
+
+// opt-in onboarding telemetry sends only timing + version, once, and only when enabled with a URL
+func TestTelemetryOptIn(t *testing.T) {
+	got := make(chan map[string]any, 2)
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var m map[string]any
+		json.NewDecoder(r.Body).Decode(&m)
+		got <- m
+	}))
+	defer ts.Close()
+	s := newStack(t)
+	s.srv.DB.SetKV(context.Background(), "telemetry.installed_at", time.Now().Add(-3*time.Minute).UTC().Format(time.RFC3339))
+	s.srv.Cfg.Telemetry.URL = ts.URL
+	s.do("POST", "/api/v1/telemetry/first-dashboard", s.admin, nil, 200) // disabled: nothing sent
+	s.srv.DB.SetKV(context.Background(), "telemetry.first_dashboard", "")
+	s2 := newStack(t)
+	s2.srv.Cfg.Telemetry = config.Telemetry{Enabled: true, URL: ts.URL}
+	s2.srv.DB.SetKV(context.Background(), "telemetry.installed_at", time.Now().Add(-3*time.Minute).UTC().Format(time.RFC3339))
+	s2.do("POST", "/api/v1/telemetry/first-dashboard", s2.admin, nil, 200)
+	s2.do("POST", "/api/v1/telemetry/first-dashboard", s2.admin, nil, 200) // second call: already recorded
+	select {
+	case m := <-got:
+		if len(m) != 3 || m["version"] != "test" || m["seconds_to_first_dashboard"].(float64) < 170 {
+			t.Fatalf("payload: %v", m)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("telemetry not sent")
+	}
+	select {
+	case m := <-got:
+		t.Fatalf("telemetry sent twice or while disabled: %v", m)
+	case <-time.After(300 * time.Millisecond):
+	}
+}
+
+func TestSSEStream(t *testing.T) {
+	s := newStack(t)
+	req, _ := http.NewRequest("GET", s.url+"/api/v1/stream", nil)
+	req.Header.Set("Authorization", "Bearer "+s.read)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil || resp.StatusCode != 200 || resp.Header.Get("Content-Type") != "text/event-stream" {
+		t.Fatalf("stream: %v %v", err, resp)
+	}
+	defer resp.Body.Close()
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		s.srv.Hub.Publish("alert", map[string]string{"rule": "high_cpu"})
+	}()
+	buf := make([]byte, 0, 256)
+	tmp := make([]byte, 256)
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) && !strings.Contains(string(buf), "high_cpu") {
+		n, _ := resp.Body.Read(tmp)
+		buf = append(buf, tmp[:n]...)
+	}
+	if !strings.Contains(string(buf), "event: alert") || !strings.Contains(string(buf), "high_cpu") {
+		t.Fatalf("no event received: %q", buf)
+	}
 }

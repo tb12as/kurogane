@@ -384,3 +384,19 @@ func TestPlanShadowedOutsideEtcSSH(t *testing.T) {
 		t.Fatalf("not effective: %v", p.newEff["ciphers"])
 	}
 }
+
+func TestLogindSessions(t *testing.T) {
+	e := setup(t, "PasswordAuthentication yes\n", true)
+	e.ex.Outputs["loginctl list-sessions --no-legend --no-pager"] = "  7 1000 deploy -  812 user  pts/0 no -\n  8 1000 deploy - 900 manager - no -\n"
+	e.ex.Outputs["loginctl show-session 7 -p Name -p TTY -p RemoteHost -p Leader -p Timestamp -p Class"] =
+		"Name=deploy\nTTY=pts/0\nRemoteHost=198.51.100.4\nLeader=812\nTimestamp=Tue 2026-11-03 08:09:46 UTC\nClass=user\n"
+	e.ex.Outputs["loginctl show-session 8 -p Name -p TTY -p RemoteHost -p Leader -p Timestamp -p Class"] =
+		"Name=deploy\nLeader=900\nClass=manager\n"
+	ss, err := e.m.Sessions(context.Background())
+	if err != nil || len(ss) != 1 || ss[0].ID != "7" || ss[0].From != "198.51.100.4" || ss[0].PID != 812 || ss[0].Started.IsZero() {
+		t.Fatalf("%v %+v", err, ss)
+	}
+	if _, err := e.m.KillSession(context.Background(), 812); err != nil || !e.ex.Called("loginctl terminate-session 7") {
+		t.Fatalf("kill: %v %v", err, e.ex.Calls)
+	}
+}

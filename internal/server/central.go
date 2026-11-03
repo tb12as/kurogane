@@ -160,7 +160,7 @@ func (c *Central) Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("cli token: %w", err)
 	}
-	if err := os.WriteFile(agent.CLITokenPath(c.Cfg), []byte(raw+"\n"), 0o600); err != nil {
+	if err := os.WriteFile(agent.CLITokenPath(c.Cfg), []byte(raw+"\n"), 0o600); err != nil { // #nosec G703 -- path comes from the root-owned config
 		return err
 	}
 	ctx, cancel := context.WithCancel(ctx)

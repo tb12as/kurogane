@@ -140,7 +140,7 @@ func (s *Server) sshRoutes() {
 	})
 	s.Route("GET /ssh/changes", auth.ScopeRead, func(r *http.Request) (any, error) { return m.Changes(r.Context()) })
 
-	s.Route("GET /ssh/sessions", auth.ScopeRead, func(r *http.Request) (any, error) { return m.Sessions() })
+	s.Route("GET /ssh/sessions", auth.ScopeRead, func(r *http.Request) (any, error) { return m.Sessions(r.Context()) })
 	s.Route("DELETE /ssh/sessions/{pid}", auth.ScopeSSH, func(r *http.Request) (any, error) {
 		pid, err := strconv.Atoi(r.PathValue("pid"))
 		if err != nil {

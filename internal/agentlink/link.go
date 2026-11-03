@@ -424,9 +424,16 @@ func (l *Link) Enroll(ctx context.Context) error {
 			return fmt.Errorf("central.ca_file %s: no certificate", l.Cfg.Central.CAFile)
 		}
 	case pin != "":
-		// verification is done against the pinned CA below
-		tc.InsecureSkipVerify = true //nolint:gosec
-		tc.VerifyPeerCertificate = pinVerify(pin)
+		// default verification is replaced by the CA pin from the token; VerifyConnection also runs on resumption
+		tc.InsecureSkipVerify = true // #nosec G402 -- pinned CA is verified in VerifyConnection
+		verify := pinVerify(pin)
+		tc.VerifyConnection = func(cs tls.ConnectionState) error {
+			raw := make([][]byte, len(cs.PeerCertificates))
+			for i, c := range cs.PeerCertificates {
+				raw[i] = c.Raw
+			}
+			return verify(raw, nil)
+		}
 	default:
 		return errors.New("enrollment token has no CA pin and central.ca_file is not set: copy the full token")
 	}

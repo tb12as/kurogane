@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 
 // Session is an active login (§6.4).
 type Session struct {
+	ID      string    `json:"id,omitempty"` // logind session id (when utmp is absent)
 	User    string    `json:"user"`
 	TTY     string    `json:"tty"`
 	From    string    `json:"from"`
@@ -51,20 +53,65 @@ func parseUtmp(b []byte) []Session {
 	return out
 }
 
-// Sessions lists active sessions from utmp.
-func (m *Manager) Sessions() ([]Session, error) {
+// Sessions lists active sessions from utmp, or from systemd-logind on systems that no longer write utmp.
+func (m *Manager) Sessions(ctx context.Context) ([]Session, error) {
 	for _, p := range []string{"/run/utmp", "/var/run/utmp"} {
 		if b, err := hostfs.Read(p); err == nil {
 			return parseUtmp(b), nil
 		}
 	}
-	return nil, fmt.Errorf("utmp not found (/run/utmp): session listing needs utmp, e.g. systemd-logind with utmp "+
-		"enabled: %w", fs.ErrNotExist)
+	out, err := m.d.Ex.Run(ctx, "loginctl", "list-sessions", "--no-legend", "--no-pager")
+	if err != nil {
+		return nil, fmt.Errorf("no utmp and loginctl failed (%v): session listing needs utmp or systemd-logind: %w",
+			err, fs.ErrNotExist)
+	}
+	ss := []Session{}
+	for _, l := range strings.Split(string(out), "\n") {
+		f := strings.Fields(l)
+		if len(f) == 0 {
+			continue
+		}
+		p, err := m.d.Ex.Run(ctx, "loginctl", "show-session", f[0], "-p", "Name", "-p", "TTY", "-p", "RemoteHost",
+			"-p", "Leader", "-p", "Timestamp", "-p", "Class")
+		if err != nil {
+			continue
+		}
+		if s, ok := parseLogind(f[0], string(p)); ok {
+			ss = append(ss, s)
+		}
+	}
+	return ss, nil
+}
+
+// parseLogind parses `loginctl show-session -p ...` output; manager/greeter sessions are skipped.
+func parseLogind(id, out string) (Session, bool) {
+	s := Session{ID: id}
+	class := ""
+	for _, l := range strings.Split(out, "\n") {
+		k, v, _ := strings.Cut(strings.TrimSpace(l), "=")
+		switch k {
+		case "Name":
+			s.User = v
+		case "TTY":
+			s.TTY = v
+		case "RemoteHost":
+			s.From = v
+		case "Leader":
+			s.PID, _ = strconv.Atoi(v)
+		case "Class":
+			class = v
+		case "Timestamp":
+			if t, err := time.ParseInLocation("Mon 2006-01-02 15:04:05 MST", v, time.Local); err == nil {
+				s.Started = t
+			}
+		}
+	}
+	return s, class == "user" && s.User != ""
 }
 
 // KillSession terminates the session with pid (only pids listed as sessions can be killed).
 func (m *Manager) KillSession(ctx context.Context, pid int) (Session, error) {
-	ss, err := m.Sessions()
+	ss, err := m.Sessions(ctx)
 	if err != nil {
 		return Session{}, err
 	}
@@ -72,9 +119,12 @@ func (m *Manager) KillSession(ctx context.Context, pid int) (Session, error) {
 		if s.PID != pid {
 			continue
 		}
-		if s.TTY != "" {
+		switch {
+		case s.ID != "":
+			_, err = m.d.Ex.Run(ctx, "loginctl", "terminate-session", s.ID)
+		case s.TTY != "":
 			_, err = m.d.Ex.Run(ctx, "pkill", "-KILL", "-t", s.TTY)
-		} else {
+		default:
 			_, err = m.d.Ex.Run(ctx, "kill", "-HUP", fmt.Sprint(pid))
 		}
 		if err == nil {

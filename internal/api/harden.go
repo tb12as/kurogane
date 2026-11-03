@@ -73,7 +73,7 @@ func (s *Server) hardenRoutes() {
 		name := fmt.Sprintf("hardening-%s-%s.%s", s.Cfg.ServerName, sc.StartedAt.Format("20060102-1504"), ext)
 		w.Header().Set("Content-Type", ct)
 		w.Header().Set("Content-Disposition", `attachment; filename="`+strings.ReplaceAll(name, `"`, "")+`"`)
-		w.Write(b)
+		w.Write(b) // #nosec G705 -- explicit Content-Type, attachment disposition and nosniff
 	})
 	s.Route("GET /harden/checks", auth.ScopeRead, func(r *http.Request) (any, error) { return h.Checks(r.Context()), nil })
 

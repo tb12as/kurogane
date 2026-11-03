@@ -11,9 +11,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/serverkeeper/serverkeeper/internal/audit"
 	"github.com/serverkeeper/serverkeeper/internal/collector"
 	"github.com/serverkeeper/serverkeeper/internal/config"
 	"github.com/serverkeeper/serverkeeper/internal/db"
+	"github.com/serverkeeper/serverkeeper/internal/executor"
+	"github.com/serverkeeper/serverkeeper/internal/firewall"
 	"github.com/serverkeeper/serverkeeper/internal/store"
 )
 
@@ -265,5 +268,36 @@ func TestDDoSBody(t *testing.T) {
 	txt, f := ddosText(s)
 	if !strings.Contains(txt, "upstream mitigation") || f[0].Value != "198.51.100.7 (300)" || f[3].Value != "on" {
 		t.Fatal(txt, f)
+	}
+}
+
+// AL-6: auto-ban is off by default; when on it bans clear offenders, never allowlisted IPs, up to max_bans
+func TestAutoBan(t *testing.T) {
+	e, _, _ := setup(t, func(c *config.Config) {
+		c.Alerts.AutoBan = config.AutoBan{Enabled: true, Duration: 30 * time.Minute, MaxBans: 2, Allowlist: []string{"203.0.113.0/24"}}
+	})
+	ex := executor.NewFake()
+	ex.Outputs["iptables -S INPUT"] = "-P INPUT ACCEPT"
+	ex.Errors["iptables -C INPUT -j SERVERKEEPER"] = &executor.RunError{Cmd: "iptables"}
+	ex.Errors["ip6tables -C INPUT -j SERVERKEEPER"] = &executor.RunError{Cmd: "ip6tables"}
+	for _, ip := range []string{"198.51.100.7", "198.51.100.8"} {
+		ex.Errors["iptables -C SERVERKEEPER -s "+ip+" -j DROP"] = &executor.RunError{Cmd: "iptables"}
+	}
+	e.d.Firewall = firewall.New(ex)
+	e.d.Audit = &audit.Logger{Store: e.d.DB}
+	ctx := context.Background()
+	s := snap("net.tcp.syn_recv", 900.0)
+	s.Conns.TopIPs = []collector.IPCount{{IP: "203.0.113.5", Count: 900}, {IP: "198.51.100.7", Count: 400},
+		{IP: "198.51.100.8", Count: 300}, {IP: "198.51.100.9", Count: 250}, {IP: "192.0.2.1", Count: 3}}
+	e.Eval(ctx, s)
+	bans := e.d.Firewall.Bans()
+	if len(bans) != 2 || bans[0].IP == "203.0.113.5" || bans[1].IP == "203.0.113.5" {
+		t.Fatalf("want 2 bans (cap), never the allowlisted IP: %+v", bans)
+	}
+	if ex.Called("iptables -I SERVERKEEPER -s 198.51.100.9") || ex.Called("iptables -I SERVERKEEPER -s 192.0.2.1") {
+		t.Fatal("cap exceeded or low-count source banned")
+	}
+	if !allowed([]string{"10.0.0.0/8"}, "10.1.2.3") || allowed([]string{"10.0.0.0/8"}, "11.1.2.3") {
+		t.Fatal("allowlist matching")
 	}
 }

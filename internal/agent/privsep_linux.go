@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"syscall"
@@ -41,10 +42,16 @@ func RunPrivsep(ctx context.Context, cfg *config.Config, cfgPath, version string
 	if err := os.MkdirAll(cfg.DataDir, 0o700); err != nil {
 		return err
 	}
-	_ = filepath.Walk(cfg.DataDir, func(p string, _ os.FileInfo, _ error) error { return os.Chown(p, uid, gid) })
+	// Lchown + skip symlinks: the unprivileged user owns this tree and could plant a link to e.g. /etc/shadow
+	_ = filepath.Walk(cfg.DataDir, func(p string, fi os.FileInfo, err error) error {
+		if err != nil || fi.Mode()&os.ModeSymlink != 0 {
+			return nil
+		}
+		return os.Lchown(p, uid, gid) // #nosec G122 -- symlinks are skipped and Lchown never follows links
+	})
 	// the worker re-reads the config: keep it root-owned but group-readable by serverkeeper only
 	if err := os.Chown(cfgPath, 0, gid); err == nil {
-		_ = os.Chmod(cfgPath, 0o640)
+		_ = os.Chmod(cfgPath, 0o640) // #nosec G302 -- config is root:serverkeeper 0640 so the worker can read it
 	}
 
 	// the worker cannot read the root-only key file, so hand it the key via env
@@ -83,6 +90,9 @@ func RunPrivsep(ctx context.Context, cfg *config.Config, cfgPath, version string
 	parent.Close()
 	slog.Info("privilege separation active", "worker_pid", cmd.Process.Pid, "user", "serverkeeper")
 	go func() { _ = executor.Serve(conn, executor.Local{}) }()
+	// the parent only proxies executor calls: keep its heap minimal (PRD §11.2 RSS budget)
+	debug.SetGCPercent(10)
+	debug.FreeOSMemory()
 	return cmd.Wait()
 }
 

@@ -40,8 +40,11 @@ lint:
 vuln:
 	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
+# excluded by design for a root agent, each call site reviewed: G304 reads configured/host paths, G204 runs
+# allowlisted commands only (internal/executor), G115 converts bounded timestamps and ids
 gosec:
-	go run github.com/securego/gosec/v2/cmd/gosec@v2.22.0 -exclude-generated -severity medium ./...
+	go run github.com/securego/gosec/v2/cmd/gosec@v2.30.0 -exclude-generated -severity medium -confidence medium \
+		-exclude=G304,G204,G115 ./...
 
 bench:
 	go test -run=^$$ -bench=. -benchmem ./internal/collector/ ./internal/store/ ./internal/alert/

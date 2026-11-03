@@ -152,7 +152,7 @@ func (s *SQLite) UpsertKey(ctx context.Context, k SSHKey) error {
 }
 
 func (s *SQLite) queryKeys(ctx context.Context, q string, args ...any) ([]SSHKey, error) {
-	rows, err := s.r.QueryContext(ctx, "SELECT "+keyCols+" FROM ssh_keys "+q, args...)
+	rows, err := s.r.QueryContext(ctx, "SELECT "+keyCols+" FROM ssh_keys "+q, args...) // #nosec G202 -- only constant column lists are concatenated; values are bound
 	if err != nil {
 		return nil, err
 	}
@@ -885,7 +885,7 @@ func (s *SQLite) EnqueueOp(ctx context.Context, op FleetOp) error {
 }
 
 func (s *SQLite) queryOps(ctx context.Context, q string, args ...any) ([]FleetOp, error) {
-	rows, err := s.r.QueryContext(ctx, "SELECT id,server_id,kind,payload,status,result,created_by,created_at,done_at FROM fleet_ops "+q, args...)
+	rows, err := s.r.QueryContext(ctx, "SELECT id,server_id,kind,payload,status,result,created_by,created_at,done_at FROM fleet_ops "+q, args...) // #nosec G202 -- only constant column lists are concatenated; values are bound
 	if err != nil {
 		return nil, err
 	}

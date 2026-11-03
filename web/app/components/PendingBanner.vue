@@ -10,10 +10,11 @@ useIntervalFn(() => (now.value = Date.now()), 1000)
 
 async function load() {
   try {
-    const p = (await api.get('/ssh/config')).pending as SSHChange | undefined
-    pending.value = p?.status === 'pending' ? [p] : []
+    // change history comes from the database, so this works on hosts without sshd (unlike /ssh/config)
+    const p = list<SSHChange>(await api.get('/ssh/changes')).find(c => c.status === 'pending')
+    pending.value = p ? [p] : []
   } catch {
-    pending.value = [] // central server, no sshd or no ssh scope: no banner
+    pending.value = [] // central server or no ssh scope: no banner
   }
 }
 onMounted(load)

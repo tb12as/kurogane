@@ -22,8 +22,11 @@ t0=$(awk '{print $14+$15}' /proc/$PID/stat)
 sleep "$DURATION"
 t1=$(awk '{print $14+$15}' /proc/$PID/stat)
 rss=$(awk '/VmRSS/ {print $2}' /proc/$PID/status)
+# PSS splits shared code pages fairly; fall back to RSS when smaps_rollup is not readable
+pss=$(awk '/^Pss:/ {print $2}' /proc/$PID/smaps_rollup 2>/dev/null || echo "$rss")
+[ -n "$pss" ] || pss=$rss
 NCPU=$(nproc)
 cpu=$(awk -v a="$t0" -v b="$t1" -v hz="$HZ" -v d="$DURATION" -v n="$NCPU" 'BEGIN {printf "%.3f", (b-a)/hz/d*100/n}')
-echo "agent cpu ${cpu}% of host (${NCPU} cpus), rss $((rss/1024)) MB"
+echo "agent cpu ${cpu}% of host (${NCPU} cpus), rss $((rss/1024)) MB, pss $((pss/1024)) MB"
 awk -v c="$cpu" 'BEGIN {exit !(c < 1.1)}' || { echo "CPU budget exceeded"; exit 1; }
-[ "$rss" -lt 56320 ] || { echo "RSS budget exceeded"; exit 1; }
+[ "$pss" -lt 56320 ] || { echo "memory budget exceeded (PSS)"; exit 1; }

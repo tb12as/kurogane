@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -108,11 +109,15 @@ func (a *Agent) ensureCLIToken(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(p, []byte(tok+"\n"), 0o600)
+	return os.WriteFile(p, []byte(tok+"\n"), 0o600) // #nosec G703 -- path comes from the root-owned config
 }
 
 // Run starts every component and blocks until ctx is cancelled.
 func (a *Agent) Run(ctx context.Context) error {
+	if os.Getenv("GOMEMLIMIT") == "" {
+		// soft limit: GC earlier instead of growing the heap (PRD §11.2: agent RSS < 50 MB)
+		debug.SetMemoryLimit(40 << 20)
+	}
 	defer a.close()
 	if err := a.ensureCLIToken(ctx); err != nil {
 		return fmt.Errorf("cli token: %w", err)

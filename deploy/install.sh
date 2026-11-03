@@ -16,10 +16,11 @@ case "$(uname -m)" in
   *) echo "unsupported arch $(uname -m)"; exit 1 ;;
 esac
 
-if [ "$VERSION" = latest ]; then
+if [ "$VERSION" = latest ] && [ -z "${SK_BASE_URL:-}" ]; then
   VERSION=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')
 fi
-BASE="https://github.com/$REPO/releases/download/$VERSION"
+# SK_BASE_URL points at a mirror or an internal artifact server with the same file layout as a release
+BASE="${SK_BASE_URL:-https://github.com/$REPO/releases/download/$VERSION}"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 

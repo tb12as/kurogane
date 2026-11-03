@@ -252,7 +252,7 @@ func spa(ui fs.FS) http.Handler {
 func (s *Server) ListenAndServe(ctx context.Context, addr string) error {
 	srv := &http.Server{Addr: addr, Handler: s.Build(), ReadHeaderTimeout: 10 * time.Second,
 		BaseContext: func(net.Listener) context.Context { return ctx }}
-	go func() {
+	go func() { // #nosec G118 -- shutdown must outlive the cancelled request context
 		<-ctx.Done()
 		sh, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()

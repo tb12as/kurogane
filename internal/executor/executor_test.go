@@ -2,6 +2,7 @@ package executor
 
 import (
 	"context"
+	"errors"
 	"net"
 	"os"
 	"path/filepath"
@@ -99,5 +100,76 @@ func TestLocalFileOps(t *testing.T) {
 	_, err = l.Run(context.Background(), "systemctl", "is-active", "serverkeeper-no-such-unit")
 	if err == nil || ExitCode(err) <= 0 || !strings.Contains(err.Error(), "failed") {
 		t.Fatalf("want exit error, got %v", err)
+	}
+}
+
+// a user must not be able to redirect root's writes by symlinking ~/.ssh elsewhere
+func TestHomeSymlinkRefused(t *testing.T) {
+	dir := t.TempDir()
+	old := hostfs.Root
+	hostfs.Root = dir
+	defer func() { hostfs.Root = old }()
+	os.MkdirAll(filepath.Join(dir, "home/eve"), 0o755)
+	os.MkdirAll(filepath.Join(dir, "etc/sudoers.d"), 0o755)
+	if err := os.Symlink(filepath.Join(dir, "etc/sudoers.d"), filepath.Join(dir, "home/eve/.ssh")); err != nil {
+		t.Fatal(err)
+	}
+	var l Local
+	if err := l.WriteFile("/home/eve/.ssh/authorized_keys", []byte("k"), 0o600); err == nil {
+		t.Fatal("write through a symlinked ~/.ssh must be refused")
+	}
+	if _, err := os.Stat(filepath.Join(dir, "etc/sudoers.d/authorized_keys")); err == nil {
+		t.Fatal("file was created through the symlink")
+	}
+	for _, f := range []func() error{
+		func() error { return l.Chown("/home/eve/.ssh/authorized_keys", 0, 0) },
+		func() error { return l.Chmod("/home/eve/.ssh/authorized_keys", 0o600) },
+		func() error { return l.MkdirAll("/home/eve/.ssh/x", 0o700) },
+		func() error { return l.Remove("/home/eve/.ssh/authorized_keys") },
+	} {
+		if f() == nil {
+			t.Fatal("op through a symlinked ~/.ssh must be refused")
+		}
+	}
+	os.MkdirAll(filepath.Join(dir, "home/bob/.ssh"), 0o700)
+	if err := l.WriteFile("/home/bob/.ssh/authorized_keys", []byte("k"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// every op crosses the privsep socket with allowlist enforcement on the root side
+func TestRemoteAllOps(t *testing.T) {
+	dir := t.TempDir()
+	old := hostfs.Root
+	hostfs.Root = dir
+	defer func() { hostfs.Root = old }()
+	a, b := net.Pipe()
+	go Serve(a, NewFake())
+	r := NewRemote(b)
+	if err := r.MkdirAll("/etc/ssh/sshd_config.d", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.WriteFile("/etc/ssh/sshd_config.d/a.conf", []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Chmod("/etc/ssh/sshd_config.d/a.conf", 0o640); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Chown("/etc/ssh/sshd_config.d/a.conf", 0, 0); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Remove("/etc/ssh/sshd_config.d/a.conf"); err != nil {
+		t.Fatal(err)
+	}
+	if r.Remove("/bin/sh") == nil || r.Chown("/bin/sh", 0, 0) == nil || r.MkdirAll("/usr/x", 0o755) == nil {
+		t.Fatal("denied ops must fail through the socket too")
+	}
+	if _, err := r.Run(context.Background(), "bash", "-c", "id"); err == nil {
+		t.Fatal("bash must be denied client side")
+	}
+	var re *RunError
+	err := &RunError{Cmd: "x", Err: os.ErrPermission}
+	if !errors.As(error(err), &re) || !errors.Is(err, os.ErrPermission) {
+		t.Fatal("RunError must unwrap")
 	}
 }

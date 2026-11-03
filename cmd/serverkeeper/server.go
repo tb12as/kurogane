@@ -192,10 +192,10 @@ func writeServerConfig(dataDir, mode string) error {
 	body := fmt.Sprintf("# /etc/serverkeeper/config.yaml (central server)\nserver_name: %s\ndata_dir: %s\n"+
 		"secret_key: %s\n", host, dataDir, filepath.Join(filepath.Dir(flagConfig), "secret.key")) +
 		fmt.Sprintf(serverSection, mode, dataDir, dataDir)
-	if err := os.MkdirAll(filepath.Dir(flagConfig), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(flagConfig), 0o755); err != nil { // #nosec G301 -- /etc/serverkeeper must be traversable
 		return err
 	}
-	return os.WriteFile(flagConfig, []byte(body), 0o640)
+	return os.WriteFile(flagConfig, []byte(body), 0o640) // #nosec G306 -- config is 0640 root:serverkeeper; secrets live in secret.key
 }
 
 // chownServer hands the data dir, secret key and config to the `serverkeeper` user the central unit runs as.
@@ -206,7 +206,13 @@ func chownServer(cfg *config.Config) {
 	}
 	uid, _ := strconv.Atoi(u.Uid)
 	gid, _ := strconv.Atoi(u.Gid)
-	_ = filepath.Walk(cfg.DataDir, func(p string, _ os.FileInfo, _ error) error { return os.Chown(p, uid, gid) })
+	// Lchown + skip symlinks: the unprivileged user owns this tree and could plant a link to e.g. /etc/shadow
+	_ = filepath.Walk(cfg.DataDir, func(p string, fi os.FileInfo, err error) error {
+		if err != nil || fi.Mode()&os.ModeSymlink != 0 {
+			return nil
+		}
+		return os.Lchown(p, uid, gid) // #nosec G122 -- symlinks are skipped and Lchown never follows links
+	})
 	_ = os.Chown(cfg.SecretKey, uid, gid)
 	_ = os.Chown(flagConfig, 0, gid)
 }

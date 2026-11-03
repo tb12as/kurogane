@@ -68,9 +68,9 @@ type loginReq struct {
 
 func (s *Server) setSessionCookies(w http.ResponseWriter, r *http.Request, sess db.Session) {
 	secure := r.TLS != nil
-	http.SetCookie(w, &http.Cookie{Name: auth.SessionCookie, Value: sess.ID, Path: "/", HttpOnly: true, Secure: secure,
+	http.SetCookie(w, &http.Cookie{Name: auth.SessionCookie, Value: sess.ID, Path: "/", HttpOnly: true, Secure: secure, // #nosec G124 -- HttpOnly+SameSite=Strict; Secure is set whenever TLS is used
 		SameSite: http.SameSiteStrictMode, Expires: sess.ExpiresAt})
-	http.SetCookie(w, &http.Cookie{Name: auth.CSRFCookie, Value: sess.CSRF, Path: "/", Secure: secure,
+	http.SetCookie(w, &http.Cookie{Name: auth.CSRFCookie, Value: sess.CSRF, Path: "/", Secure: secure, // #nosec G124 -- CSRF double-submit cookie must be readable by the UI script
 		SameSite: http.SameSiteStrictMode, Expires: sess.ExpiresAt})
 }
 
@@ -113,7 +113,7 @@ func (s *Server) oidcLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	state := auth.RandomToken(16)
-	http.SetCookie(w, &http.Cookie{Name: "sk_oidc_state", Value: state, Path: "/", HttpOnly: true, Secure: r.TLS != nil,
+	http.SetCookie(w, &http.Cookie{Name: "sk_oidc_state", Value: state, Path: "/", HttpOnly: true, Secure: r.TLS != nil, // #nosec G124 -- Secure is set whenever TLS is used; plain HTTP is loopback-only
 		SameSite: http.SameSiteLaxMode, MaxAge: 600})
 	http.Redirect(w, r, s.Auth.OIDC.AuthURL(state), http.StatusFound)
 }
