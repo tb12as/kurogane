@@ -169,7 +169,7 @@ func (m *Manager) Keys(ctx context.Context, onlyUser string) ([]Key, error) {
 			meta[r.User+"|"+r.Fingerprint] = r
 		}
 	}
-	var out []Key
+	out := []Key{} // JSON [] rather than null when there are no keys
 	owners := map[string]map[string]bool{}
 	for _, u := range users {
 		if onlyUser != "" && u.Name != onlyUser {

@@ -98,7 +98,12 @@ func (s *Server) hardenRoutes() {
 		}
 		res, err := h.Fix(r.Context(), q.CheckID, q.DryRun)
 		if err != nil {
-			return nil, hardenErr(err)
+			e := hardenErr(err)
+			if e == err && q.DryRun {
+				// a failing dry run means the host is not in a fixable state (missing file/package): not a 500
+				return nil, Errf(http.StatusConflict, "%s", err.Error())
+			}
+			return nil, e
 		}
 		return []harden.FixResult{res}, nil
 	})
