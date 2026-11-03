@@ -80,6 +80,8 @@ func TestValidateAndDurations(t *testing.T) {
 	for name, y := range map[string]string{
 		"interval": "collector: {interval: 120s}\n",
 		"rollback": "ssh: {rollback_timeout: 1s}\n",
+		"certint":  "collector: {certs: {interval: 10s}}\n",
+		"certport": "collector: {certs: {probe_ports: [0]}}\n",
 		"dupchan":  "alerts: {channels: [{name: a, type: slack}, {name: a, type: slack}]}\n",
 		"badtype":  "alerts: {channels: [{name: a, type: sms}]}\n",
 		"noreason": "harden: {ignore: [{id: X}]}\n",
@@ -92,6 +94,15 @@ func TestValidateAndDurations(t *testing.T) {
 		}
 	}
 	c, err := Load(filepath.Join(dir, "missing.yaml"))
+	if err != nil || !c.Collector.Certs.Enabled || c.Collector.Certs.Interval != time.Hour ||
+		len(c.Collector.Certs.ProbePorts) != 1 || c.Collector.Certs.ProbePorts[0] != 443 {
+		t.Fatalf("cert defaults: %v %+v", err, c.Collector.Certs)
+	}
+	p := filepath.Join(dir, "certs.yaml")
+	os.WriteFile(p, []byte("collector: {certs: {paths: [/srv/a.pem], probe_ports: []}}\n"), 0o600)
+	if cc, err := Load(p); err != nil || len(cc.Collector.Certs.ProbePorts) != 0 || cc.Collector.Certs.Paths[0] != "/srv/a.pem" {
+		t.Fatalf("cert config: %v %+v", err, cc.Collector.Certs)
+	}
 	if err != nil || c.Listen != "127.0.0.1:9443" || c.AgentDB() == "" || c.MetaDB() == "" || c.BackupDir() == "" {
 		t.Fatalf("defaults: %v %+v", err, c)
 	}
