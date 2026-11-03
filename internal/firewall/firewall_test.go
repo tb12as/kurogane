@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/executor"
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
-	"github.com/serverkeeper/serverkeeper/internal/store"
+	"github.com/tb12as/serverman/internal/executor"
+	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/serverman/internal/store"
 )
 
 type fakeNft struct{ set map[string]time.Duration }

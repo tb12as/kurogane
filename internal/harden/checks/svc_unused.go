@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
+	"github.com/tb12as/serverman/internal/hostfs"
 )
 
 // unusedUnits are desktop/LAN services rarely needed on servers, with their socket units.

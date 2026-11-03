@@ -7,7 +7,7 @@ Management Agent.md`.
 ## Install
 
 ```sh
-curl -fsSL https://github.com/serverkeeper/serverkeeper/releases/latest/download/install.sh | sudo sh
+curl -fsSL https://github.com/tb12as/serverman/releases/latest/download/install.sh | sudo sh
 # or: sudo apt install ./serverkeeper_<ver>_amd64.deb   /   sudo dnf install ./serverkeeper-<ver>.x86_64.rpm
 sudo serverkeeper init        # writes /etc/serverkeeper/config.yaml, creates the admin user (TOTP), starts the unit
 ```

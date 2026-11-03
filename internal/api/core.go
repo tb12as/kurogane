@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/auth"
-	"github.com/serverkeeper/serverkeeper/internal/db"
+	"github.com/tb12as/serverman/internal/auth"
+	"github.com/tb12as/serverman/internal/db"
 )
 
 func init() {

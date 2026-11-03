@@ -6,7 +6,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/collector"
+	"github.com/tb12as/serverman/internal/collector"
 )
 
 // AL-5: baselined metrics and their absolute floors; anomalies below a floor never alert (idle servers).

@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/serverkeeper/serverkeeper/internal/executor"
+	"github.com/tb12as/serverman/internal/executor"
 	"gopkg.in/yaml.v3"
 )
 

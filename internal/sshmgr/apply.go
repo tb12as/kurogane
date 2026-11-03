@@ -14,11 +14,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/alert"
-	"github.com/serverkeeper/serverkeeper/internal/audit"
-	"github.com/serverkeeper/serverkeeper/internal/db"
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
-	"github.com/serverkeeper/serverkeeper/internal/store"
+	"github.com/tb12as/serverman/internal/alert"
+	"github.com/tb12as/serverman/internal/audit"
+	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/serverman/internal/store"
 )
 
 const (

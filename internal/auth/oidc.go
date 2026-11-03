@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/serverkeeper/serverkeeper/internal/config"
-	"github.com/serverkeeper/serverkeeper/internal/db"
+	"github.com/tb12as/serverman/internal/config"
+	"github.com/tb12as/serverman/internal/db"
 	"golang.org/x/oauth2"
 )
 

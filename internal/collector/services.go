@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/executor"
+	"github.com/tb12as/serverman/internal/executor"
 )
 
 // svcCollector queries all watched units with one `systemctl show` call per tick.

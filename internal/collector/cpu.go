@@ -5,7 +5,7 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
+	"github.com/tb12as/serverman/internal/hostfs"
 )
 
 type cpuTimes struct{ user, nice, system, idle, iowait, irq, softirq, steal uint64 }

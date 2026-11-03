@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
+	"github.com/tb12as/serverman/internal/hostfs"
 )
 
 var nopasswdAll = regexp.MustCompile(`NOPASSWD\s*:\s*ALL\s*$`)

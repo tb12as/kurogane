@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/config"
+	"github.com/tb12as/serverman/internal/config"
 )
 
 // restartMin is the first restart delay; it doubles up to 30 s and resets after a minute of uptime.

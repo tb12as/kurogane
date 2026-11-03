@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/collector"
-	"github.com/serverkeeper/serverkeeper/internal/db"
-	"github.com/serverkeeper/serverkeeper/internal/pb"
+	"github.com/tb12as/serverman/internal/collector"
+	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/serverman/internal/pb"
 )
 
 func TestBufferBounded(t *testing.T) {

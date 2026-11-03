@@ -5,7 +5,7 @@
 set -eu
 
 VERSION="${SK_VERSION:-latest}"
-REPO="serverkeeper/serverkeeper"
+REPO="tb12as/serverman"
 [ "$(id -u)" -eq 0 ] || { echo "run as root (sudo)"; exit 1; }
 [ "$(uname -s)" = Linux ] || { echo "Linux only"; exit 1; }
 command -v systemctl >/dev/null || { echo "systemd is required"; exit 1; }

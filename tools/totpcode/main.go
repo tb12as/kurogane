@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/auth"
+	"github.com/tb12as/serverman/internal/auth"
 )
 
 func main() {

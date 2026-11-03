@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/collector"
+	"github.com/tb12as/serverman/internal/collector"
 	bolt "go.etcd.io/bbolt"
 )
 

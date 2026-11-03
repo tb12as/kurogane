@@ -3,7 +3,7 @@ package checks
 import (
 	"context"
 
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
+	"github.com/tb12as/serverman/internal/hostfs"
 )
 
 func init() {

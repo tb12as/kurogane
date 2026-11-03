@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
+	"github.com/tb12as/serverman/internal/hostfs"
 )
 
 // Session is an active login (§6.4).

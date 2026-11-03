@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/notify"
-	"github.com/serverkeeper/serverkeeper/internal/secret"
+	"github.com/tb12as/serverman/internal/notify"
+	"github.com/tb12as/serverman/internal/secret"
 )
 
 // queued is one pending delivery, persisted in bbolt so alerts survive restarts and outages (§11.4).

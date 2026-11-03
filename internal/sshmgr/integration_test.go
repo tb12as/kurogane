@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/audit"
-	"github.com/serverkeeper/serverkeeper/internal/config"
-	"github.com/serverkeeper/serverkeeper/internal/db"
-	"github.com/serverkeeper/serverkeeper/internal/executor"
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
-	"github.com/serverkeeper/serverkeeper/internal/store"
+	"github.com/tb12as/serverman/internal/audit"
+	"github.com/tb12as/serverman/internal/config"
+	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/serverman/internal/executor"
+	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/serverman/internal/store"
 )
 
 // containers have no systemd: this shim turns `systemctl reload ssh|sshd` into SIGHUP for the real sshd

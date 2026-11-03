@@ -9,9 +9,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/serverkeeper/serverkeeper/internal/config"
-	"github.com/serverkeeper/serverkeeper/internal/secret"
 	"github.com/spf13/cobra"
+	"github.com/tb12as/serverman/internal/config"
+	"github.com/tb12as/serverman/internal/secret"
 )
 
 // version is set by -ldflags at release time.

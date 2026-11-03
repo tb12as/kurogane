@@ -7,10 +7,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/serverkeeper/serverkeeper/internal/db"
-	"github.com/serverkeeper/serverkeeper/internal/harden"
-	"github.com/serverkeeper/serverkeeper/internal/harden/checks"
 	"github.com/spf13/cobra"
+	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/serverman/internal/harden"
+	"github.com/tb12as/serverman/internal/harden/checks"
 )
 
 func clipS(s string, n int) string {

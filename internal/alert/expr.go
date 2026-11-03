@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/serverkeeper/serverkeeper/internal/collector"
+	"github.com/tb12as/serverman/internal/collector"
 )
 
 // Rule expressions:

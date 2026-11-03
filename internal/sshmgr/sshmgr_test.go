@@ -11,13 +11,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/audit"
-	"github.com/serverkeeper/serverkeeper/internal/config"
-	"github.com/serverkeeper/serverkeeper/internal/db"
-	"github.com/serverkeeper/serverkeeper/internal/executor"
-	"github.com/serverkeeper/serverkeeper/internal/firewall"
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
-	"github.com/serverkeeper/serverkeeper/internal/store"
+	"github.com/tb12as/serverman/internal/audit"
+	"github.com/tb12as/serverman/internal/config"
+	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/serverman/internal/executor"
+	"github.com/tb12as/serverman/internal/firewall"
+	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/serverman/internal/store"
 	"golang.org/x/crypto/ssh"
 )
 

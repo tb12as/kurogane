@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/config"
-	"github.com/serverkeeper/serverkeeper/internal/secret"
+	"github.com/tb12as/serverman/internal/config"
+	"github.com/tb12as/serverman/internal/secret"
 )
 
 func sample() Alert {

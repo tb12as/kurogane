@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
+	"github.com/tb12as/serverman/internal/hostfs"
 )
 
 // ---- sshd ----

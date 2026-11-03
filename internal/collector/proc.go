@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
+	"github.com/tb12as/serverman/internal/hostfs"
 )
 
 type pinfo struct {

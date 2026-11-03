@@ -1,6 +1,6 @@
 [Unit]
 Description=ServerKeeper agent
-Documentation=https://github.com/serverkeeper/serverkeeper
+Documentation=https://github.com/tb12as/serverman
 After=network-online.target
 Wants=network-online.target
 

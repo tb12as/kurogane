@@ -11,9 +11,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/serverkeeper/serverkeeper/internal/collector"
-	"github.com/serverkeeper/serverkeeper/internal/executor"
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
+	"github.com/tb12as/serverman/internal/collector"
+	"github.com/tb12as/serverman/internal/executor"
+	"github.com/tb12as/serverman/internal/hostfs"
 )
 
 // Severities and their score weights (PRD §7.2).

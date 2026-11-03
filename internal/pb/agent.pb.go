@@ -1278,7 +1278,7 @@ const file_serverkeeper_v1_agent_proto_rawDesc = "" +
 	"\aRunScan2\xa1\x01\n" +
 	"\x05Fleet\x12I\n" +
 	"\x06Enroll\x12\x1e.serverkeeper.v1.EnrollRequest\x1a\x1f.serverkeeper.v1.EnrollResponse\x12M\n" +
-	"\aConnect\x12\x1d.serverkeeper.v1.AgentMessage\x1a\x1f.serverkeeper.v1.CentralMessage(\x010\x01B5Z3github.com/serverkeeper/serverkeeper/internal/pb;pbb\x06proto3"
+	"\aConnect\x12\x1d.serverkeeper.v1.AgentMessage\x1a\x1f.serverkeeper.v1.CentralMessage(\x010\x01B,Z*github.com/tb12as/serverman/internal/pb;pbb\x06proto3"
 
 var (
 	file_serverkeeper_v1_agent_proto_rawDescOnce sync.Once

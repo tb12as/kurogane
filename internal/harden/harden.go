@@ -12,15 +12,15 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
-	"github.com/serverkeeper/serverkeeper/internal/alert"
-	"github.com/serverkeeper/serverkeeper/internal/audit"
-	"github.com/serverkeeper/serverkeeper/internal/collector"
-	"github.com/serverkeeper/serverkeeper/internal/config"
-	"github.com/serverkeeper/serverkeeper/internal/db"
-	"github.com/serverkeeper/serverkeeper/internal/executor"
-	"github.com/serverkeeper/serverkeeper/internal/firewall"
-	"github.com/serverkeeper/serverkeeper/internal/harden/checks"
-	"github.com/serverkeeper/serverkeeper/internal/sshmgr"
+	"github.com/tb12as/serverman/internal/alert"
+	"github.com/tb12as/serverman/internal/audit"
+	"github.com/tb12as/serverman/internal/collector"
+	"github.com/tb12as/serverman/internal/config"
+	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/serverman/internal/executor"
+	"github.com/tb12as/serverman/internal/firewall"
+	"github.com/tb12as/serverman/internal/harden/checks"
+	"github.com/tb12as/serverman/internal/sshmgr"
 )
 
 type Deps struct {

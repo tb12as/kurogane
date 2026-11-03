@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/config"
-	"github.com/serverkeeper/serverkeeper/internal/executor"
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
+	"github.com/tb12as/serverman/internal/config"
+	"github.com/tb12as/serverman/internal/executor"
+	"github.com/tb12as/serverman/internal/hostfs"
 )
 
 func TestAppendLine(t *testing.T) {

@@ -1,4 +1,4 @@
-module github.com/serverkeeper/serverkeeper
+module github.com/tb12as/serverman
 
 go 1.26.0
 

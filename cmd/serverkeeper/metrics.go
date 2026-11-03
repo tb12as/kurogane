@@ -5,10 +5,10 @@ import (
 	"math"
 	"net/url"
 
-	"github.com/serverkeeper/serverkeeper/internal/collector"
-	"github.com/serverkeeper/serverkeeper/internal/store"
-	"github.com/serverkeeper/serverkeeper/internal/tui"
 	"github.com/spf13/cobra"
+	"github.com/tb12as/serverman/internal/collector"
+	"github.com/tb12as/serverman/internal/store"
+	"github.com/tb12as/serverman/internal/tui"
 )
 
 func init() {

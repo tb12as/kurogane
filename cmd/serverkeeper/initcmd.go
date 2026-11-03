@@ -10,13 +10,13 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/deploy"
-	"github.com/serverkeeper/serverkeeper/internal/auth"
-	"github.com/serverkeeper/serverkeeper/internal/config"
-	"github.com/serverkeeper/serverkeeper/internal/db"
-	"github.com/serverkeeper/serverkeeper/internal/executor"
-	"github.com/serverkeeper/serverkeeper/internal/secret"
 	"github.com/spf13/cobra"
+	"github.com/tb12as/serverman/deploy"
+	"github.com/tb12as/serverman/internal/auth"
+	"github.com/tb12as/serverman/internal/config"
+	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/serverman/internal/executor"
+	"github.com/tb12as/serverman/internal/secret"
 )
 
 const configTmpl = `# /etc/serverkeeper/config.yaml (written by serverkeeper init)

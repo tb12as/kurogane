@@ -18,11 +18,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/api"
-	"github.com/serverkeeper/serverkeeper/internal/auth"
-	"github.com/serverkeeper/serverkeeper/internal/config"
-	"github.com/serverkeeper/serverkeeper/internal/db"
-	"github.com/serverkeeper/serverkeeper/internal/metricsdb"
+	"github.com/tb12as/serverman/internal/api"
+	"github.com/tb12as/serverman/internal/auth"
+	"github.com/tb12as/serverman/internal/config"
+	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/serverman/internal/metricsdb"
 	bolt "go.etcd.io/bbolt"
 )
 

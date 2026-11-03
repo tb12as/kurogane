@@ -10,15 +10,15 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/serverkeeper/serverkeeper/internal/agentlink" // agent side of the central link (agent.Hooks)
-	"github.com/serverkeeper/serverkeeper/internal/auth"
-	"github.com/serverkeeper/serverkeeper/internal/config"
-	"github.com/serverkeeper/serverkeeper/internal/db"
-	"github.com/serverkeeper/serverkeeper/internal/executor"
-	"github.com/serverkeeper/serverkeeper/internal/metricsdb"
-	"github.com/serverkeeper/serverkeeper/internal/secret"
-	"github.com/serverkeeper/serverkeeper/internal/server"
 	"github.com/spf13/cobra"
+	_ "github.com/tb12as/serverman/internal/agentlink" // agent side of the central link (agent.Hooks)
+	"github.com/tb12as/serverman/internal/auth"
+	"github.com/tb12as/serverman/internal/config"
+	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/serverman/internal/executor"
+	"github.com/tb12as/serverman/internal/metricsdb"
+	"github.com/tb12as/serverman/internal/secret"
+	"github.com/tb12as/serverman/internal/server"
 )
 
 const serverSection = `

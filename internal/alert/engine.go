@@ -12,14 +12,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/audit"
-	"github.com/serverkeeper/serverkeeper/internal/collector"
-	"github.com/serverkeeper/serverkeeper/internal/config"
-	"github.com/serverkeeper/serverkeeper/internal/db"
-	"github.com/serverkeeper/serverkeeper/internal/firewall"
-	"github.com/serverkeeper/serverkeeper/internal/notify"
-	"github.com/serverkeeper/serverkeeper/internal/secret"
-	"github.com/serverkeeper/serverkeeper/internal/store"
+	"github.com/tb12as/serverman/internal/audit"
+	"github.com/tb12as/serverman/internal/collector"
+	"github.com/tb12as/serverman/internal/config"
+	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/serverman/internal/firewall"
+	"github.com/tb12as/serverman/internal/notify"
+	"github.com/tb12as/serverman/internal/secret"
+	"github.com/tb12as/serverman/internal/store"
 )
 
 // Event is an externally detected condition or one-shot event (SSH login, rollback, drift, ...).

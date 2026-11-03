@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/audit"
-	"github.com/serverkeeper/serverkeeper/internal/db"
-	"github.com/serverkeeper/serverkeeper/internal/harden/checks"
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
+	"github.com/tb12as/serverman/internal/audit"
+	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/serverman/internal/harden/checks"
+	"github.com/tb12as/serverman/internal/hostfs"
 )
 
 // BackupRoot holds one directory per fix with file copies and a manifest (HD-3).

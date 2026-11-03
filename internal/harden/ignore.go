@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/audit"
-	"github.com/serverkeeper/serverkeeper/internal/db"
-	"github.com/serverkeeper/serverkeeper/internal/harden/checks"
+	"github.com/tb12as/serverman/internal/audit"
+	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/serverman/internal/harden/checks"
 )
 
 // CheckInfo is a catalog entry with its ignore state.

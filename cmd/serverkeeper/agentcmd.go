@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/serverkeeper/serverkeeper/internal/agent"
 	"github.com/spf13/cobra"
+	"github.com/tb12as/serverman/internal/agent"
 )
 
 func init() {

@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/config"
-	"github.com/serverkeeper/serverkeeper/internal/db"
-	"github.com/serverkeeper/serverkeeper/internal/notify"
-	"github.com/serverkeeper/serverkeeper/internal/pb"
+	"github.com/tb12as/serverman/internal/config"
+	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/serverman/internal/notify"
+	"github.com/tb12as/serverman/internal/pb"
 )
 
 // agentAlert stores an agent's alert event under the server id and routes state changes.

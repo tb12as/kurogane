@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/auth"
-	"github.com/serverkeeper/serverkeeper/internal/collector"
-	"github.com/serverkeeper/serverkeeper/internal/store"
+	"github.com/tb12as/serverman/internal/auth"
+	"github.com/tb12as/serverman/internal/collector"
+	"github.com/tb12as/serverman/internal/store"
 )
 
 func init() {

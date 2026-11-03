@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/serverkeeper/serverkeeper/internal/db"
 	"github.com/spf13/cobra"
+	"github.com/tb12as/serverman/internal/db"
 )
 
 func init() {

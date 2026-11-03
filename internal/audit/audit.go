@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"log/slog"
 
-	"github.com/serverkeeper/serverkeeper/internal/db"
-	"github.com/serverkeeper/serverkeeper/internal/secret"
+	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/serverman/internal/secret"
 )
 
 type ctxKey struct{}

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
+	"github.com/tb12as/serverman/internal/hostfs"
 )
 
 func TestAllowlist(t *testing.T) {

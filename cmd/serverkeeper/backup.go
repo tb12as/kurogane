@@ -7,12 +7,12 @@ import (
 	"net"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/backup"
-	"github.com/serverkeeper/serverkeeper/internal/config"
-	"github.com/serverkeeper/serverkeeper/internal/db"
-	"github.com/serverkeeper/serverkeeper/internal/metricsdb"
-	"github.com/serverkeeper/serverkeeper/internal/store"
 	"github.com/spf13/cobra"
+	"github.com/tb12as/serverman/internal/backup"
+	"github.com/tb12as/serverman/internal/config"
+	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/serverman/internal/metricsdb"
+	"github.com/tb12as/serverman/internal/store"
 )
 
 func init() {

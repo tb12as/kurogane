@@ -65,4 +65,4 @@ jobs:
           file: deploy/Dockerfile.server
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/serverkeeper/serverkeeper-server:${{ github.ref_name }}
+          tags: ghcr.io/tb12as/serverkeeper-server:${{ github.ref_name }}

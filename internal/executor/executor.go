@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
+	"github.com/tb12as/serverman/internal/hostfs"
 )
 
 // Executor performs privileged host operations. Paths are host paths (hostfs.Root applied inside).

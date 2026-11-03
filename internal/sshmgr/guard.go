@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
+	"github.com/tb12as/serverman/internal/hostfs"
 )
 
 // groups returns each user's group names (primary + supplementary) from /etc/group.

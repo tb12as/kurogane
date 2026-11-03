@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/executor"
-	"github.com/serverkeeper/serverkeeper/internal/store"
+	"github.com/tb12as/serverman/internal/executor"
+	"github.com/tb12as/serverman/internal/store"
 )
 
 type Ban struct {

@@ -13,8 +13,8 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/agent"
-	"github.com/serverkeeper/serverkeeper/internal/config"
+	"github.com/tb12as/serverman/internal/agent"
+	"github.com/tb12as/serverman/internal/config"
 )
 
 // client is the thin CLI client over the REST API (§10: behaviour never diverges).

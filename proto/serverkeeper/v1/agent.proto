@@ -4,7 +4,7 @@ syntax = "proto3";
 
 package serverkeeper.v1;
 
-option go_package = "github.com/serverkeeper/serverkeeper/internal/pb;pb";
+option go_package = "github.com/tb12as/serverman/internal/pb;pb";
 
 service Fleet {
   // Enroll exchanges a one-time token and a CSR for a client certificate. Server-auth TLS only.

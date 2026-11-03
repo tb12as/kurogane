@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/hostfs"
+	"github.com/tb12as/serverman/internal/hostfs"
 	"github.com/vishvananda/netlink/nl"
 	"golang.org/x/sys/unix"
 )

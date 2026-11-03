@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/serverkeeper/serverkeeper/internal/config"
-	"github.com/serverkeeper/serverkeeper/internal/executor"
+	"github.com/tb12as/serverman/internal/config"
+	"github.com/tb12as/serverman/internal/executor"
 )
 
 // TestLiveSmoke reads the real host read-only; run with SK_LIVE=1.

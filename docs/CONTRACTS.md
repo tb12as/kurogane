@@ -4,7 +4,7 @@ Shared agreements between packages. Source of truth for requirements: `docs/PRD 
 
 ## Conventions
 
-- Module `github.com/serverkeeper/serverkeeper`, `CGO_ENABLED=0`, Go stdlib `log/slog` for logs.
+- Module `github.com/tb12as/serverman`, `CGO_ENABLED=0`, Go stdlib `log/slog` for logs.
 - Every host path read goes through `hostfs.P()` / `hostfs.Read()` so tests can use fixture trees (`SK_ROOT`).
 - Every privileged write or command goes through `executor.Executor` (allowlist in `internal/executor/executor.go`).
   Add a command to the allowlist only if strictly needed, with the narrowest first-argument list.
