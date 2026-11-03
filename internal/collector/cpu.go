@@ -18,7 +18,6 @@ func (t cpuTimes) total() uint64 {
 type cpuCollector struct {
 	prev, cur []cpuTimes // [0] = all cpus, then one per core line
 	ids       [][]byte   // core id per cur[i+1]
-	prevN     int
 	cores     int
 	lbl       *labels
 	f         [][]byte

@@ -44,7 +44,8 @@ func firewall(ctx context.Context, e *Env) (fwState, error) {
 				st := fwState{Backend: "firewalld", Active: true, Evidence: "firewalld running"}
 				all, err := e.Ex.Run(ctx, "firewall-cmd", "--list-all")
 				if err != nil {
-					errs = append(errs, err)
+					// an empty target would read as "not ACCEPT" and report a default deny that was never verified
+					return fwState{}, fmt.Errorf("firewalld is running but its zone could not be read (run as root): %w", err)
 				}
 				for _, l := range strings.Split(string(all), "\n") {
 					if k, v, ok := strings.Cut(strings.TrimSpace(l), ":"); ok && k == "target" {

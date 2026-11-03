@@ -101,17 +101,6 @@ func ExitErr(code int) error {
 
 var sshd = map[string]string{"/etc/ssh/sshd_config": ""}
 
-func with(m map[string]string, kv ...string) map[string]string {
-	out := map[string]string{}
-	for k, v := range m {
-		out[k] = v
-	}
-	for i := 0; i+1 < len(kv); i += 2 {
-		out[kv[i]] = kv[i+1]
-	}
-	return out
-}
-
 func TestCatalogComplete(t *testing.T) {
 	want := strings.Fields(`SSH-ROOT-LOGIN SSH-PASSWORD-AUTH SSH-CIPHERS SSH-MAXAUTHTRIES SSH-PORT-NONDEFAULT SSH-X11
 		SSH-EMPTY-PASSWORDS SSH-LOGINGRACE SSH-CLIENTALIVE ACC-UID0 ACC-EMPTY-PASSWD ACC-PASS-AGING ACC-SUDO-NOPASSWD
@@ -190,6 +179,9 @@ func scanCases() []scanCase {
 		{"ufw fail", "FW-DEFAULT-DENY", Fixture{Files: ufw, Out: map[string]string{"ufw status verbose": "Status: active\nDefault: allow (incoming), allow (outgoing)\n"}}, Fail},
 		{"firewalld fail", "FW-DEFAULT-DENY", Fixture{Files: map[string]string{"/usr/bin/firewall-cmd": ""}, Out: map[string]string{
 			"firewall-cmd --state": "running\n", "firewall-cmd --list-all": "public (active)\n  target: ACCEPT\n"}}, Fail},
+		{"firewalld zone unreadable", "FW-DEFAULT-DENY", Fixture{Files: map[string]string{"/usr/bin/firewall-cmd": ""},
+			Out:  map[string]string{"firewall-cmd --state": "running\n"},
+			Errs: map[string]error{"firewall-cmd --list-all": errors.New("permission denied")}}, Error},
 		{"firewalld pass", "FW-DEFAULT-DENY", Fixture{Files: map[string]string{"/usr/bin/firewall-cmd": ""}, Out: map[string]string{
 			"firewall-cmd --state": "running\n", "firewall-cmd --list-all": "public (active)\n  target: default\n"}}, Pass},
 		{"pass", "FW-EXPECTED-PORTS", Fixture{Ports: []int{80}, Listen: []Listener{pub(22, "tcp"), pub(80, "tcp"),

@@ -12,7 +12,6 @@ import (
 	"os"
 	"path"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -135,7 +134,7 @@ func Bits(pub ssh.PublicKey) int {
 	case *ecdsa.PublicKey:
 		return k.Curve.Params().BitSize
 	}
-	if pub.Type() == ssh.KeyAlgoDSA {
+	if pub.Type() == "ssh-dss" { // DSA: the x/crypto constant is deprecated, but such keys must still be flagged
 		return 1024
 	}
 	return 256
@@ -493,13 +492,4 @@ func (m *Manager) usersWithKeys(ctx context.Context, settings map[string]string)
 		}
 	}
 	return out
-}
-
-func sortKeys(ks []Key) {
-	sort.Slice(ks, func(i, j int) bool {
-		if ks[i].User != ks[j].User {
-			return ks[i].User < ks[j].User
-		}
-		return ks[i].Fingerprint < ks[j].Fingerprint
-	})
 }

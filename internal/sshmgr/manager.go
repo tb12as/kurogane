@@ -36,8 +36,6 @@ type Manager struct {
 
 	applyMu sync.Mutex // one sshd change at a time
 	confirm chan string
-	timerMu sync.Mutex
-	timerOn bool
 
 	bfMu     sync.Mutex
 	failures map[string][]time.Time
