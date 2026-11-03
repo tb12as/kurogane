@@ -1,0 +1,46 @@
+paths:
+  /certs:
+    get:
+      summary: TLS certificates found on this host with expiry and served state (latest scan)
+      responses:
+        "200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/CertList"}}}}
+        "503": {description: no local collector (central server)}
+  /certs/rescan:
+    post:
+      summary: Scan certificates now (returns the last scan if one ran in the past 10 seconds)
+      responses:
+        "200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/CertList"}}}}
+        "409": {description: certificate monitoring disabled}
+        "503": {description: no local collector (central server)}
+components:
+  schemas:
+    CertList:
+      type: object
+      required: [enabled, certs]
+      properties:
+        enabled: {type: boolean}
+        scanned_at: {type: string, format: date-time, description: absent before the first scan}
+        certs: {type: array, items: {$ref: "#/components/schemas/Cert"}}
+    Cert:
+      type: object
+      required: [name, origin, days_left, stale]
+      properties:
+        name: {type: string, description: "Let's Encrypt lineage, else the first DNS name; the cert.days_left label"}
+        path: {type: string}
+        origin: {type: string, enum: [letsencrypt, nginx, config, live]}
+        server_names: {type: array, items: {type: string}, description: nginx server_name values using this file}
+        subject: {type: string}
+        issuer: {type: string}
+        dns_names: {type: array, items: {type: string}}
+        not_before: {type: string, format: date-time}
+        not_after: {type: string, format: date-time}
+        key_type: {type: string}
+        key_bits: {type: integer}
+        sig_alg: {type: string}
+        fingerprint: {type: string, description: SHA-256 of the DER leaf}
+        chain: {type: integer}
+        days_left: {type: number, description: negative once expired}
+        served_port: {type: integer, description: local port that serves this certificate (or an older one)}
+        stale: {type: boolean, description: the port serves an older certificate than the file}
+        served_not_after: {type: string, format: date-time}
+        error: {type: string}

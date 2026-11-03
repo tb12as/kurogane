@@ -168,6 +168,86 @@ components:
                 reason:
                     type: string
             type: object
+        Cert:
+            properties:
+                chain:
+                    type: integer
+                days_left:
+                    description: negative once expired
+                    type: number
+                dns_names:
+                    items:
+                        type: string
+                    type: array
+                error:
+                    type: string
+                fingerprint:
+                    description: SHA-256 of the DER leaf
+                    type: string
+                issuer:
+                    type: string
+                key_bits:
+                    type: integer
+                key_type:
+                    type: string
+                name:
+                    description: Let's Encrypt lineage, else the first DNS name; the cert.days_left label
+                    type: string
+                not_after:
+                    format: date-time
+                    type: string
+                not_before:
+                    format: date-time
+                    type: string
+                origin:
+                    enum:
+                        - letsencrypt
+                        - nginx
+                        - config
+                        - live
+                    type: string
+                path:
+                    type: string
+                served_not_after:
+                    format: date-time
+                    type: string
+                served_port:
+                    description: local port that serves this certificate (or an older one)
+                    type: integer
+                server_names:
+                    description: nginx server_name values using this file
+                    items:
+                        type: string
+                    type: array
+                sig_alg:
+                    type: string
+                stale:
+                    description: the port serves an older certificate than the file
+                    type: boolean
+                subject:
+                    type: string
+            required:
+                - name
+                - origin
+                - days_left
+                - stale
+            type: object
+        CertList:
+            properties:
+                certs:
+                    items:
+                        $ref: '#/components/schemas/Cert'
+                    type: array
+                enabled:
+                    type: boolean
+                scanned_at:
+                    description: absent before the first scan
+                    format: date-time
+                    type: string
+            required:
+                - enabled
+                - certs
+            type: object
         ChannelInfo:
             properties:
                 has_secret:
@@ -916,6 +996,11 @@ components:
             type: object
         Snapshot:
             properties:
+                certs:
+                    description: TLS certificates from the latest scan
+                    items:
+                        $ref: '#/components/schemas/Cert'
+                    type: array
                 conns:
                     $ref: '#/components/schemas/ConnInfo'
                 lag_ns:
@@ -1511,6 +1596,32 @@ paths:
                                 type: object
                     description: written
             summary: Back up SQLite, the agent store and (central) a VictoriaMetrics snapshot (admin)
+    /certs:
+        get:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CertList'
+                    description: ok
+                "503":
+                    description: no local collector (central server)
+            summary: TLS certificates found on this host with expiry and served state (latest scan)
+    /certs/rescan:
+        post:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CertList'
+                    description: ok
+                "409":
+                    description: certificate monitoring disabled
+                "503":
+                    description: no local collector (central server)
+            summary: Scan certificates now (returns the last scan if one ran in the past 10 seconds)
     /fleet/enrollment-tokens:
         post:
             requestBody:

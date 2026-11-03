@@ -100,6 +100,7 @@ components:
         conns: {$ref: "#/components/schemas/ConnInfo"}
         services: {type: array, items: {$ref: "#/components/schemas/ServiceState"}}
         mounts: {type: array, items: {$ref: "#/components/schemas/Mount"}}
+        certs: {type: array, items: {$ref: "#/components/schemas/Cert"}, description: TLS certificates from the latest scan}
         lag_ns: {type: integer, description: collection lag in nanoseconds}
     Series:
       type: object

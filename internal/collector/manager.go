@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/tb12as/serverman/internal/certs"
 	"github.com/tb12as/serverman/internal/config"
 	"github.com/tb12as/serverman/internal/executor"
 )
@@ -111,6 +112,9 @@ func (m *Manager) collect(ctx context.Context, delay time.Duration) *Snapshot {
 	sys := m.sys.snapshot()
 	sys.CPUs, sys.MemTotal = m.cpu.cores, m.mem.total
 	cs, _ := m.Certs()
+	if cs == nil {
+		cs = []certs.Cert{}
+	}
 	return &Snapshot{TS: start, Samples: all, System: sys, TopCPU: m.proc.topCPU, TopMem: m.proc.topMem,
 		Conns: m.conn.info, Services: m.svc.state, Mounts: m.disk.mounts, Certs: cs, Lag: lag}
 }
