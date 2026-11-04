@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 // groups returns each user's group names (primary + supplementary) from /etc/group.
@@ -141,7 +141,7 @@ func (m *Manager) guard(ctx context.Context, cur, next map[string]string) error 
 	if len(after) == 0 && len(before) > 0 {
 		if strings.EqualFold(next["passwordauthentication"], "no") && !strings.EqualFold(cur["passwordauthentication"], "no") {
 			return errors.New("refusing to disable password authentication: no allowed user has a working SSH key. " +
-				"Add a key first (`serverkeeper ssh keys add --user <name> --file key.pub`), log in with it, then retry")
+				"Add a key first (`kurogane ssh keys add --user <name> --file key.pub`), log in with it, then retry")
 		}
 		return errors.New("refusing change: it would leave no user able to log in over SSH " +
 			"(check AllowUsers/AllowGroups/DenyUsers and that at least one allowed user has a key)")

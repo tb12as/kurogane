@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/tb12as/serverman/internal/auth"
-	"github.com/tb12as/serverman/internal/sites"
+	"github.com/tb12as/kurogane/internal/auth"
+	"github.com/tb12as/kurogane/internal/sites"
 )
 
 func init() {

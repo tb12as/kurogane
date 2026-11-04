@@ -8,7 +8,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 // walkDirs are the system dirs scanned for world-writable and SUID files.

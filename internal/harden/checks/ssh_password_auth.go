@@ -5,6 +5,6 @@ func init() {
 		return sshEq(Meta{ID: "SSH-PASSWORD-AUTH", Title: "SSH password authentication disabled", Severity: High,
 			Rationale: "Passwords can be brute-forced or reused; key-based authentication is not exposed to guessing.",
 			Remediation: "Install SSH keys for every user, then set `PasswordAuthentication no` " +
-				"(`serverkeeper harden fix SSH-PASSWORD-AUTH`)."}, e, "passwordauthentication", "no")
+				"(`kurogane harden fix SSH-PASSWORD-AUTH`)."}, e, "passwordauthentication", "no")
 	})
 }

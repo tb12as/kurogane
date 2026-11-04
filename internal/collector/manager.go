@@ -4,12 +4,13 @@ import (
 	"context"
 	"log/slog"
 	"slices"
+	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/tb12as/serverman/internal/certs"
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/executor"
+	"github.com/tb12as/kurogane/internal/certs"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/executor"
 )
 
 type named struct {
@@ -93,12 +94,19 @@ func (m *Manager) Latest() *Snapshot { return m.latest.Load() }
 // Run collects until ctx is done, calling sink with every snapshot. A priming pass runs first
 // so rates are available on the first published snapshot one second later.
 func (m *Manager) Run(ctx context.Context, sink func(*Snapshot)) {
-	go m.sys.loop(ctx)
+	// helper loops stop with ctx; Run returns only after they have, so nothing polls after shutdown
+	var wg sync.WaitGroup
+	defer wg.Wait()
+	bg := func(f func(context.Context)) {
+		wg.Add(1)
+		go func() { defer wg.Done(); f(ctx) }()
+	}
+	bg(m.sys.loop)
 	if m.certs != nil {
-		go m.certs.loop(ctx)
+		bg(m.certs.loop)
 	}
 	if m.redis != nil {
-		go m.redis.loop(ctx)
+		bg(m.redis.loop)
 	}
 	m.collect(ctx, 0)
 	sched := time.Now().Add(time.Second)

@@ -6,14 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/executor"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/executor"
 )
 
-// TestLiveSmoke reads the real host read-only; run with SK_LIVE=1.
+// TestLiveSmoke reads the real host read-only; run with KRGN_LIVE=1.
 func TestLiveSmoke(t *testing.T) {
-	if os.Getenv("SK_LIVE") == "" {
-		t.Skip("set SK_LIVE=1")
+	if os.Getenv("KRGN_LIVE") == "" {
+		t.Skip("set KRGN_LIVE=1")
 	}
 	m := NewManager(config.Collector{Interval: time.Second, WatchServices: []string{"ssh", "cron"}}, executor.Local{})
 	ctx := context.Background()

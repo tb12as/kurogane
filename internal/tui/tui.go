@@ -1,4 +1,4 @@
-// Package tui is the `serverkeeper top` live dashboard (PM-3): a thin client over GET /metrics/current.
+// Package tui is the `kurogane top` live dashboard (PM-3): a thin client over GET /metrics/current.
 package tui
 
 import (
@@ -9,7 +9,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/tb12as/serverman/internal/collector"
+	"github.com/tb12as/kurogane/internal/collector"
 )
 
 // Fetch returns the agent's latest snapshot.

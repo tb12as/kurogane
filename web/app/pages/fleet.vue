@@ -2,7 +2,7 @@
 import { toast } from 'vue-sonner'
 import type { FleetOp, Person } from '~/types/models'
 
-useHead({ title: 'Fleet · ServerKeeper' })
+useHead({ title: 'Fleet · Kurogane' })
 if (!useFleet().value) await navigateTo('/', { replace: true })
 const tab = useTab('people')
 const admin = computed(() => can('admin'))

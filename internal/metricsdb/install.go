@@ -18,8 +18,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/executor"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/executor"
 )
 
 // Version is the pinned VictoriaMetrics single-node release.
@@ -39,7 +39,7 @@ var DownloadURL = "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/d
 	"%s/victoria-metrics-linux-%s-%s.tar.gz"
 
 // UnitPath is the systemd unit written for vm.mode=systemd.
-const UnitPath = "/etc/systemd/system/serverkeeper-vm.service"
+const UnitPath = "/etc/systemd/system/kurogane-vm.service"
 
 // InstallOpts configures Install.
 type InstallOpts struct {
@@ -70,7 +70,7 @@ func Args(vm config.VM) ([]string, error) {
 }
 
 // Install fetches (or reads from Bundle) the pinned release, verifies its checksums, installs the binary to
-// vm.Binary and, for mode systemd, writes and enables serverkeeper-vm.service.
+// vm.Binary and, for mode systemd, writes and enables kurogane-vm.service.
 func Install(ctx context.Context, ex executor.Executor, o InstallOpts) error {
 	if o.Arch == "" {
 		o.Arch = runtime.GOARCH
@@ -117,24 +117,24 @@ func Install(ctx context.Context, ex executor.Executor, o InstallOpts) error {
 	if _, err := ex.Run(ctx, "systemctl", "daemon-reload"); err != nil {
 		return err
 	}
-	_, err = ex.Run(ctx, "systemctl", "enable", "--now", "serverkeeper-vm")
+	_, err = ex.Run(ctx, "systemctl", "enable", "--now", "kurogane-vm")
 	return err
 }
 
-// Unit renders serverkeeper-vm.service.
+// Unit renders kurogane-vm.service.
 func Unit(bin, dataDir string, args []string) string {
 	state := ""
 	if rel, ok := strings.CutPrefix(path.Clean(dataDir), "/var/lib/"); ok {
 		state = "StateDirectory=" + rel + "\n"
 	}
 	return `[Unit]
-Description=VictoriaMetrics for the ServerKeeper central server
+Description=VictoriaMetrics for the Kurogane central server
 After=network.target
 
 [Service]
 Type=simple
-User=serverkeeper
-Group=serverkeeper
+User=kurogane
+Group=kurogane
 ExecStart=` + bin + " " + strings.Join(args, " ") + `
 Restart=always
 RestartSec=5

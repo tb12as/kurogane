@@ -14,22 +14,22 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/secret"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/secret"
 )
 
 // WorkerFD is the inherited socket fd in the unprivileged worker.
 const WorkerFD = 3
 
-// RunPrivsep runs the agent. As root with privsep enabled and a `serverkeeper` user present, the root
+// RunPrivsep runs the agent. As root with privsep enabled and a `kurogane` user present, the root
 // parent only serves allowlisted executor ops while an unprivileged worker runs everything else
 // (PRD §11.1 least privilege). Otherwise the agent runs in-process.
 func RunPrivsep(ctx context.Context, cfg *config.Config, cfgPath, version string) error {
-	u, err := user.Lookup("serverkeeper")
+	u, err := user.Lookup("kurogane")
 	if os.Geteuid() != 0 || !cfg.Privsep || err != nil {
 		if os.Geteuid() == 0 && cfg.Privsep {
-			slog.Warn("privilege separation off: create a system user `serverkeeper` to enable it")
+			slog.Warn("privilege separation off: create a system user `kurogane` to enable it")
 		}
 		a, err := New(cfg, executor.Local{}, version)
 		if err != nil {
@@ -49,9 +49,9 @@ func RunPrivsep(ctx context.Context, cfg *config.Config, cfgPath, version string
 		}
 		return os.Lchown(p, uid, gid) // #nosec G122 -- symlinks are skipped and Lchown never follows links
 	})
-	// the worker re-reads the config: keep it root-owned but group-readable by serverkeeper only
+	// the worker re-reads the config: keep it root-owned but group-readable by kurogane only
 	if err := os.Chown(cfgPath, 0, gid); err == nil {
-		_ = os.Chmod(cfgPath, 0o640) // #nosec G302 -- config is root:serverkeeper 0640 so the worker can read it
+		_ = os.Chmod(cfgPath, 0o640) // #nosec G302 -- config is root:kurogane 0640 so the worker can read it
 	}
 
 	// the worker cannot read the root-only key file, so hand it the key via env
@@ -76,7 +76,7 @@ func RunPrivsep(ctx context.Context, cfg *config.Config, cfgPath, version string
 	cmd := exec.CommandContext(ctx, exe, "agent", "worker", "--config", cfgPath)
 	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 	cmd.ExtraFiles = []*os.File{child}
-	cmd.Env = append(os.Environ(), "SK_SECRET_KEY="+strings.TrimSpace(string(key)))
+	cmd.Env = append(os.Environ(), "KRGN_SECRET_KEY="+strings.TrimSpace(string(key)))
 	cmd.SysProcAttr = &syscall.SysProcAttr{Credential: &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)},
 		Pdeathsig: syscall.SIGTERM}
 	if err := cmd.Start(); err != nil {
@@ -88,7 +88,7 @@ func RunPrivsep(ctx context.Context, cfg *config.Config, cfgPath, version string
 		return err
 	}
 	parent.Close()
-	slog.Info("privilege separation active", "worker_pid", cmd.Process.Pid, "user", "serverkeeper")
+	slog.Info("privilege separation active", "worker_pid", cmd.Process.Pid, "user", "kurogane")
 	go func() { _ = executor.Serve(conn, executor.Local{}) }()
 	// the parent only proxies executor calls: keep its heap minimal (PRD §11.2 RSS budget)
 	debug.SetGCPercent(10)

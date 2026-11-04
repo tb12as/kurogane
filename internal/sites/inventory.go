@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/hostfs"
-	"github.com/tb12as/serverman/internal/webconf"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/webconf"
 )
 
 // Toggle methods.
@@ -74,7 +74,7 @@ type Site struct {
 	Line      int              `json:"line"`
 	Enabled   bool             `json:"enabled"`
 	Default   bool             `json:"default,omitempty"`
-	Toggle    string           `json:"toggle,omitempty"`    // link | rename, "" when ServerKeeper will not toggle it
+	Toggle    string           `json:"toggle,omitempty"`    // link | rename, "" when Kurogane will not toggle it
 	NoToggle  string           `json:"no_toggle,omitempty"` // why not
 	FileSites int              `json:"file_sites"`          // sites in the same file: a toggle switches them all
 	Available string           `json:"available,omitempty"` // ToggleLink: the sites-available file
@@ -254,7 +254,7 @@ func toggleFor(kind, file string, enabled bool) (method, available, why string) 
 			return ToggleRename, "", ""
 		}
 	}
-	return "", "", "defined in " + file + "; ServerKeeper toggles only files in sites-enabled/sites-available or conf.d"
+	return "", "", "defined in " + file + "; Kurogane toggles only files in sites-enabled/sites-available or conf.d"
 }
 
 // disabledSites parses site files that the running config does not include.

@@ -11,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 // Directive is one sshd_config line.
@@ -182,7 +182,7 @@ func (m *Manager) Settings(ctx context.Context) (map[string]string, error) {
 	return withDefaults(effective(ds)), nil
 }
 
-// Managed is one sshd setting ServerKeeper manages, with its recommendation (PRD §6.2).
+// Managed is one sshd setting Kurogane manages, with its recommendation (PRD §6.2).
 type Managed struct {
 	Name        string `json:"name"`
 	Recommended string `json:"recommended"`

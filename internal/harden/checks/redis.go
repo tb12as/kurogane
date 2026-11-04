@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tb12as/serverman/internal/collector"
-	"github.com/tb12as/serverman/internal/redisinfo"
+	"github.com/tb12as/kurogane/internal/collector"
+	"github.com/tb12as/kurogane/internal/redisinfo"
 )
 
 // redisConf is one parsed instance with what the checks need.
@@ -163,7 +163,7 @@ func init() {
 			Rationale: "Without a password any local process or user (a compromised web app included) can read, " +
 				"change or delete everything in Redis.",
 			Remediation: "Set `requirepass`, or define ACL users and turn the default user off " +
-				"(`user default off`). Give ServerKeeper its own read-only user: -@all +ping +info +slowlog|get."}, e,
+				"(`user default off`). Give Kurogane its own read-only user: -@all +ping +info +slowlog|get."}, e,
 			func(ctx context.Context, c *fnCheck) Result {
 				cs := redisConfs(ctx, c.e)
 				if len(cs) == 0 {

@@ -6,7 +6,7 @@ const route = useRoute()
 const id = computed(() => String(route.params.id))
 const local = computed(() => id.value === 'local')
 const live = useLive()
-useHead({ title: 'Server · ServerKeeper' })
+useHead({ title: 'Server · Kurogane' })
 
 const ranges = { '1h': '', '6h': '1m', '24h': '5m', '7d': '30m' } as const
 type Range = keyof typeof ranges

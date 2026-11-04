@@ -7,7 +7,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/tb12as/serverman/internal/collector"
+	"github.com/tb12as/kurogane/internal/collector"
 )
 
 func snap() *collector.Snapshot {

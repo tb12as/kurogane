@@ -120,7 +120,7 @@ func parseNft(b []byte) (fwState, bool) {
 		Evidence: fmt.Sprintf("nftables input chains: %d rules, policy drop %v", rules, deny)}, true
 }
 
-const nftFile = "/etc/serverkeeper/nftables-harden.nft"
+const nftFile = "/etc/kurogane/nftables-harden.nft"
 
 // fwPlan opens every listening port plus SSH, then enables (or default-denies) the firewall.
 func fwPlan(ctx context.Context, e *Env, deny bool) (Diff, error) {
@@ -174,7 +174,7 @@ func fwPlan(ctx context.Context, e *Env, deny bool) (Diff, error) {
 			d.Files = append(d.Files, FileEdit{Path: "/etc/nftables.conf", New: conf + inc + "\n", Mode: 0o755})
 		}
 		d.Cmds = append(d.Cmds, cmd("nft", "-f", nftFile), cmd("systemctl", "enable", "nftables"))
-		d.Undo = append(d.Undo, cmd("nft", "delete", "table", "inet", "serverkeeper"))
+		d.Undo = append(d.Undo, cmd("nft", "delete", "table", "inet", "kurogane"))
 	default:
 		return Diff{}, errors.New("no firewall tool found: install ufw (Debian/Ubuntu) or firewalld (RHEL), then retry")
 	}
@@ -192,8 +192,8 @@ func nftRuleset(ports []string) string {
 		}
 	}
 	var b strings.Builder
-	b.WriteString("# managed by serverkeeper harden: default-deny inbound, keeps listening ports and SSH open\n")
-	b.WriteString("table inet serverkeeper\ndelete table inet serverkeeper\ntable inet serverkeeper {\n")
+	b.WriteString("# managed by kurogane harden: default-deny inbound, keeps listening ports and SSH open\n")
+	b.WriteString("table inet kurogane\ndelete table inet kurogane\ntable inet kurogane {\n")
 	b.WriteString("\tchain input {\n\t\ttype filter hook input priority 0; policy drop;\n")
 	b.WriteString("\t\tiif \"lo\" accept\n\t\tct state established,related accept\n")
 	b.WriteString("\t\tmeta l4proto { icmp, ipv6-icmp } accept\n")

@@ -1,4 +1,4 @@
-// Package backup implements `serverkeeper backup` / `restore` (PRD §9 backups, §11.4): SQLite VACUUM INTO, the
+// Package backup implements `kurogane backup` / `restore` (PRD §9 backups, §11.4): SQLite VACUUM INTO, the
 // agent's bbolt store and, on the central server, a VictoriaMetrics snapshot, copied into cfg.Server.Backup.Dest.
 // Off-host copies are the operator's mount or rsync target.
 package backup
@@ -18,15 +18,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tb12as/serverman/internal/api"
-	"github.com/tb12as/serverman/internal/auth"
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/metricsdb"
+	"github.com/tb12as/kurogane/internal/api"
+	"github.com/tb12as/kurogane/internal/auth"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/metricsdb"
 	bolt "go.etcd.io/bbolt"
 )
 
-const prefix = "serverkeeper-"
+const prefix = "kurogane-"
 
 // Options selects what to back up; nil stores are skipped.
 type Options struct {
@@ -97,7 +97,7 @@ func Run(ctx context.Context, o Options) (string, Manifest, error) {
 		return "", m, err
 	}
 	if o.DB != nil {
-		if err := o.DB.VacuumInto(ctx, filepath.Join(tmp, "serverkeeper.db")); err != nil {
+		if err := o.DB.VacuumInto(ctx, filepath.Join(tmp, "kurogane.db")); err != nil {
 			return fail(fmt.Errorf("sqlite VACUUM INTO: %w", err))
 		}
 	}
@@ -107,7 +107,7 @@ func Run(ctx context.Context, o Options) (string, Manifest, error) {
 			return fail(fmt.Errorf("bbolt copy: %w", err))
 		}
 	}
-	for _, f := range []string{"serverkeeper.db", "agent.db"} {
+	for _, f := range []string{"kurogane.db", "agent.db"} {
 		p := filepath.Join(tmp, f)
 		if _, err := os.Stat(p); err != nil {
 			continue
@@ -171,7 +171,7 @@ type RestoreOpts struct {
 func Restore(dir string, o RestoreOpts) ([]string, error) {
 	b, err := os.ReadFile(filepath.Join(dir, "manifest.json"))
 	if err != nil {
-		return nil, fmt.Errorf("%s is not a serverkeeper backup (no manifest.json): %w", dir, err)
+		return nil, fmt.Errorf("%s is not a kurogane backup (no manifest.json): %w", dir, err)
 	}
 	var m Manifest
 	if err := json.Unmarshal(b, &m); err != nil {
@@ -185,7 +185,7 @@ func Restore(dir string, o RestoreOpts) ([]string, error) {
 	}
 	suffix := ".pre-restore-" + time.Now().Format("20060102-150405")
 	var done []string
-	for f, dst := range map[string]string{"serverkeeper.db": o.MetaDB, "agent.db": o.AgentDB} {
+	for f, dst := range map[string]string{"kurogane.db": o.MetaDB, "agent.db": o.AgentDB} {
 		if _, ok := m.Files[f]; !ok || dst == "" {
 			continue
 		}

@@ -23,9 +23,9 @@ const prefix = "enc:"
 // Box encrypts and decrypts with one key.
 type Box struct{ aead cipher.AEAD }
 
-// LoadOrCreate reads a 32-byte hex key from path (or SK_SECRET_KEY), creating it with mode 0600 if missing.
+// LoadOrCreate reads a 32-byte hex key from path (or KRGN_SECRET_KEY), creating it with mode 0600 if missing.
 func LoadOrCreate(path string) (*Box, error) {
-	if k := os.Getenv("SK_SECRET_KEY"); k != "" {
+	if k := os.Getenv("KRGN_SECRET_KEY"); k != "" {
 		return New(k)
 	}
 	b, err := os.ReadFile(path)
@@ -44,7 +44,7 @@ func LoadOrCreate(path string) (*Box, error) {
 		return New(hexKey)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("read %s: %w (run as root or set SK_SECRET_KEY)", path, err)
+		return nil, fmt.Errorf("read %s: %w (run as root or set KRGN_SECRET_KEY)", path, err)
 	}
 	if st, err := os.Stat(path); err == nil && st.Mode().Perm()&0o077 != 0 {
 		return nil, fmt.Errorf("%s has mode %o: run chmod 600 %s", path, st.Mode().Perm(), path)

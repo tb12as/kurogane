@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tb12as/serverman/internal/audit"
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/hostfs"
-	"github.com/tb12as/serverman/internal/sshmgr"
-	"github.com/tb12as/serverman/internal/store"
+	"github.com/tb12as/kurogane/internal/audit"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/sshmgr"
+	"github.com/tb12as/kurogane/internal/store"
 )
 
 // containers have no systemd: `systemctl reload ssh|sshd` becomes SIGHUP for the real sshd
@@ -56,8 +56,8 @@ var integrationSkip = map[string]bool{"FW-ACTIVE": true, "FW-DEFAULT-DENY": true
 // Runs inside a disposable distro container as root (CI matrix, PRD §12): every check scans without error,
 // and every failing fixable check is fixed and reverted with the real executor; revert must restore files.
 func TestIntegrationScanFixRevert(t *testing.T) {
-	if os.Getenv("SK_INTEGRATION") != "1" || os.Geteuid() != 0 {
-		t.Skip("set SK_INTEGRATION=1 and run as root inside a disposable container")
+	if os.Getenv("KRGN_INTEGRATION") != "1" || os.Geteuid() != 0 {
+		t.Skip("set KRGN_INTEGRATION=1 and run as root inside a disposable container")
 	}
 	hostfs.Root = "/"
 	d, err := db.Open(filepath.Join(t.TempDir(), "m.db"))
@@ -105,7 +105,7 @@ func TestIntegrationScanFixRevert(t *testing.T) {
 			continue // report-only or not applicable here
 		}
 		// unprivileged containers cannot write /proc/sys (and privileged ones would change the host kernel)
-		if len(dry.Diff.Sysctl) > 0 && os.Getenv("SK_INTEGRATION_NO_SYSCTL") == "1" {
+		if len(dry.Diff.Sysctl) > 0 && os.Getenv("KRGN_INTEGRATION_NO_SYSCTL") == "1" {
 			continue
 		}
 		before := map[string][]byte{}

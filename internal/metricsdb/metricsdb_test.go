@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 func TestAppendLine(t *testing.T) {
@@ -110,7 +110,7 @@ func TestInstall(t *testing.T) {
 	DownloadURL = srv.URL + "/%s/%s/%s"
 
 	vm := config.VM{URL: "http://127.0.0.1:8428", Mode: "systemd", Binary: "/usr/local/bin/victoria-metrics-prod",
-		Retention: "90d", DataDir: "/var/lib/serverkeeper/vm"}
+		Retention: "90d", DataDir: "/var/lib/kurogane/vm"}
 	ex := executor.NewFake()
 	if err := Install(context.Background(), ex, InstallOpts{VM: vm, Arch: "amd64"}); err != nil {
 		t.Fatal(err)
@@ -120,11 +120,11 @@ func TestInstall(t *testing.T) {
 		t.Fatal("binary not installed")
 	}
 	unit, _ := os.ReadFile(hostfs.P(UnitPath))
-	if !strings.Contains(string(unit), "-httpListenAddr=127.0.0.1:8428 -storageDataPath=/var/lib/serverkeeper/vm "+
-		"-retentionPeriod=90d") || !strings.Contains(string(unit), "StateDirectory=serverkeeper/vm") {
+	if !strings.Contains(string(unit), "-httpListenAddr=127.0.0.1:8428 -storageDataPath=/var/lib/kurogane/vm "+
+		"-retentionPeriod=90d") || !strings.Contains(string(unit), "StateDirectory=kurogane/vm") {
 		t.Fatal(string(unit))
 	}
-	if !ex.Called("systemctl enable --now serverkeeper-vm") {
+	if !ex.Called("systemctl enable --now kurogane-vm") {
 		t.Fatal(ex.String())
 	}
 

@@ -9,14 +9,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tb12as/serverman/internal/audit"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/harden/checks"
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/audit"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/harden/checks"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 // BackupRoot holds one directory per fix with file copies and a manifest (HD-3).
-const BackupRoot = "/var/lib/serverkeeper/backups/harden/"
+const BackupRoot = "/var/lib/kurogane/backups/harden/"
 
 // FixResult is a dry-run diff or an applied fix with its verification.
 type FixResult struct {
@@ -77,7 +77,7 @@ func (s *Service) Fix(ctx context.Context, checkID string, dryRun bool) (FixResu
 		_ = s.d.DB.SaveFix(ctx, f)
 		s.d.Audit.Record(ctx, "harden.fix", checkID, nil, map[string]string{"fix_id": f.ID, "error": err.Error()})
 		res.Fix = &f
-		return res, fmt.Errorf("%s fix failed (may be partly applied; undo with `serverkeeper harden revert %s`): %w",
+		return res, fmt.Errorf("%s fix failed (may be partly applied; undo with `kurogane harden revert %s`): %w",
 			checkID, f.ID, err)
 	}
 	v := safeRun(checks.WithMemo(ctx), c)
@@ -119,7 +119,7 @@ func (s *Service) FixAll(ctx context.Context, severity string, dryRun bool) ([]F
 		}
 		if r.AutoFix == checks.FixConfirm {
 			out = append(out, FixResult{CheckID: r.CheckID, DryRun: dryRun,
-				Skipped: "firewall change: apply it explicitly with `serverkeeper harden fix " + r.CheckID + "`"})
+				Skipped: "firewall change: apply it explicitly with `kurogane harden fix " + r.CheckID + "`"})
 			continue
 		}
 		fr, err := s.Fix(ctx, r.CheckID, dryRun)
@@ -166,7 +166,7 @@ func (s *Service) Revert(ctx context.Context, fixID string) (db.Fix, error) {
 	defer s.mu.Unlock()
 	f, err := s.d.DB.GetFix(ctx, fixID)
 	if err != nil {
-		return f, fmt.Errorf("fix %s: %w (list fixes with `serverkeeper harden fixes`)", fixID, err)
+		return f, fmt.Errorf("fix %s: %w (list fixes with `kurogane harden fixes`)", fixID, err)
 	}
 	if !f.RevertedAt.IsZero() {
 		return f, fmt.Errorf("fix %s was already reverted at %s", fixID, f.RevertedAt.Format(time.RFC3339))

@@ -2,7 +2,7 @@
 # Agent resource benchmark (PRD §2, §11.2): runs the agent for $DURATION seconds at a 10 s interval and
 # fails if average CPU > 1% (of one 2-vCPU host => 2% of a single core) or RSS > 50 MB, with 10% headroom.
 set -eu
-BIN="${BIN:-bin/serverkeeper}"
+BIN="${BIN:-bin/kurogane}"
 DURATION="${DURATION:-300}"
 DIR=$(mktemp -d)
 trap 'kill $PID 2>/dev/null || true; rm -rf "$DIR"' EXIT

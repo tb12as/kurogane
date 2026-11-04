@@ -1,0 +1,22 @@
+[Unit]
+Description=Kurogane agent
+Documentation=https://github.com/tb12as/kurogane
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/kurogane agent run --config /etc/kurogane/config.yaml
+Restart=always
+RestartSec=5
+# root is required for sshd/sysctl/firewall changes; the agent drops to the
+# `kurogane` user for everything else (privilege separation)
+User=root
+LimitNOFILE=65536
+MemoryMax=200M
+CPUQuota=20%
+# no ProtectHome/ProtectSystem: the agent must manage authorized_keys in every home and system config
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

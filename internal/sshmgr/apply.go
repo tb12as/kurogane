@@ -14,19 +14,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tb12as/serverman/internal/alert"
-	"github.com/tb12as/serverman/internal/audit"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/hostfs"
-	"github.com/tb12as/serverman/internal/store"
+	"github.com/tb12as/kurogane/internal/alert"
+	"github.com/tb12as/kurogane/internal/audit"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/store"
 )
 
 const (
-	DropIn        = "/etc/ssh/sshd_config.d/99-serverkeeper.conf"
-	candidatePath = "/etc/ssh/sshd_config.sk-candidate"
+	DropIn        = "/etc/ssh/sshd_config.d/99-kurogane.conf"
+	candidatePath = "/etc/ssh/sshd_config.krgn-candidate"
 	pendingBucket = "ssh_pending"
 	pendingKey    = "current"
-	backupRoot    = "/var/lib/serverkeeper/backups/ssh/"
+	backupRoot    = "/var/lib/kurogane/backups/ssh/"
 )
 
 // Pending is an applied, unconfirmed sshd change; persisted so the rollback survives restarts.
@@ -58,7 +58,7 @@ func normalize(set map[string]string) (map[string]string, error) {
 	for k, v := range set {
 		name, ok := allowedKeys[strings.ToLower(k)]
 		if !ok {
-			return nil, fmt.Errorf("sshd setting %q is not managed by ServerKeeper", k)
+			return nil, fmt.Errorf("sshd setting %q is not managed by Kurogane", k)
 		}
 		v = strings.TrimSpace(v)
 		if v == "" || !valueOK.MatchString(v) {
@@ -161,7 +161,7 @@ func (m *Manager) Plan(ctx context.Context, set map[string]string) (*Plan, error
 				}
 			}
 			lines := strings.Split(string(b), "\n")
-			lines[d.Line-1] = "# disabled by serverkeeper (overrode " + k + "): " + lines[d.Line-1]
+			lines[d.Line-1] = "# disabled by kurogane (overrode " + k + "): " + lines[d.Line-1]
 			p.files[d.File] = []byte(strings.Join(lines, "\n"))
 		}
 		if !bad {
@@ -216,7 +216,7 @@ func renderDropIn(old []byte, set map[string]string) []byte {
 		vals[k] = v
 	}
 	var b strings.Builder
-	b.WriteString("# managed by serverkeeper: changes here are overwritten by `serverkeeper ssh config set`\n")
+	b.WriteString("# managed by kurogane: changes here are overwritten by `kurogane ssh config set`\n")
 	for _, k := range sortedKeys(vals) {
 		b.WriteString(k + " " + vals[k] + "\n")
 	}
@@ -277,12 +277,12 @@ func prependMain(main []byte, set map[string]string) []byte {
 		}
 		n, _ := splitDirective(l)
 		if _, mine := set[allowedKeys[strings.ToLower(n)]]; mine && i >= at && l != "" && l[0] != '#' {
-			kept = append(kept, "# replaced by serverkeeper: "+raw)
+			kept = append(kept, "# replaced by kurogane: "+raw)
 			continue
 		}
 		kept = append(kept, raw)
 	}
-	head := []string{"# managed by serverkeeper (must precede Include so first-value-wins applies)"}
+	head := []string{"# managed by kurogane (must precede Include so first-value-wins applies)"}
 	for _, k := range sortedKeys(set) {
 		head = append(head, k+" "+set[k])
 	}
@@ -349,7 +349,7 @@ func (m *Manager) SafeApplyFrom(ctx context.Context, set map[string]string, roll
 	m.applyMu.Lock()
 	defer m.applyMu.Unlock()
 	if p, ok := m.pending(); ok {
-		return db.SSHChange{}, fmt.Errorf("sshd change %s is waiting for confirmation until %s: run `serverkeeper ssh "+
+		return db.SSHChange{}, fmt.Errorf("sshd change %s is waiting for confirmation until %s: run `kurogane ssh "+
 			"confirm` from a new SSH session, or wait for the automatic rollback", p.Change.ID,
 			p.Change.Deadline.Format("15:04:05"))
 	}

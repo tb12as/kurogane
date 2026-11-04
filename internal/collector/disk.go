@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 // statfs is swapped in tests.

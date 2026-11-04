@@ -128,7 +128,7 @@ func parseNftJSON(b []byte) (string, []string, int, error) {
 	for _, it := range doc.Nftables {
 		if raw, ok := it["chain"]; ok {
 			var c struct{ Family, Table, Name, Hook, Policy string }
-			if json.Unmarshal(raw, &c) != nil || c.Hook != "input" || c.Table == "serverkeeper" {
+			if json.Unmarshal(raw, &c) != nil || c.Hook != "input" || c.Table == "kurogane" {
 				continue
 			}
 			chains++

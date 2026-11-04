@@ -1,4 +1,4 @@
-module github.com/tb12as/serverman
+module github.com/tb12as/kurogane
 
 go 1.26.0
 

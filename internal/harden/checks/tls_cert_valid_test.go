@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tb12as/serverman/internal/certs"
+	"github.com/tb12as/kurogane/internal/certs"
 )
 
 // testCert returns a self-signed PEM certificate, generated at test time so fixtures never expire.

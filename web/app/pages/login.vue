@@ -1,6 +1,6 @@
 <script setup lang="ts">
 definePageMeta({ layout: false })
-useHead({ title: 'Sign in · ServerKeeper' })
+useHead({ title: 'Sign in · Kurogane' })
 
 const route = useRoute()
 const f = reactive({ username: '', password: '', totp: '' })
@@ -39,7 +39,7 @@ async function submit() {
       <CardHeader>
         <CardTitle class="flex items-center gap-2 text-xl">
           <Logo class="size-7" />
-          ServerKeeper
+          Kurogane
         </CardTitle>
         <CardDescription>Sign in with your password and authenticator code.</CardDescription>
       </CardHeader>

@@ -8,7 +8,7 @@ import (
 	"github.com/google/nftables/expr"
 )
 
-// netlinkNft owns table `inet serverkeeper` with timeout sets banned4/banned6 dropped on input.
+// netlinkNft owns table `inet kurogane` with timeout sets banned4/banned6 dropped on input.
 type netlinkNft struct {
 	t      *nftables.Table
 	s4, s6 *nftables.Set
@@ -31,7 +31,7 @@ func (n *netlinkNft) setup(bans []Ban) error {
 	if err != nil {
 		return err
 	}
-	n.t = &nftables.Table{Family: nftables.TableFamilyINet, Name: "serverkeeper"}
+	n.t = &nftables.Table{Family: nftables.TableFamilyINet, Name: "kurogane"}
 	n.s4 = &nftables.Set{Table: n.t, Name: "banned4", KeyType: nftables.TypeIPAddr, HasTimeout: true}
 	n.s6 = &nftables.Set{Table: n.t, Name: "banned6", KeyType: nftables.TypeIP6Addr, HasTimeout: true}
 	ts, err := c.ListTablesOfFamily(nftables.TableFamilyINet)

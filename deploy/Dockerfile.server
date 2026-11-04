@@ -6,11 +6,11 @@ ARG VERSION=dev
 WORKDIR /src
 COPY . .
 RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -trimpath -buildvcs=false \
-    -ldflags "-s -w -X main.version=$VERSION" -o /out/serverkeeper ./cmd/serverkeeper
+    -ldflags "-s -w -X main.version=$VERSION" -o /out/kurogane ./cmd/kurogane
 
 FROM gcr.io/distroless/static-debian12:nonroot
-COPY --from=build /out/serverkeeper /usr/bin/serverkeeper
-ENV SK_SERVER_VM_MODE=child SK_DATA_DIR=/var/lib/serverkeeper SK_PRIVSEP=false
-VOLUME ["/var/lib/serverkeeper", "/etc/serverkeeper"]
+COPY --from=build /out/kurogane /usr/bin/kurogane
+ENV KRGN_SERVER_VM_MODE=child KRGN_DATA_DIR=/var/lib/kurogane KRGN_PRIVSEP=false
+VOLUME ["/var/lib/kurogane", "/etc/kurogane"]
 EXPOSE 9443 9444
-ENTRYPOINT ["/usr/bin/serverkeeper", "server", "run", "--config", "/etc/serverkeeper/config.yaml"]
+ENTRYPOINT ["/usr/bin/kurogane", "server", "run", "--config", "/etc/kurogane/config.yaml"]

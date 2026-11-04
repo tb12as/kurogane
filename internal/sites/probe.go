@@ -51,7 +51,7 @@ func httpProbe(ctx context.Context, s Site) bool {
 	if err != nil {
 		return false
 	}
-	req.Header.Set("User-Agent", "serverkeeper-site-probe")
+	req.Header.Set("User-Agent", "kurogane-site-probe")
 	resp, err := c.Do(req)
 	if err != nil {
 		return false

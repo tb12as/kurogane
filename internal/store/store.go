@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tb12as/serverman/internal/collector"
+	"github.com/tb12as/kurogane/internal/collector"
 	bolt "go.etcd.io/bbolt"
 )
 

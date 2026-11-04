@@ -5,7 +5,7 @@
 // versions:
 // 	protoc-gen-go v1.36.12
 // 	protoc        (unknown)
-// source: serverkeeper/v1/agent.proto
+// source: kurogane/v1/agent.proto
 
 package pb
 
@@ -36,7 +36,7 @@ type EnrollRequest struct {
 
 func (x *EnrollRequest) Reset() {
 	*x = EnrollRequest{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[0]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -48,7 +48,7 @@ func (x *EnrollRequest) String() string {
 func (*EnrollRequest) ProtoMessage() {}
 
 func (x *EnrollRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[0]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -61,7 +61,7 @@ func (x *EnrollRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnrollRequest.ProtoReflect.Descriptor instead.
 func (*EnrollRequest) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{0}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *EnrollRequest) GetToken() string {
@@ -104,7 +104,7 @@ type EnrollResponse struct {
 
 func (x *EnrollResponse) Reset() {
 	*x = EnrollResponse{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[1]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -116,7 +116,7 @@ func (x *EnrollResponse) String() string {
 func (*EnrollResponse) ProtoMessage() {}
 
 func (x *EnrollResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[1]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -129,7 +129,7 @@ func (x *EnrollResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnrollResponse.ProtoReflect.Descriptor instead.
 func (*EnrollResponse) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{1}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *EnrollResponse) GetServerId() string {
@@ -179,7 +179,7 @@ type AgentMessage struct {
 
 func (x *AgentMessage) Reset() {
 	*x = AgentMessage{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[2]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -191,7 +191,7 @@ func (x *AgentMessage) String() string {
 func (*AgentMessage) ProtoMessage() {}
 
 func (x *AgentMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[2]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -204,7 +204,7 @@ func (x *AgentMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AgentMessage.ProtoReflect.Descriptor instead.
 func (*AgentMessage) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{2}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *AgentMessage) GetMsg() isAgentMessage_Msg {
@@ -351,7 +351,7 @@ type Hello struct {
 
 func (x *Hello) Reset() {
 	*x = Hello{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[3]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -363,7 +363,7 @@ func (x *Hello) String() string {
 func (*Hello) ProtoMessage() {}
 
 func (x *Hello) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[3]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -376,7 +376,7 @@ func (x *Hello) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Hello.ProtoReflect.Descriptor instead.
 func (*Hello) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{3}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Hello) GetName() string {
@@ -423,7 +423,7 @@ type Heartbeat struct {
 
 func (x *Heartbeat) Reset() {
 	*x = Heartbeat{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[4]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -435,7 +435,7 @@ func (x *Heartbeat) String() string {
 func (*Heartbeat) ProtoMessage() {}
 
 func (x *Heartbeat) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[4]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -448,7 +448,7 @@ func (x *Heartbeat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Heartbeat.ProtoReflect.Descriptor instead.
 func (*Heartbeat) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{4}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Heartbeat) GetTsMs() int64 {
@@ -470,7 +470,7 @@ type Samples struct {
 
 func (x *Samples) Reset() {
 	*x = Samples{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[5]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -482,7 +482,7 @@ func (x *Samples) String() string {
 func (*Samples) ProtoMessage() {}
 
 func (x *Samples) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[5]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -495,7 +495,7 @@ func (x *Samples) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Samples.ProtoReflect.Descriptor instead.
 func (*Samples) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{5}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Samples) GetTsMs() int64 {
@@ -536,7 +536,7 @@ type AlertEvent struct {
 
 func (x *AlertEvent) Reset() {
 	*x = AlertEvent{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[6]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -548,7 +548,7 @@ func (x *AlertEvent) String() string {
 func (*AlertEvent) ProtoMessage() {}
 
 func (x *AlertEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[6]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -561,7 +561,7 @@ func (x *AlertEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AlertEvent.ProtoReflect.Descriptor instead.
 func (*AlertEvent) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{6}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *AlertEvent) GetId() string {
@@ -642,7 +642,7 @@ type AuditEntry struct {
 
 func (x *AuditEntry) Reset() {
 	*x = AuditEntry{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[7]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -654,7 +654,7 @@ func (x *AuditEntry) String() string {
 func (*AuditEntry) ProtoMessage() {}
 
 func (x *AuditEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[7]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -667,7 +667,7 @@ func (x *AuditEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuditEntry.ProtoReflect.Descriptor instead.
 func (*AuditEntry) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{7}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *AuditEntry) GetActor() string {
@@ -731,7 +731,7 @@ type OpResult struct {
 
 func (x *OpResult) Reset() {
 	*x = OpResult{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[8]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -743,7 +743,7 @@ func (x *OpResult) String() string {
 func (*OpResult) ProtoMessage() {}
 
 func (x *OpResult) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[8]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -756,7 +756,7 @@ func (x *OpResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OpResult.ProtoReflect.Descriptor instead.
 func (*OpResult) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{8}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *OpResult) GetOpId() string {
@@ -801,7 +801,7 @@ type ScanResult struct {
 
 func (x *ScanResult) Reset() {
 	*x = ScanResult{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[9]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -813,7 +813,7 @@ func (x *ScanResult) String() string {
 func (*ScanResult) ProtoMessage() {}
 
 func (x *ScanResult) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[9]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -826,7 +826,7 @@ func (x *ScanResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScanResult.ProtoReflect.Descriptor instead.
 func (*ScanResult) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{9}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ScanResult) GetId() string {
@@ -882,7 +882,7 @@ type Sites struct {
 
 func (x *Sites) Reset() {
 	*x = Sites{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[10]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -894,7 +894,7 @@ func (x *Sites) String() string {
 func (*Sites) ProtoMessage() {}
 
 func (x *Sites) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[10]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -907,7 +907,7 @@ func (x *Sites) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Sites.ProtoReflect.Descriptor instead.
 func (*Sites) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{10}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *Sites) GetServers() []*WebServerInfo {
@@ -938,7 +938,7 @@ type WebServerInfo struct {
 
 func (x *WebServerInfo) Reset() {
 	*x = WebServerInfo{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[11]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -950,7 +950,7 @@ func (x *WebServerInfo) String() string {
 func (*WebServerInfo) ProtoMessage() {}
 
 func (x *WebServerInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[11]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -963,7 +963,7 @@ func (x *WebServerInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WebServerInfo.ProtoReflect.Descriptor instead.
 func (*WebServerInfo) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{11}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *WebServerInfo) GetKind() string {
@@ -1028,7 +1028,7 @@ type SiteInfo struct {
 
 func (x *SiteInfo) Reset() {
 	*x = SiteInfo{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[12]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1040,7 +1040,7 @@ func (x *SiteInfo) String() string {
 func (*SiteInfo) ProtoMessage() {}
 
 func (x *SiteInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[12]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1053,7 +1053,7 @@ func (x *SiteInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SiteInfo.ProtoReflect.Descriptor instead.
 func (*SiteInfo) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{12}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *SiteInfo) GetId() string {
@@ -1152,7 +1152,7 @@ type CentralMessage struct {
 
 func (x *CentralMessage) Reset() {
 	*x = CentralMessage{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[13]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1164,7 +1164,7 @@ func (x *CentralMessage) String() string {
 func (*CentralMessage) ProtoMessage() {}
 
 func (x *CentralMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[13]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1177,7 +1177,7 @@ func (x *CentralMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CentralMessage.ProtoReflect.Descriptor instead.
 func (*CentralMessage) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{13}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *CentralMessage) GetMsg() isCentralMessage_Msg {
@@ -1222,7 +1222,7 @@ type Op struct {
 
 func (x *Op) Reset() {
 	*x = Op{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[14]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1234,7 +1234,7 @@ func (x *Op) String() string {
 func (*Op) ProtoMessage() {}
 
 func (x *Op) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[14]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1247,7 +1247,7 @@ func (x *Op) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Op.ProtoReflect.Descriptor instead.
 func (*Op) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{14}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *Op) GetId() string {
@@ -1340,7 +1340,7 @@ type AddKey struct {
 
 func (x *AddKey) Reset() {
 	*x = AddKey{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[15]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1352,7 +1352,7 @@ func (x *AddKey) String() string {
 func (*AddKey) ProtoMessage() {}
 
 func (x *AddKey) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[15]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1365,7 +1365,7 @@ func (x *AddKey) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddKey.ProtoReflect.Descriptor instead.
 func (*AddKey) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{15}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *AddKey) GetUser() string {
@@ -1406,7 +1406,7 @@ type RemoveKey struct {
 
 func (x *RemoveKey) Reset() {
 	*x = RemoveKey{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[16]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1418,7 +1418,7 @@ func (x *RemoveKey) String() string {
 func (*RemoveKey) ProtoMessage() {}
 
 func (x *RemoveKey) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[16]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1431,7 +1431,7 @@ func (x *RemoveKey) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveKey.ProtoReflect.Descriptor instead.
 func (*RemoveKey) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{16}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *RemoveKey) GetFingerprint() string {
@@ -1456,7 +1456,7 @@ type RunScan struct {
 
 func (x *RunScan) Reset() {
 	*x = RunScan{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[17]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1468,7 +1468,7 @@ func (x *RunScan) String() string {
 func (*RunScan) ProtoMessage() {}
 
 func (x *RunScan) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[17]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1481,7 +1481,7 @@ func (x *RunScan) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunScan.ProtoReflect.Descriptor instead.
 func (*RunScan) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{17}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{17}
 }
 
 // SetSite enables or disables one web site with the agent's safe toggle (test, reload, probe, rollback).
@@ -1495,7 +1495,7 @@ type SetSite struct {
 
 func (x *SetSite) Reset() {
 	*x = SetSite{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[18]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1507,7 +1507,7 @@ func (x *SetSite) String() string {
 func (*SetSite) ProtoMessage() {}
 
 func (x *SetSite) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[18]
+	mi := &file_kurogane_v1_agent_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1520,7 +1520,7 @@ func (x *SetSite) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetSite.ProtoReflect.Descriptor instead.
 func (*SetSite) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{18}
+	return file_kurogane_v1_agent_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *SetSite) GetSiteId() string {
@@ -1537,11 +1537,11 @@ func (x *SetSite) GetEnabled() bool {
 	return false
 }
 
-var File_serverkeeper_v1_agent_proto protoreflect.FileDescriptor
+var File_kurogane_v1_agent_proto protoreflect.FileDescriptor
 
-const file_serverkeeper_v1_agent_proto_rawDesc = "" +
+const file_kurogane_v1_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x1bserverkeeper/v1/agent.proto\x12\x0fserverkeeper.v1\"f\n" +
+	"\x17kurogane/v1/agent.proto\x12\vkurogane.v1\"f\n" +
 	"\rEnrollRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x17\n" +
 	"\acsr_pem\x18\x02 \x01(\fR\x06csrPem\x12\x12\n" +
@@ -1551,16 +1551,16 @@ const file_serverkeeper_v1_agent_proto_rawDesc = "" +
 	"\tserver_id\x18\x01 \x01(\tR\bserverId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x19\n" +
 	"\bcert_pem\x18\x03 \x01(\fR\acertPem\x12\x15\n" +
-	"\x06ca_pem\x18\x04 \x01(\fR\x05caPem\"\xbe\x03\n" +
-	"\fAgentMessage\x12.\n" +
-	"\x05hello\x18\x01 \x01(\v2\x16.serverkeeper.v1.HelloH\x00R\x05hello\x12:\n" +
-	"\theartbeat\x18\x02 \x01(\v2\x1a.serverkeeper.v1.HeartbeatH\x00R\theartbeat\x124\n" +
-	"\asamples\x18\x03 \x01(\v2\x18.serverkeeper.v1.SamplesH\x00R\asamples\x123\n" +
-	"\x05alert\x18\x04 \x01(\v2\x1b.serverkeeper.v1.AlertEventH\x00R\x05alert\x123\n" +
-	"\x05audit\x18\x05 \x01(\v2\x1b.serverkeeper.v1.AuditEntryH\x00R\x05audit\x128\n" +
-	"\top_result\x18\x06 \x01(\v2\x19.serverkeeper.v1.OpResultH\x00R\bopResult\x121\n" +
-	"\x04scan\x18\a \x01(\v2\x1b.serverkeeper.v1.ScanResultH\x00R\x04scan\x12.\n" +
-	"\x05sites\x18\b \x01(\v2\x16.serverkeeper.v1.SitesH\x00R\x05sitesB\x05\n" +
+	"\x06ca_pem\x18\x04 \x01(\fR\x05caPem\"\x9e\x03\n" +
+	"\fAgentMessage\x12*\n" +
+	"\x05hello\x18\x01 \x01(\v2\x12.kurogane.v1.HelloH\x00R\x05hello\x126\n" +
+	"\theartbeat\x18\x02 \x01(\v2\x16.kurogane.v1.HeartbeatH\x00R\theartbeat\x120\n" +
+	"\asamples\x18\x03 \x01(\v2\x14.kurogane.v1.SamplesH\x00R\asamples\x12/\n" +
+	"\x05alert\x18\x04 \x01(\v2\x17.kurogane.v1.AlertEventH\x00R\x05alert\x12/\n" +
+	"\x05audit\x18\x05 \x01(\v2\x17.kurogane.v1.AuditEntryH\x00R\x05audit\x124\n" +
+	"\top_result\x18\x06 \x01(\v2\x15.kurogane.v1.OpResultH\x00R\bopResult\x12-\n" +
+	"\x04scan\x18\a \x01(\v2\x17.kurogane.v1.ScanResultH\x00R\x04scan\x12*\n" +
+	"\x05sites\x18\b \x01(\v2\x12.kurogane.v1.SitesH\x00R\x05sitesB\x05\n" +
 	"\x03msg\"|\n" +
 	"\x05Hello\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
@@ -1609,10 +1609,10 @@ const file_serverkeeper_v1_agent_proto_rawDesc = "" +
 	"\n" +
 	"started_at\x18\x04 \x01(\x03R\tstartedAt\x12\x16\n" +
 	"\x06passed\x18\x05 \x01(\x05R\x06passed\x12\x16\n" +
-	"\x06failed\x18\x06 \x01(\x05R\x06failed\"r\n" +
-	"\x05Sites\x128\n" +
-	"\aservers\x18\x01 \x03(\v2\x1e.serverkeeper.v1.WebServerInfoR\aservers\x12/\n" +
-	"\x05sites\x18\x02 \x03(\v2\x19.serverkeeper.v1.SiteInfoR\x05sites\"\xa9\x01\n" +
+	"\x06failed\x18\x06 \x01(\x05R\x06failed\"j\n" +
+	"\x05Sites\x124\n" +
+	"\aservers\x18\x01 \x03(\v2\x1a.kurogane.v1.WebServerInfoR\aservers\x12+\n" +
+	"\x05sites\x18\x02 \x03(\v2\x15.kurogane.v1.SiteInfoR\x05sites\"\xa9\x01\n" +
 	"\rWebServerInfo\x12\x12\n" +
 	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x12\n" +
 	"\x04unit\x18\x02 \x01(\tR\x04unit\x12\x18\n" +
@@ -1635,17 +1635,17 @@ const file_serverkeeper_v1_agent_proto_rawDesc = "" +
 	"\tcert_days\x18\n" +
 	" \x01(\x01R\bcertDays\x12\x12\n" +
 	"\x04file\x18\v \x01(\tR\x04file\x12\x1b\n" +
-	"\tno_toggle\x18\f \x01(\tR\bnoToggle\">\n" +
-	"\x0eCentralMessage\x12%\n" +
-	"\x02op\x18\x01 \x01(\v2\x13.serverkeeper.v1.OpH\x00R\x02opB\x05\n" +
-	"\x03msg\"\xfb\x01\n" +
+	"\tno_toggle\x18\f \x01(\tR\bnoToggle\":\n" +
+	"\x0eCentralMessage\x12!\n" +
+	"\x02op\x18\x01 \x01(\v2\x0f.kurogane.v1.OpH\x00R\x02opB\x05\n" +
+	"\x03msg\"\xeb\x01\n" +
 	"\x02Op\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x122\n" +
-	"\aadd_key\x18\x02 \x01(\v2\x17.serverkeeper.v1.AddKeyH\x00R\x06addKey\x12;\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12.\n" +
+	"\aadd_key\x18\x02 \x01(\v2\x13.kurogane.v1.AddKeyH\x00R\x06addKey\x127\n" +
 	"\n" +
-	"remove_key\x18\x03 \x01(\v2\x1a.serverkeeper.v1.RemoveKeyH\x00R\tremoveKey\x125\n" +
-	"\brun_scan\x18\x04 \x01(\v2\x18.serverkeeper.v1.RunScanH\x00R\arunScan\x125\n" +
-	"\bset_site\x18\x05 \x01(\v2\x18.serverkeeper.v1.SetSiteH\x00R\asetSiteB\x06\n" +
+	"remove_key\x18\x03 \x01(\v2\x16.kurogane.v1.RemoveKeyH\x00R\tremoveKey\x121\n" +
+	"\brun_scan\x18\x04 \x01(\v2\x14.kurogane.v1.RunScanH\x00R\arunScan\x121\n" +
+	"\bset_site\x18\x05 \x01(\v2\x14.kurogane.v1.SetSiteH\x00R\asetSiteB\x06\n" +
 	"\x04kind\"p\n" +
 	"\x06AddKey\x12\x12\n" +
 	"\x04user\x18\x01 \x01(\tR\x04user\x12\x1d\n" +
@@ -1660,65 +1660,65 @@ const file_serverkeeper_v1_agent_proto_rawDesc = "" +
 	"\aRunScan\"<\n" +
 	"\aSetSite\x12\x17\n" +
 	"\asite_id\x18\x01 \x01(\tR\x06siteId\x12\x18\n" +
-	"\aenabled\x18\x02 \x01(\bR\aenabled2\xa1\x01\n" +
-	"\x05Fleet\x12I\n" +
-	"\x06Enroll\x12\x1e.serverkeeper.v1.EnrollRequest\x1a\x1f.serverkeeper.v1.EnrollResponse\x12M\n" +
-	"\aConnect\x12\x1d.serverkeeper.v1.AgentMessage\x1a\x1f.serverkeeper.v1.CentralMessage(\x010\x01B,Z*github.com/tb12as/serverman/internal/pb;pbb\x06proto3"
+	"\aenabled\x18\x02 \x01(\bR\aenabled2\x91\x01\n" +
+	"\x05Fleet\x12A\n" +
+	"\x06Enroll\x12\x1a.kurogane.v1.EnrollRequest\x1a\x1b.kurogane.v1.EnrollResponse\x12E\n" +
+	"\aConnect\x12\x19.kurogane.v1.AgentMessage\x1a\x1b.kurogane.v1.CentralMessage(\x010\x01B+Z)github.com/tb12as/kurogane/internal/pb;pbb\x06proto3"
 
 var (
-	file_serverkeeper_v1_agent_proto_rawDescOnce sync.Once
-	file_serverkeeper_v1_agent_proto_rawDescData []byte
+	file_kurogane_v1_agent_proto_rawDescOnce sync.Once
+	file_kurogane_v1_agent_proto_rawDescData []byte
 )
 
-func file_serverkeeper_v1_agent_proto_rawDescGZIP() []byte {
-	file_serverkeeper_v1_agent_proto_rawDescOnce.Do(func() {
-		file_serverkeeper_v1_agent_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_serverkeeper_v1_agent_proto_rawDesc), len(file_serverkeeper_v1_agent_proto_rawDesc)))
+func file_kurogane_v1_agent_proto_rawDescGZIP() []byte {
+	file_kurogane_v1_agent_proto_rawDescOnce.Do(func() {
+		file_kurogane_v1_agent_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_kurogane_v1_agent_proto_rawDesc), len(file_kurogane_v1_agent_proto_rawDesc)))
 	})
-	return file_serverkeeper_v1_agent_proto_rawDescData
+	return file_kurogane_v1_agent_proto_rawDescData
 }
 
-var file_serverkeeper_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
-var file_serverkeeper_v1_agent_proto_goTypes = []any{
-	(*EnrollRequest)(nil),  // 0: serverkeeper.v1.EnrollRequest
-	(*EnrollResponse)(nil), // 1: serverkeeper.v1.EnrollResponse
-	(*AgentMessage)(nil),   // 2: serverkeeper.v1.AgentMessage
-	(*Hello)(nil),          // 3: serverkeeper.v1.Hello
-	(*Heartbeat)(nil),      // 4: serverkeeper.v1.Heartbeat
-	(*Samples)(nil),        // 5: serverkeeper.v1.Samples
-	(*AlertEvent)(nil),     // 6: serverkeeper.v1.AlertEvent
-	(*AuditEntry)(nil),     // 7: serverkeeper.v1.AuditEntry
-	(*OpResult)(nil),       // 8: serverkeeper.v1.OpResult
-	(*ScanResult)(nil),     // 9: serverkeeper.v1.ScanResult
-	(*Sites)(nil),          // 10: serverkeeper.v1.Sites
-	(*WebServerInfo)(nil),  // 11: serverkeeper.v1.WebServerInfo
-	(*SiteInfo)(nil),       // 12: serverkeeper.v1.SiteInfo
-	(*CentralMessage)(nil), // 13: serverkeeper.v1.CentralMessage
-	(*Op)(nil),             // 14: serverkeeper.v1.Op
-	(*AddKey)(nil),         // 15: serverkeeper.v1.AddKey
-	(*RemoveKey)(nil),      // 16: serverkeeper.v1.RemoveKey
-	(*RunScan)(nil),        // 17: serverkeeper.v1.RunScan
-	(*SetSite)(nil),        // 18: serverkeeper.v1.SetSite
+var file_kurogane_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_kurogane_v1_agent_proto_goTypes = []any{
+	(*EnrollRequest)(nil),  // 0: kurogane.v1.EnrollRequest
+	(*EnrollResponse)(nil), // 1: kurogane.v1.EnrollResponse
+	(*AgentMessage)(nil),   // 2: kurogane.v1.AgentMessage
+	(*Hello)(nil),          // 3: kurogane.v1.Hello
+	(*Heartbeat)(nil),      // 4: kurogane.v1.Heartbeat
+	(*Samples)(nil),        // 5: kurogane.v1.Samples
+	(*AlertEvent)(nil),     // 6: kurogane.v1.AlertEvent
+	(*AuditEntry)(nil),     // 7: kurogane.v1.AuditEntry
+	(*OpResult)(nil),       // 8: kurogane.v1.OpResult
+	(*ScanResult)(nil),     // 9: kurogane.v1.ScanResult
+	(*Sites)(nil),          // 10: kurogane.v1.Sites
+	(*WebServerInfo)(nil),  // 11: kurogane.v1.WebServerInfo
+	(*SiteInfo)(nil),       // 12: kurogane.v1.SiteInfo
+	(*CentralMessage)(nil), // 13: kurogane.v1.CentralMessage
+	(*Op)(nil),             // 14: kurogane.v1.Op
+	(*AddKey)(nil),         // 15: kurogane.v1.AddKey
+	(*RemoveKey)(nil),      // 16: kurogane.v1.RemoveKey
+	(*RunScan)(nil),        // 17: kurogane.v1.RunScan
+	(*SetSite)(nil),        // 18: kurogane.v1.SetSite
 }
-var file_serverkeeper_v1_agent_proto_depIdxs = []int32{
-	3,  // 0: serverkeeper.v1.AgentMessage.hello:type_name -> serverkeeper.v1.Hello
-	4,  // 1: serverkeeper.v1.AgentMessage.heartbeat:type_name -> serverkeeper.v1.Heartbeat
-	5,  // 2: serverkeeper.v1.AgentMessage.samples:type_name -> serverkeeper.v1.Samples
-	6,  // 3: serverkeeper.v1.AgentMessage.alert:type_name -> serverkeeper.v1.AlertEvent
-	7,  // 4: serverkeeper.v1.AgentMessage.audit:type_name -> serverkeeper.v1.AuditEntry
-	8,  // 5: serverkeeper.v1.AgentMessage.op_result:type_name -> serverkeeper.v1.OpResult
-	9,  // 6: serverkeeper.v1.AgentMessage.scan:type_name -> serverkeeper.v1.ScanResult
-	10, // 7: serverkeeper.v1.AgentMessage.sites:type_name -> serverkeeper.v1.Sites
-	11, // 8: serverkeeper.v1.Sites.servers:type_name -> serverkeeper.v1.WebServerInfo
-	12, // 9: serverkeeper.v1.Sites.sites:type_name -> serverkeeper.v1.SiteInfo
-	14, // 10: serverkeeper.v1.CentralMessage.op:type_name -> serverkeeper.v1.Op
-	15, // 11: serverkeeper.v1.Op.add_key:type_name -> serverkeeper.v1.AddKey
-	16, // 12: serverkeeper.v1.Op.remove_key:type_name -> serverkeeper.v1.RemoveKey
-	17, // 13: serverkeeper.v1.Op.run_scan:type_name -> serverkeeper.v1.RunScan
-	18, // 14: serverkeeper.v1.Op.set_site:type_name -> serverkeeper.v1.SetSite
-	0,  // 15: serverkeeper.v1.Fleet.Enroll:input_type -> serverkeeper.v1.EnrollRequest
-	2,  // 16: serverkeeper.v1.Fleet.Connect:input_type -> serverkeeper.v1.AgentMessage
-	1,  // 17: serverkeeper.v1.Fleet.Enroll:output_type -> serverkeeper.v1.EnrollResponse
-	13, // 18: serverkeeper.v1.Fleet.Connect:output_type -> serverkeeper.v1.CentralMessage
+var file_kurogane_v1_agent_proto_depIdxs = []int32{
+	3,  // 0: kurogane.v1.AgentMessage.hello:type_name -> kurogane.v1.Hello
+	4,  // 1: kurogane.v1.AgentMessage.heartbeat:type_name -> kurogane.v1.Heartbeat
+	5,  // 2: kurogane.v1.AgentMessage.samples:type_name -> kurogane.v1.Samples
+	6,  // 3: kurogane.v1.AgentMessage.alert:type_name -> kurogane.v1.AlertEvent
+	7,  // 4: kurogane.v1.AgentMessage.audit:type_name -> kurogane.v1.AuditEntry
+	8,  // 5: kurogane.v1.AgentMessage.op_result:type_name -> kurogane.v1.OpResult
+	9,  // 6: kurogane.v1.AgentMessage.scan:type_name -> kurogane.v1.ScanResult
+	10, // 7: kurogane.v1.AgentMessage.sites:type_name -> kurogane.v1.Sites
+	11, // 8: kurogane.v1.Sites.servers:type_name -> kurogane.v1.WebServerInfo
+	12, // 9: kurogane.v1.Sites.sites:type_name -> kurogane.v1.SiteInfo
+	14, // 10: kurogane.v1.CentralMessage.op:type_name -> kurogane.v1.Op
+	15, // 11: kurogane.v1.Op.add_key:type_name -> kurogane.v1.AddKey
+	16, // 12: kurogane.v1.Op.remove_key:type_name -> kurogane.v1.RemoveKey
+	17, // 13: kurogane.v1.Op.run_scan:type_name -> kurogane.v1.RunScan
+	18, // 14: kurogane.v1.Op.set_site:type_name -> kurogane.v1.SetSite
+	0,  // 15: kurogane.v1.Fleet.Enroll:input_type -> kurogane.v1.EnrollRequest
+	2,  // 16: kurogane.v1.Fleet.Connect:input_type -> kurogane.v1.AgentMessage
+	1,  // 17: kurogane.v1.Fleet.Enroll:output_type -> kurogane.v1.EnrollResponse
+	13, // 18: kurogane.v1.Fleet.Connect:output_type -> kurogane.v1.CentralMessage
 	17, // [17:19] is the sub-list for method output_type
 	15, // [15:17] is the sub-list for method input_type
 	15, // [15:15] is the sub-list for extension type_name
@@ -1726,12 +1726,12 @@ var file_serverkeeper_v1_agent_proto_depIdxs = []int32{
 	0,  // [0:15] is the sub-list for field type_name
 }
 
-func init() { file_serverkeeper_v1_agent_proto_init() }
-func file_serverkeeper_v1_agent_proto_init() {
-	if File_serverkeeper_v1_agent_proto != nil {
+func init() { file_kurogane_v1_agent_proto_init() }
+func file_kurogane_v1_agent_proto_init() {
+	if File_kurogane_v1_agent_proto != nil {
 		return
 	}
-	file_serverkeeper_v1_agent_proto_msgTypes[2].OneofWrappers = []any{
+	file_kurogane_v1_agent_proto_msgTypes[2].OneofWrappers = []any{
 		(*AgentMessage_Hello)(nil),
 		(*AgentMessage_Heartbeat)(nil),
 		(*AgentMessage_Samples)(nil),
@@ -1741,10 +1741,10 @@ func file_serverkeeper_v1_agent_proto_init() {
 		(*AgentMessage_Scan)(nil),
 		(*AgentMessage_Sites)(nil),
 	}
-	file_serverkeeper_v1_agent_proto_msgTypes[13].OneofWrappers = []any{
+	file_kurogane_v1_agent_proto_msgTypes[13].OneofWrappers = []any{
 		(*CentralMessage_Op)(nil),
 	}
-	file_serverkeeper_v1_agent_proto_msgTypes[14].OneofWrappers = []any{
+	file_kurogane_v1_agent_proto_msgTypes[14].OneofWrappers = []any{
 		(*Op_AddKey)(nil),
 		(*Op_RemoveKey)(nil),
 		(*Op_RunScan)(nil),
@@ -1754,17 +1754,17 @@ func file_serverkeeper_v1_agent_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_serverkeeper_v1_agent_proto_rawDesc), len(file_serverkeeper_v1_agent_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_kurogane_v1_agent_proto_rawDesc), len(file_kurogane_v1_agent_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_serverkeeper_v1_agent_proto_goTypes,
-		DependencyIndexes: file_serverkeeper_v1_agent_proto_depIdxs,
-		MessageInfos:      file_serverkeeper_v1_agent_proto_msgTypes,
+		GoTypes:           file_kurogane_v1_agent_proto_goTypes,
+		DependencyIndexes: file_kurogane_v1_agent_proto_depIdxs,
+		MessageInfos:      file_kurogane_v1_agent_proto_msgTypes,
 	}.Build()
-	File_serverkeeper_v1_agent_proto = out.File
-	file_serverkeeper_v1_agent_proto_goTypes = nil
-	file_serverkeeper_v1_agent_proto_depIdxs = nil
+	File_kurogane_v1_agent_proto = out.File
+	file_kurogane_v1_agent_proto_goTypes = nil
+	file_kurogane_v1_agent_proto_depIdxs = nil
 }

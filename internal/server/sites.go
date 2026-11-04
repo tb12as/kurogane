@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tb12as/serverman/internal/api"
-	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/kurogane/internal/api"
+	"github.com/tb12as/kurogane/internal/db"
 )
 
 // fleetSiteData mirrors pb.Sites as stored by protojson (proto field names).

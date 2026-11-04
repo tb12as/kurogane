@@ -3,5 +3,5 @@ package deploy
 
 import _ "embed"
 
-//go:embed serverkeeper.service
+//go:embed kurogane.service
 var AgentUnit []byte

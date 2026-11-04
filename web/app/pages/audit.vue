@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AuditEntry } from '~/types/models'
 
-useHead({ title: 'Audit log · ServerKeeper' })
+useHead({ title: 'Audit log · Kurogane' })
 const PAGE = 100
 const f = reactive({ actor: '', action: '', since: '24h' })
 const q = reactive({ actor: '', action: '', since: '24h' })

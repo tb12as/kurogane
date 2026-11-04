@@ -1,4 +1,4 @@
-# /etc/serverkeeper/config.yaml
+# /etc/kurogane/config.yaml
 server_name: web-01
 tags: [prod, web]
 listen: 127.0.0.1:9443
@@ -21,8 +21,8 @@ collector:
     # instances:                                  # empty = autodetect from /etc/redis/redis*.conf (requirepass is used)
     #   - name: cache
     #     addr: 127.0.0.1:6379                    # or unix:/run/redis/redis-server.sock
-    #     username: serverkeeper                  # read-only ACL user: -@all +ping +info +slowlog|get
-    #     password_file: /etc/serverkeeper/redis-cache.pass
+    #     username: kurogane                  # read-only ACL user: -@all +ping +info +slowlog|get
+    #     password_file: /etc/kurogane/redis-cache.pass
 
 ssh:
   rollback_timeout: 120s
@@ -43,10 +43,10 @@ alerts:
   channels:
     - name: ops
       type: slack
-      webhook_url_env: SK_SLACK_OPS      # secret read from env / encrypted store
+      webhook_url_env: KRGN_SLACK_OPS      # secret read from env / encrypted store
     - name: phone
       type: discord
-      webhook_url_env: SK_DISCORD_ME
+      webhook_url_env: KRGN_DISCORD_ME
   rules:
     - id: mem_available_low
       expr: mem.available_pct < 10
@@ -69,4 +69,4 @@ web:
 # v1 fleet: connect this agent to a central server
 # central:
 #   addr: central.example.com:9444
-#   enrollment_token: <one-time token from `serverkeeper server token create`>
+#   enrollment_token: <one-time token from `kurogane server token create`>

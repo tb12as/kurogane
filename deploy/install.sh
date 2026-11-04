@@ -1,11 +1,12 @@
 #!/bin/sh
-# ServerKeeper install script: curl -fsSL https://get.serverkeeper.dev | sudo sh
+# Kurogane install script:
+#   curl -fsSL https://github.com/tb12as/kurogane/releases/latest/download/install.sh | sudo sh
 # Downloads the release for this arch, verifies SHA256 and the cosign signature (if cosign is present),
-# installs the binary, systemd units and the serverkeeper system user.
+# installs the binary, systemd units and the kurogane system user.
 set -eu
 
-VERSION="${SK_VERSION:-latest}"
-REPO="tb12as/serverman"
+VERSION="${KRGN_VERSION:-latest}"
+REPO="tb12as/kurogane"
 [ "$(id -u)" -eq 0 ] || { echo "run as root (sudo)"; exit 1; }
 [ "$(uname -s)" = Linux ] || { echo "Linux only"; exit 1; }
 command -v systemctl >/dev/null || { echo "systemd is required"; exit 1; }
@@ -16,15 +17,15 @@ case "$(uname -m)" in
   *) echo "unsupported arch $(uname -m)"; exit 1 ;;
 esac
 
-if [ "$VERSION" = latest ] && [ -z "${SK_BASE_URL:-}" ]; then
+if [ "$VERSION" = latest ] && [ -z "${KRGN_BASE_URL:-}" ]; then
   VERSION=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')
 fi
-# SK_BASE_URL points at a mirror or an internal artifact server with the same file layout as a release
-BASE="${SK_BASE_URL:-https://github.com/$REPO/releases/download/$VERSION}"
+# KRGN_BASE_URL points at a mirror or an internal artifact server with the same file layout as a release
+BASE="${KRGN_BASE_URL:-https://github.com/$REPO/releases/download/$VERSION}"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-BIN="serverkeeper-linux-$ARCH"
+BIN="kurogane-linux-$ARCH"
 curl -fsSL -o "$TMP/$BIN" "$BASE/$BIN"
 curl -fsSL -o "$TMP/checksums.txt" "$BASE/checksums.txt"
 (cd "$TMP" && grep " $BIN\$" checksums.txt | sha256sum -c -) || { echo "checksum mismatch"; exit 1; }
@@ -39,15 +40,16 @@ else
   echo "cosign not found: signature not verified (checksum verified)"
 fi
 
-install -m 0755 "$TMP/$BIN" /usr/bin/serverkeeper
-curl -fsSL -o /lib/systemd/system/serverkeeper.service "$BASE/serverkeeper.service"
-curl -fsSL -o /lib/systemd/system/serverkeeper-server.service "$BASE/serverkeeper-server.service"
-if ! getent passwd serverkeeper >/dev/null; then
-  useradd --system --home-dir /var/lib/serverkeeper --no-create-home --shell /usr/sbin/nologin serverkeeper
+install -m 0755 "$TMP/$BIN" /usr/bin/kurogane
+ln -sf kurogane /usr/bin/krgn # short alias
+curl -fsSL -o /lib/systemd/system/kurogane.service "$BASE/kurogane.service"
+curl -fsSL -o /lib/systemd/system/kurogane-server.service "$BASE/kurogane-server.service"
+if ! getent passwd kurogane >/dev/null; then
+  useradd --system --home-dir /var/lib/kurogane --no-create-home --shell /usr/sbin/nologin kurogane
 fi
 # debian family: read /var/log/auth.log directly (RHEL falls back to journald via the root executor)
-getent group adm >/dev/null && usermod -a -G adm serverkeeper || true
-install -d -m 0700 -o serverkeeper -g serverkeeper /var/lib/serverkeeper
-install -d -m 0750 -o root -g serverkeeper /etc/serverkeeper
+getent group adm >/dev/null && usermod -a -G adm kurogane || true
+install -d -m 0700 -o kurogane -g kurogane /var/lib/kurogane
+install -d -m 0750 -o root -g kurogane /etc/kurogane
 systemctl daemon-reload
-echo "Installed serverkeeper $VERSION. Next: sudo serverkeeper init"
+echo "Installed kurogane $VERSION (also as krgn). Next: sudo krgn init"

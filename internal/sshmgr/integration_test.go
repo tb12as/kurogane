@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tb12as/serverman/internal/audit"
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/hostfs"
-	"github.com/tb12as/serverman/internal/store"
+	"github.com/tb12as/kurogane/internal/audit"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/store"
 )
 
 // containers have no systemd: this shim turns `systemctl reload ssh|sshd` into SIGHUP for the real sshd
@@ -43,8 +43,8 @@ func sshdT(t *testing.T, key string) string {
 
 // PRD §12 lockout test against a real sshd: an unconfirmed change must roll back within the timeout.
 func TestIntegrationLockoutRollback(t *testing.T) {
-	if os.Getenv("SK_INTEGRATION") != "1" || os.Geteuid() != 0 {
-		t.Skip("set SK_INTEGRATION=1 and run as root inside a disposable container")
+	if os.Getenv("KRGN_INTEGRATION") != "1" || os.Geteuid() != 0 {
+		t.Skip("set KRGN_INTEGRATION=1 and run as root inside a disposable container")
 	}
 	hostfs.Root = "/"
 	if err := os.WriteFile("/usr/local/sbin/systemctl", []byte(systemctlShim), 0o755); err != nil {

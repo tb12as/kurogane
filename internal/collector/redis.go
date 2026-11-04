@@ -13,10 +13,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/hostfs"
-	"github.com/tb12as/serverman/internal/redisinfo"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/redisinfo"
 )
 
 // Redis instance states.
@@ -363,7 +363,7 @@ func (c *redisCollector) one(ctx context.Context, t redisTarget) ([]Sample, Redi
 	case errors.Is(err, redisinfo.ErrNoAuth) && !t.hasPass:
 		st.Status = RedisNeedsCreds
 		st.Hint = "This Redis requires a password. Set collector.redis.instances[].password_file, or create a " +
-			"read-only user: ACL SETUSER serverkeeper on >PASSWORD -@all +ping +info +slowlog|get"
+			"read-only user: ACL SETUSER kurogane on >PASSWORD -@all +ping +info +slowlog|get"
 		return nil, st
 	case errors.Is(err, redisinfo.ErrAuth), errors.Is(err, redisinfo.ErrNoAuth):
 		st.Status, st.Error = RedisAuthFailed, err.Error()
@@ -372,7 +372,7 @@ func (c *redisCollector) one(ctx context.Context, t redisTarget) ([]Sample, Redi
 	case err != nil:
 		st.Status, st.Error = RedisDown, err.Error()
 		if strings.HasPrefix(t.target.Addr, "unix:") && strings.Contains(err.Error(), "permission denied") {
-			st.Hint = "The agent cannot open the socket: add the serverkeeper user to the redis group, or let " +
+			st.Hint = "The agent cannot open the socket: add the kurogane user to the redis group, or let " +
 				"Redis listen on 127.0.0.1."
 		}
 		return []Sample{{Metric: "redis.up", Labels: l, Value: 0}}, st

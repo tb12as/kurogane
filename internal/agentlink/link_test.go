@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tb12as/serverman/internal/collector"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/pb"
-	"github.com/tb12as/serverman/internal/sites"
-	"github.com/tb12as/serverman/internal/webconf"
+	"github.com/tb12as/kurogane/internal/collector"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/pb"
+	"github.com/tb12as/kurogane/internal/sites"
+	"github.com/tb12as/kurogane/internal/webconf"
 )
 
 func TestBufferBounded(t *testing.T) {

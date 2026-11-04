@@ -1,4 +1,4 @@
-// Package config loads /etc/serverkeeper/config.yaml (PRD §10.3) with viper.
+// Package config loads /etc/kurogane/config.yaml (PRD §10.3) with viper.
 package config
 
 import (
@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-const DefaultPath = "/etc/serverkeeper/config.yaml"
+const DefaultPath = "/etc/kurogane/config.yaml"
 
 type Config struct {
 	ServerName   string    `mapstructure:"server_name" json:"server_name"`
@@ -180,7 +180,7 @@ type Central struct {
 	CAFile          string `mapstructure:"ca_file" json:"ca_file"`
 }
 
-// Server configures `serverkeeper server run` (central, v1).
+// Server configures `kurogane server run` (central, v1).
 type Server struct {
 	GRPCListen     string        `mapstructure:"grpc_listen" json:"grpc_listen"`
 	HTTPListen     string        `mapstructure:"http_listen" json:"http_listen"`
@@ -226,8 +226,8 @@ func defaults(v *viper.Viper) {
 	host, _ := os.Hostname()
 	v.SetDefault("server_name", host)
 	v.SetDefault("listen", "127.0.0.1:9443")
-	v.SetDefault("data_dir", "/var/lib/serverkeeper")
-	v.SetDefault("secret_key", "/etc/serverkeeper/secret.key")
+	v.SetDefault("data_dir", "/var/lib/kurogane")
+	v.SetDefault("secret_key", "/etc/kurogane/secret.key")
 	v.SetDefault("privsep", true)
 	v.SetDefault("collector.interval", "10s")
 	v.SetDefault("collector.retention_raw", "24h")
@@ -256,7 +256,7 @@ func defaults(v *viper.Viper) {
 	v.SetDefault("server.vm.mode", "systemd")
 	v.SetDefault("server.vm.binary", "/usr/local/bin/victoria-metrics-prod")
 	v.SetDefault("server.vm.retention", "90d")
-	v.SetDefault("server.vm.data_dir", "/var/lib/serverkeeper/vm")
+	v.SetDefault("server.vm.data_dir", "/var/lib/kurogane/vm")
 	v.SetDefault("server.backup.schedule", "30 2 * * *")
 	v.SetDefault("server.backup.keep", 7)
 	v.SetDefault("server.audit_retention", "8760h")
@@ -292,11 +292,11 @@ func ParseDuration(s string) (time.Duration, error) {
 	return time.ParseDuration(s)
 }
 
-// Load reads path (missing file = defaults) with SK_* env overrides.
+// Load reads path (missing file = defaults) with KRGN_* env overrides.
 func Load(path string) (*Config, error) {
 	v := viper.New()
 	defaults(v)
-	v.SetEnvPrefix("SK")
+	v.SetEnvPrefix("KRGN")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
 	if path == "" {
@@ -381,5 +381,5 @@ func IsLoopback(addr string) bool {
 
 // Path helpers inside DataDir.
 func (c *Config) AgentDB() string   { return c.DataDir + "/agent.db" }
-func (c *Config) MetaDB() string    { return c.DataDir + "/serverkeeper.db" }
+func (c *Config) MetaDB() string    { return c.DataDir + "/kurogane.db" }
 func (c *Config) BackupDir() string { return c.DataDir + "/backups" }

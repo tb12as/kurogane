@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tb12as/serverman/internal/collector"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/collector"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 // Fixture describes a host: files (path ending in "/" = dir), modes, fake command outputs and service seams.
@@ -66,7 +66,7 @@ func Setup(t *testing.T, f Fixture) (*Env, *executor.Fake) {
 	for k, v := range f.Errs {
 		fx.Errors[k] = v
 	}
-	e := &Env{Ex: fx, ExpectedPorts: f.Ports, ConfigPath: "/etc/serverkeeper/config.yaml",
+	e := &Env{Ex: fx, ExpectedPorts: f.Ports, ConfigPath: "/etc/kurogane/config.yaml",
 		Bruteforce: func() bool { return f.BF }}
 	if f.SSH != nil {
 		e.Settings = func(context.Context) (map[string]string, error) { return f.SSH, nil }

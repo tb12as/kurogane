@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tb12as/serverman/internal/auth"
-	"github.com/tb12as/serverman/internal/certs"
+	"github.com/tb12as/kurogane/internal/auth"
+	"github.com/tb12as/kurogane/internal/certs"
 )
 
 func init() {

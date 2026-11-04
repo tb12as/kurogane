@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 // fakeRedis answers PING, AUTH, INFO (from fields) and SLOWLOG GET.
@@ -145,10 +145,10 @@ func redisRoot(t *testing.T, files map[string]string) string {
 
 func TestRedisMetricsAndRates(t *testing.T) {
 	adv := clock(t)
-	redisRoot(t, map[string]string{"etc/serverkeeper/redis.pass": "s3cret\n"})
+	redisRoot(t, map[string]string{"etc/kurogane/redis.pass": "s3cret\n"})
 	f := newFakeRedis(t, "s3cret")
 	c := newRedis(config.Redis{Enabled: "auto", Instances: []config.RedisInstance{{Name: "cache", Addr: f.addr,
-		PasswordFile: "/etc/serverkeeper/redis.pass"}}}, executor.NewFake(), 10*time.Second)
+		PasswordFile: "/etc/kurogane/redis.pass"}}}, executor.NewFake(), 10*time.Second)
 	c.poll(ctx)
 	first := samplesMap(c.samples)
 	for k, want := range map[string]float64{`redis.up{instance="cache"}`: 1, `redis.memory_used_pct{instance="cache"}`: 50,
@@ -209,14 +209,14 @@ func TestRedisMetricsAndRates(t *testing.T) {
 
 func TestRedisStates(t *testing.T) {
 	clock(t)
-	redisRoot(t, map[string]string{"etc/serverkeeper/wrong.pass": "nope"})
+	redisRoot(t, map[string]string{"etc/kurogane/wrong.pass": "nope"})
 	locked := newFakeRedis(t, "s3cret")
 	l, _ := net.Listen("tcp", "127.0.0.1:0")
 	dead := l.Addr().String()
 	l.Close()
 	c := newRedis(config.Redis{Instances: []config.RedisInstance{
 		{Name: "nopass", Addr: locked.addr},
-		{Name: "wrong", Addr: locked.addr, PasswordFile: "/etc/serverkeeper/wrong.pass"},
+		{Name: "wrong", Addr: locked.addr, PasswordFile: "/etc/kurogane/wrong.pass"},
 		{Name: "dead", Addr: dead},
 		{Name: "sock", Addr: "unix:/nonexistent/redis.sock"},
 	}}, executor.NewFake(), time.Second)

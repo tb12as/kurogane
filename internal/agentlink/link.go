@@ -27,13 +27,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tb12as/serverman/internal/agent"
-	"github.com/tb12as/serverman/internal/collector"
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/hostfs"
-	"github.com/tb12as/serverman/internal/pb"
-	"github.com/tb12as/serverman/internal/sites"
+	"github.com/tb12as/kurogane/internal/agent"
+	"github.com/tb12as/kurogane/internal/collector"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/pb"
+	"github.com/tb12as/kurogane/internal/sites"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/encoding/gzip"
@@ -42,7 +42,7 @@ import (
 )
 
 // ServerName must match the central gRPC certificate SAN (server.ServerName).
-const ServerName = "serverkeeper-central"
+const ServerName = "kurogane-central"
 
 const (
 	maxQueue   = 5000 // alerts, audit, op results, scans
@@ -468,7 +468,7 @@ func (l *Link) credentials(ctx context.Context) (*tls.Config, error) {
 func (l *Link) Enroll(ctx context.Context) error {
 	tok := strings.TrimSpace(l.Cfg.Central.EnrollmentToken)
 	if tok == "" {
-		return errors.New("not enrolled and central.enrollment_token is empty: run `serverkeeper server token create " +
+		return errors.New("not enrolled and central.enrollment_token is empty: run `kurogane server token create " +
 			"--name " + l.Cfg.ServerName + "` on the central server and put the token in config.yaml")
 	}
 	tc := &tls.Config{MinVersion: tls.VersionTLS13, ServerName: ServerName}

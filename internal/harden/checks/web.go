@@ -7,8 +7,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/webconf"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/webconf"
 )
 
 // webConfigs parses nginx and Apache once per scan.

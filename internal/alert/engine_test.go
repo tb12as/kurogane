@@ -12,14 +12,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tb12as/serverman/internal/audit"
-	"github.com/tb12as/serverman/internal/certs"
-	"github.com/tb12as/serverman/internal/collector"
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/firewall"
-	"github.com/tb12as/serverman/internal/store"
+	"github.com/tb12as/kurogane/internal/audit"
+	"github.com/tb12as/kurogane/internal/certs"
+	"github.com/tb12as/kurogane/internal/collector"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/firewall"
+	"github.com/tb12as/kurogane/internal/store"
 )
 
 type hookSink struct {
@@ -446,7 +446,7 @@ func TestRedisRules(t *testing.T) {
 		t.Fatalf("replication = %v", sink.msgs)
 	}
 	if txt := redisText("redis_down", "x", &collector.Snapshot{Redis: []collector.RedisInstance{{Name: "x",
-		Status: collector.RedisAuthFailed}}}, 0); !strings.Contains(txt, "rejects ServerKeeper's credentials") {
+		Status: collector.RedisAuthFailed}}}, 0); !strings.Contains(txt, "rejects Kurogane's credentials") {
 		t.Fatal(txt)
 	}
 }

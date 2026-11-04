@@ -30,7 +30,7 @@ func New(u string) *Client {
 func (c *Client) do(req *http.Request) ([]byte, error) {
 	resp, err := c.HC.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("victoriametrics at %s unreachable: %w (is serverkeeper-vm running?)", c.URL, err)
+		return nil, fmt.Errorf("victoriametrics at %s unreachable: %w (is kurogane-vm running?)", c.URL, err)
 	}
 	defer resp.Body.Close()
 	b, err := io.ReadAll(io.LimitReader(resp.Body, 256<<20))

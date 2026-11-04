@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 // Certificates are generated at test time: committed fixtures would expire and break CI.

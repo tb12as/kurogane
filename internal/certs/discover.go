@@ -14,8 +14,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tb12as/serverman/internal/hostfs"
-	"github.com/tb12as/serverman/internal/webconf"
+	"github.com/tb12as/kurogane/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/webconf"
 )
 
 // Reader reads host files. The agent passes its executor, so root-only certbot directories are read by the

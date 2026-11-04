@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tb12as/serverman/internal/auth"
-	"github.com/tb12as/serverman/internal/collector"
-	"github.com/tb12as/serverman/internal/store"
+	"github.com/tb12as/kurogane/internal/auth"
+	"github.com/tb12as/kurogane/internal/collector"
+	"github.com/tb12as/kurogane/internal/store"
 )
 
 func init() {
@@ -146,7 +146,7 @@ func writeProm(w http.ResponseWriter, samples []collector.Sample) {
 	var lk []string
 	for _, i := range idx {
 		x := samples[i]
-		name := "serverkeeper_" + promIdent(x.Metric)
+		name := "kurogane_" + promIdent(x.Metric)
 		if x.Metric != last {
 			last = x.Metric
 			bw.WriteString("# TYPE " + name + " gauge\n")

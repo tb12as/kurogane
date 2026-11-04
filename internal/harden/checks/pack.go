@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tb12as/serverman/internal/executor"
+	"github.com/tb12as/kurogane/internal/executor"
 	"gopkg.in/yaml.v3"
 )
 

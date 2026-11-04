@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 // memCollector reads /proc/meminfo and /proc/vmstat (oom_kill).

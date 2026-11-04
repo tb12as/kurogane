@@ -17,7 +17,7 @@ export default defineNuxtConfig({
   shadcn: { prefix: '', componentDir: './app/components/ui' },
   app: {
     head: {
-      title: 'ServerKeeper',
+      title: 'Kurogane',
       htmlAttrs: { lang: 'en' },
       meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1' }],
       link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
@@ -29,7 +29,7 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss()],
     // dev: proxy the API to a locally running agent
-    server: { proxy: { '/api': { target: process.env.SK_API || 'http://127.0.0.1:9443', changeOrigin: true } } },
+    server: { proxy: { '/api': { target: process.env.KRGN_API || 'http://127.0.0.1:9443', changeOrigin: true } } },
   },
   typescript: { strict: true },
 })

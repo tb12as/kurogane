@@ -11,10 +11,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/tb12as/serverman/internal/certs"
-	"github.com/tb12as/serverman/internal/collector"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/certs"
+	"github.com/tb12as/kurogane/internal/collector"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 // Severities and their score weights (PRD §7.2).

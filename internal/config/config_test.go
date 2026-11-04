@@ -33,10 +33,10 @@ alerts:
   channels:
     - name: ops
       type: slack
-      webhook_url_env: SK_SLACK_OPS
+      webhook_url_env: KRGN_SLACK_OPS
     - name: phone
       type: discord
-      webhook_url_env: SK_DISCORD_ME
+      webhook_url_env: KRGN_DISCORD_ME
   rules:
     - id: mem_available_low
       expr: mem.available_pct < 10

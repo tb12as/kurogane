@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tb12as/serverman/internal/certs"
+	"github.com/tb12as/kurogane/internal/certs"
 )
 
 // Sample is one metric value at a point in time (data model §10.4).

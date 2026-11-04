@@ -1,5 +1,5 @@
 <script setup lang="ts">
-useHead({ title: 'Alerts · ServerKeeper' })
+useHead({ title: 'Alerts · Kurogane' })
 const tab = useTab('events')
 </script>
 

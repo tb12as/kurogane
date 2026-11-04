@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AlertEvent, Server, Snapshot } from '~/types/models'
 
-useHead({ title: 'Overview · ServerKeeper' })
+useHead({ title: 'Overview · Kurogane' })
 const fleet = useFleet()
 const live = useLive()
 
@@ -27,8 +27,8 @@ onMounted(async () => {
 // onboarding telemetry: time from init to first dashboard (backend records only the first call)
 onMounted(() => {
   try {
-    if (localStorage.getItem('sk.first-dashboard')) return
-    localStorage.setItem('sk.first-dashboard', '1')
+    if (localStorage.getItem('krgn.first-dashboard')) return
+    localStorage.setItem('krgn.first-dashboard', '1')
   } catch {
     /* storage blocked */
   }

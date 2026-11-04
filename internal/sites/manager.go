@@ -7,13 +7,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tb12as/serverman/internal/alert"
-	"github.com/tb12as/serverman/internal/audit"
-	"github.com/tb12as/serverman/internal/certs"
-	"github.com/tb12as/serverman/internal/collector"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/store"
+	"github.com/tb12as/kurogane/internal/alert"
+	"github.com/tb12as/kurogane/internal/audit"
+	"github.com/tb12as/kurogane/internal/certs"
+	"github.com/tb12as/kurogane/internal/collector"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/store"
 )
 
 // Scan cadence: files are parsed often (cheap), the config test runs less often and after every change.
@@ -32,7 +32,7 @@ type Deps struct {
 	Certs   func() []certs.Cert                // latest certificate scan, for days left per site
 	Publish func(event string, v any)
 	Now     func() time.Time
-	// SelfPort is the port ServerKeeper's own API listens on, to warn before disabling a site that proxies to it.
+	// SelfPort is the port Kurogane's own API listens on, to warn before disabling a site that proxies to it.
 	SelfPort string
 }
 

@@ -85,7 +85,7 @@ func TestDialAndInfo(t *testing.T) {
 	f := serve(t, func(a []string) string {
 		switch strings.ToUpper(a[0]) {
 		case "AUTH":
-			if len(a) == 3 && a[1] == "serverkeeper" && a[2] == "s3cret" {
+			if len(a) == 3 && a[1] == "kurogane" && a[2] == "s3cret" {
 				return "+OK\r\n"
 			}
 			return "-WRONGPASS invalid username-password pair or user is disabled.\r\n"
@@ -101,12 +101,12 @@ func TestDialAndInfo(t *testing.T) {
 		}
 		return "-ERR unknown command\r\n"
 	})
-	c, err := Dial(ctx, Target{Addr: f.addr, Username: "serverkeeper", Password: "s3cret"})
+	c, err := Dial(ctx, Target{Addr: f.addr, Username: "kurogane", Password: "s3cret"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer c.Close()
-	if got := <-f.cmds; strings.Join(got, " ") != "AUTH serverkeeper s3cret" {
+	if got := <-f.cmds; strings.Join(got, " ") != "AUTH kurogane s3cret" {
 		t.Fatalf("first command = %v", got)
 	}
 	if d, err := c.Ping(); err != nil || d <= 0 {

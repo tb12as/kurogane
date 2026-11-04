@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tb12as/serverman/internal/auth"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/store"
+	"github.com/tb12as/kurogane/internal/auth"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/store"
 )
 
 func init() {
@@ -119,7 +119,7 @@ func (s *Server) clearHistory(r *http.Request) (any, error) {
 
 func (s *Server) uninstall(r *http.Request) (any, error) {
 	if s.Central || s.Ex == nil {
-		return nil, Errf(http.StatusBadRequest, "uninstall from the UI is agent only: run sudo serverkeeper uninstall on the host")
+		return nil, Errf(http.StatusBadRequest, "uninstall from the UI is agent only: run sudo kurogane uninstall on the host")
 	}
 	var q struct {
 		Purge   bool   `json:"purge"`
@@ -145,7 +145,7 @@ func (s *Server) uninstall(r *http.Request) (any, error) {
 	s.Audit.Record(r.Context(), "agent.uninstall", s.Cfg.ServerName, nil, map[string]any{"purge": q.Purge})
 	if _, err := s.Ex.Run(r.Context(), "systemd-run", args...); err != nil {
 		return nil, Errf(http.StatusInternalServerError,
-			"start uninstall: %v (binary %s; run sudo serverkeeper uninstall on the host)", err, bin)
+			"start uninstall: %v (binary %s; run sudo kurogane uninstall on the host)", err, bin)
 	}
 	return map[string]any{"started": true, "purge": q.Purge}, nil
 }

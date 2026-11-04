@@ -1,12 +1,12 @@
-# ServerKeeper Design Rules
+# Kurogane Design Rules
 
-This document defines the visual and interaction rules for the ServerKeeper web UI (`web/app`). AI agents and
+This document defines the visual and interaction rules for the Kurogane web UI (`web/app`). AI agents and
 contributors must follow it for every UI change. When a rule here conflicts with a default from a library, a
 template, or a model's habit, this document wins.
 
 ## 1. Product and audience
 
-ServerKeeper is a self-hosted server management tool. Its users are operators who manage one server or a fleet.
+Kurogane is a self-hosted server management tool. Its users are operators who manage one server or a fleet.
 Every screen exists to let the operator spot a problem and act on it: a firing alert, a failed hardening check, a
 pending SSH change. Layout, emphasis, and color follow that job. Decoration does not.
 

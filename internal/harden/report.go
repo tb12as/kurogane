@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/go-pdf/fpdf"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/harden/checks"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/harden/checks"
 )
 
 // Report is the exported scan (HD-4).

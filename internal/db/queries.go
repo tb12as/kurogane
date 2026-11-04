@@ -928,7 +928,7 @@ func (s *SQLite) UseEnrollToken(ctx context.Context, hash string, now time.Time)
 		return EnrollToken{}, err
 	}
 	if n, _ := r.RowsAffected(); n == 0 {
-		return EnrollToken{}, errors.New("enrollment token invalid, expired or already used: create a new one with `serverkeeper server token`")
+		return EnrollToken{}, errors.New("enrollment token invalid, expired or already used: create a new one with `kurogane server token`")
 	}
 	var t EnrollToken
 	var c, e, u int64

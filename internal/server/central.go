@@ -1,4 +1,4 @@
-// Package server is the v1 central server (`serverkeeper server run`, PRD §9): SQLite metadata, its own CA,
+// Package server is the v1 central server (`kurogane server run`, PRD §9): SQLite metadata, its own CA,
 // gRPC with mutual TLS for agents, fleet metrics in VictoriaMetrics, alert routing and typed fleet operations.
 //
 // Ports: one gRPC port (server.grpc_listen, default :9444) serves both RPCs. TLS 1.3 with
@@ -22,20 +22,20 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
-	"github.com/tb12as/serverman/internal/agent"
-	"github.com/tb12as/serverman/internal/alert"
-	"github.com/tb12as/serverman/internal/api"
-	"github.com/tb12as/serverman/internal/audit"
-	"github.com/tb12as/serverman/internal/auth"
-	"github.com/tb12as/serverman/internal/backup"
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/metricsdb"
-	"github.com/tb12as/serverman/internal/notify"
-	"github.com/tb12as/serverman/internal/pb"
-	"github.com/tb12as/serverman/internal/secret"
-	"github.com/tb12as/serverman/web"
+	"github.com/tb12as/kurogane/internal/agent"
+	"github.com/tb12as/kurogane/internal/alert"
+	"github.com/tb12as/kurogane/internal/api"
+	"github.com/tb12as/kurogane/internal/audit"
+	"github.com/tb12as/kurogane/internal/auth"
+	"github.com/tb12as/kurogane/internal/backup"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/metricsdb"
+	"github.com/tb12as/kurogane/internal/notify"
+	"github.com/tb12as/kurogane/internal/pb"
+	"github.com/tb12as/kurogane/internal/secret"
+	"github.com/tb12as/kurogane/web"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	_ "google.golang.org/grpc/encoding/gzip" // agents compress the stream
@@ -85,7 +85,7 @@ var (
 // New opens the metadata store, CA and secret box under cfg.DataDir.
 func New(cfg *config.Config, version string) (*Central, error) {
 	if err := os.MkdirAll(cfg.DataDir, 0o700); err != nil {
-		return nil, fmt.Errorf("create data dir %s: %w (run as the serverkeeper user or set data_dir)", cfg.DataDir, err)
+		return nil, fmt.Errorf("create data dir %s: %w (run as the kurogane user or set data_dir)", cfg.DataDir, err)
 	}
 	c := &Central{Cfg: cfg, Version: version, NewNotifier: notify.New, sessions: map[string]*session{},
 		latest: map[string]map[string]float64{}, VM: metricsdb.New(cfg.Server.VM.URL)}

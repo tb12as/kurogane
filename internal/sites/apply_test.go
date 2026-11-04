@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/store"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/store"
 )
 
 // seqExec fails `nginx -t` from the nth call on (0 = never), on top of the fake executor.
@@ -148,7 +148,7 @@ func TestPlanWarnings(t *testing.T) {
 	r.m.inv = inv
 	r.m.mu.Unlock()
 	p, _ := r.m.Plan(ctx, r.id("api.example.com"), false)
-	if !strings.Contains(strings.Join(p.Warnings, "\n"), "proxies to ServerKeeper itself") {
+	if !strings.Contains(strings.Join(p.Warnings, "\n"), "proxies to Kurogane itself") {
 		t.Errorf("self warning missing: %v", p.Warnings)
 	}
 	p, _ = r.m.Plan(ctx, r.id("old.example.org"), true)
