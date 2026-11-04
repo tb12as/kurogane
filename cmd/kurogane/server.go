@@ -95,6 +95,7 @@ func init() {
 					fmt.Println("admin user not created:", err)
 				} else {
 					fmt.Println("Admin user created. Add this to your authenticator app (TOTP is mandatory):\n  " + url)
+					printQR(url)
 				}
 			}
 			store.Close()

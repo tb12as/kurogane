@@ -280,10 +280,10 @@ func TestAutoBan(t *testing.T) {
 	})
 	ex := executor.NewFake()
 	ex.Outputs["iptables -S INPUT"] = "-P INPUT ACCEPT"
-	ex.Errors["iptables -C INPUT -j SERVERKEEPER"] = &executor.RunError{Cmd: "iptables"}
-	ex.Errors["ip6tables -C INPUT -j SERVERKEEPER"] = &executor.RunError{Cmd: "ip6tables"}
+	ex.Errors["iptables -C INPUT -j KUROGANE"] = &executor.RunError{Cmd: "iptables"}
+	ex.Errors["ip6tables -C INPUT -j KUROGANE"] = &executor.RunError{Cmd: "ip6tables"}
 	for _, ip := range []string{"198.51.100.7", "198.51.100.8"} {
-		ex.Errors["iptables -C SERVERKEEPER -s "+ip+" -j DROP"] = &executor.RunError{Cmd: "iptables"}
+		ex.Errors["iptables -C KUROGANE -s "+ip+" -j DROP"] = &executor.RunError{Cmd: "iptables"}
 	}
 	e.d.Firewall = firewall.New(ex)
 	e.d.Audit = &audit.Logger{Store: e.d.DB}
@@ -296,7 +296,7 @@ func TestAutoBan(t *testing.T) {
 	if len(bans) != 2 || bans[0].IP == "203.0.113.5" || bans[1].IP == "203.0.113.5" {
 		t.Fatalf("want 2 bans (cap), never the allowlisted IP: %+v", bans)
 	}
-	if ex.Called("iptables -I SERVERKEEPER -s 198.51.100.9") || ex.Called("iptables -I SERVERKEEPER -s 192.0.2.1") {
+	if ex.Called("iptables -I KUROGANE -s 198.51.100.9") || ex.Called("iptables -I KUROGANE -s 192.0.2.1") {
 		t.Fatal("cap exceeded or low-count source banned")
 	}
 	if !allowed([]string{"10.0.0.0/8"}, "10.1.2.3") || allowed([]string{"10.0.0.0/8"}, "11.1.2.3") {

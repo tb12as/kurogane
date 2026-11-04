@@ -118,14 +118,14 @@ func TestBanFirewalldIptables(t *testing.T) {
 
 	ex2, _ := setup(t)
 	ex2.Errors["nft list tables"] = errors.New("no nft")
-	ex2.Errors["iptables -C INPUT -j SERVERKEEPER"] = errors.New("missing")
-	ex2.Errors["iptables -C SERVERKEEPER -s 198.51.100.7 -j DROP"] = errors.New("missing")
+	ex2.Errors["iptables -C INPUT -j KUROGANE"] = errors.New("missing")
+	ex2.Errors["iptables -C KUROGANE -s 198.51.100.7 -j DROP"] = errors.New("missing")
 	m2 := New(ex2)
 	if err := m2.Ban(context.Background(), "198.51.100.7", time.Hour, ""); err != nil {
 		t.Fatal(err)
 	}
-	if m2.Backend() != "iptables" || !ex2.Called("iptables -I INPUT 1 -j SERVERKEEPER") ||
-		!ex2.Called("iptables -I SERVERKEEPER -s 198.51.100.7 -j DROP") {
+	if m2.Backend() != "iptables" || !ex2.Called("iptables -I INPUT 1 -j KUROGANE") ||
+		!ex2.Called("iptables -I KUROGANE -s 198.51.100.7 -j DROP") {
 		t.Fatalf("iptables path: %v", ex2)
 	}
 }
@@ -156,7 +156,7 @@ Anywhere                   DENY IN     198.51.100.7
 	if err != nil || n != 1 || pol != "drop" || len(ports) != 3 || ports[0] != "22/tcp" {
 		t.Fatalf("nft: %v %s %v", err, pol, ports)
 	}
-	pol, ports, rules := parseIptables("-P INPUT DROP\n-P FORWARD DROP\n-A INPUT -j SERVERKEEPER\n" +
+	pol, ports, rules := parseIptables("-P INPUT DROP\n-P FORWARD DROP\n-A INPUT -j KUROGANE\n" +
 		"-A INPUT -p tcp -m tcp --dport 22 -j ACCEPT\n-A INPUT -p tcp -m multiport --dports 80,443 -j ACCEPT\n")
 	if pol != "drop" || rules != 2 || len(ports) != 3 {
 		t.Fatalf("iptables: %s %v %d", pol, ports, rules)

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -156,6 +157,7 @@ func init() {
 				} else {
 					fmt.Println("\nAdmin user created. Scan this in your authenticator app (TOTP is mandatory):")
 					fmt.Println("  " + url)
+					printQR(url)
 				}
 			}
 			if err := installUnit(ctx); err != nil {
@@ -212,4 +214,14 @@ func installUnit(ctx context.Context) error {
 	}
 	_, err := ex.Run(ctx, "systemctl", "enable", "--now", "kurogane")
 	return err
+}
+
+// printQR renders s as a terminal QR code when qrencode is installed; the URL is printed either way
+func printQR(s string) {
+	if _, err := exec.LookPath("qrencode"); err != nil {
+		return
+	}
+	c := exec.Command("qrencode", "-t", "ansiutf8", s)
+	c.Stdout, c.Stderr = os.Stdout, os.Stderr
+	_ = c.Run()
 }
