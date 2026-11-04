@@ -31,6 +31,10 @@ const NAMES = [
   'net.tcp.time_wait',
   'net.tcp.close_wait',
   'net.new_conns_ps',
+  'redis.memory_used_bytes',
+  'redis.ops_ps',
+  'redis.hit_ratio',
+  'redis.clients',
 ]
 
 const {
@@ -86,7 +90,7 @@ function pick(metrics: string[], label?: string, names?: Record<string, string>)
 }
 const charts = computed(
   () =>
-    [
+    ([
       {
         title: 'CPU',
         unit: 'pct',
@@ -125,7 +129,12 @@ const charts = computed(
         lines: pick(['net.tcp.established', 'net.tcp.syn_recv', 'net.tcp.time_wait', 'net.tcp.close_wait']),
       },
       { title: 'New connections per second', unit: 'num', lines: pick(['net.new_conns_ps']) },
-    ] as const,
+      // Redis charts appear only on servers that report Redis
+      { title: 'Redis memory', unit: 'bytes', lines: pick(['redis.memory_used_bytes'], 'instance', { 'redis.memory_used_bytes': '' }) },
+      { title: 'Redis operations per second', unit: 'num', lines: pick(['redis.ops_ps'], 'instance', { 'redis.ops_ps': '' }) },
+      { title: 'Redis hit ratio', unit: 'pct', lines: pick(['redis.hit_ratio'], 'instance', { 'redis.hit_ratio': '' }) },
+      { title: 'Redis clients', unit: 'num', lines: pick(['redis.clients'], 'instance', { 'redis.clients': '' }) },
+    ] as const).filter(c => !c.title.startsWith('Redis') || c.lines.length),
 )
 
 const procTab = ref('cpu')
@@ -248,6 +257,10 @@ async function kill(pid: number) {
       </CardContent>
     </Card>
   </div>
+
+  <section v-if="local && snap?.redis?.length" aria-label="Redis" class="grid gap-4 xl:grid-cols-2">
+    <RedisCard v-for="r in snap.redis" :key="r.name" :r="r" />
+  </section>
 
   <Card v-if="local">
     <CardHeader class="flex flex-row items-center justify-between">

@@ -253,6 +253,8 @@ func TestAgentRoundTrip(t *testing.T) {
 		{Metric: "disk.used_pct", Labels: map[string]string{"mount": "/"}, Value: 70},
 		{Metric: "cert.days_left", Labels: map[string]string{"name": "a.example"}, Value: 40},
 		{Metric: "cert.days_left", Labels: map[string]string{"name": "b.example"}, Value: 12.5},
+		{Metric: "redis.up", Labels: map[string]string{"instance": "redis"}, Value: 1},
+		{Metric: "redis.up", Labels: map[string]string{"instance": "redis-cache"}, Value: 0},
 	}})
 	eventually(t, "samples in VM", func() bool {
 		e.c.Flush(ctx)
@@ -265,7 +267,7 @@ func TestAgentRoundTrip(t *testing.T) {
 	e.c.mu.Lock()
 	ov := e.c.latest[srv.ID]
 	e.c.mu.Unlock()
-	if ov["cert_days"] != 12.5 || ov["disk"] != 70 {
+	if ov["cert_days"] != 12.5 || ov["disk"] != 70 || ov["redis_total"] != 2 || ov["redis_up"] != 1 {
 		t.Fatalf("overview latest = %v", ov)
 	}
 

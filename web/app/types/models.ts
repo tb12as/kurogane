@@ -46,6 +46,38 @@ export interface Snapshot {
   services: { unit: string; active: string; sub: string }[]
   mounts: Mount[]
   certs?: Cert[]
+  redis?: RedisInstance[]
+}
+export interface RedisInstance {
+  name: string
+  addr: string
+  config_file?: string
+  status: 'up' | 'down' | 'auth_failed' | 'needs_credentials'
+  error?: string
+  hint?: string
+  version?: string
+  mode?: string
+  role?: string
+  uptime_s?: number
+  ping_ms?: number
+  memory_used: number
+  memory_rss: number
+  maxmemory: number
+  maxmemory_policy?: string
+  clients: number
+  maxclients: number
+  ops_ps: number
+  hit_ratio?: number
+  evicted_keys: number
+  rdb_status?: string
+  last_save?: string
+  changes_since_save: number
+  aof_enabled: boolean
+  aof_status?: string
+  replicas: number
+  master_link?: string
+  keyspace: { name: string; keys: number; expires: number }[]
+  slowlog: { id: number; at: string; duration_ns: number; command: string }[]
 }
 export interface Cert {
   name: string

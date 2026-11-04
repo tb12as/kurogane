@@ -101,7 +101,41 @@ components:
         services: {type: array, items: {$ref: "#/components/schemas/ServiceState"}}
         mounts: {type: array, items: {$ref: "#/components/schemas/Mount"}}
         certs: {type: array, items: {$ref: "#/components/schemas/Cert"}, description: TLS certificates from the latest scan}
+        redis: {type: array, items: {$ref: "#/components/schemas/RedisInstance"}, description: monitored Redis instances}
         lag_ns: {type: integer, description: collection lag in nanoseconds}
+    RedisInstance:
+      type: object
+      required: [name, addr, status]
+      properties:
+        name: {type: string}
+        addr: {type: string}
+        config_file: {type: string}
+        status: {type: string, enum: [up, down, auth_failed, needs_credentials], description: "needs_credentials: Redis wants a password ServerKeeper does not have; shown, never alerted"}
+        error: {type: string}
+        hint: {type: string}
+        version: {type: string}
+        mode: {type: string}
+        role: {type: string}
+        uptime_s: {type: number}
+        ping_ms: {type: number}
+        memory_used: {type: number}
+        memory_rss: {type: number}
+        maxmemory: {type: number}
+        maxmemory_policy: {type: string}
+        clients: {type: number}
+        maxclients: {type: number}
+        ops_ps: {type: number}
+        hit_ratio: {type: number, description: percent; absent when there were no lookups}
+        evicted_keys: {type: number}
+        rdb_status: {type: string}
+        last_save: {type: string, format: date-time}
+        changes_since_save: {type: number}
+        aof_enabled: {type: boolean}
+        aof_status: {type: string}
+        replicas: {type: integer}
+        master_link: {type: string}
+        keyspace: {type: array, items: {type: object, properties: {name: {type: string}, keys: {type: integer}, expires: {type: integer}}}}
+        slowlog: {type: array, items: {type: object, properties: {id: {type: integer}, at: {type: string, format: date-time}, duration_ns: {type: integer}, command: {type: string, description: command name only; arguments are never collected}}}}
     Series:
       type: object
       properties:
