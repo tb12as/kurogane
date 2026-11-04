@@ -112,7 +112,7 @@ func init() {
 			fmt.Println(out.Token)
 			return nil
 		}}
-	create.Flags().StringSliceVar(&scopes, "scopes", []string{"read"}, "read, ssh:write, harden:write, admin")
+	create.Flags().StringSliceVar(&scopes, "scopes", []string{"read"}, "read, ssh:write, harden:write, web:write, admin")
 	create.Flags().StringVar(&ttl, "ttl", "", "expiry, e.g. 720h (default never)")
 	tlist := &cobra.Command{Use: "list", Short: "List API tokens",
 		RunE: func(cmd *cobra.Command, _ []string) error {

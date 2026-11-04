@@ -476,3 +476,45 @@ func (m *Manager) Changes(ctx context.Context) ([]db.SiteChange, error) {
 	}
 	return m.d.DB.ListSiteChanges(ctx, 100)
 }
+
+// Reload runs the config test and reloads the web server of kind; a failing test refuses the reload, so a
+// broken file never takes the running server down.
+func (m *Manager) Reload(ctx context.Context, kind string) error {
+	w, ok := m.Inventory().Server(kind)
+	if !ok {
+		return ErrNotFound
+	}
+	if ok, msg := configTest(ctx, m.d.Ex, kind); !ok {
+		return refuse("`%s` fails: %s. Not reloading: the reload would fail", testCmd(kind), msg)
+	}
+	err := m.reload(ctx, w.Unit)
+	if m.d.Audit != nil {
+		after := map[string]any{"ok": err == nil}
+		if err != nil {
+			after["error"] = errText(err)
+		}
+		m.d.Audit.Record(ctx, "web.reload", w.Unit, nil, after)
+	}
+	if err != nil {
+		return fmt.Errorf("systemctl reload %s failed: %s", w.Unit, errText(err))
+	}
+	m.Scan(ctx, true)
+	return nil
+}
+
+// Config returns the file that defines a site and its content (the sites-available file for a link).
+func (m *Manager) Config(_ context.Context, id string) (string, string, error) {
+	s, ok := m.Inventory().Site(id)
+	if !ok {
+		return "", "", ErrNotFound
+	}
+	f := s.File
+	if s.Available != "" {
+		f = s.Available
+	}
+	b, err := m.d.Ex.ReadFile(f)
+	if err != nil {
+		return f, "", err
+	}
+	return f, string(b), nil
+}

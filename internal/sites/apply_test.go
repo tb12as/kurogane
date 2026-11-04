@@ -310,3 +310,29 @@ func TestFileOps(t *testing.T) {
 		t.Error("string")
 	}
 }
+
+func TestReloadAndConfig(t *testing.T) {
+	r := setup(t)
+	if err := r.m.Reload(ctx, "nginx"); err != nil || !r.ex.Called("systemctl reload nginx") {
+		t.Fatalf("reload: %v", err)
+	}
+	if err := r.m.Reload(ctx, "apache"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("apache: %v", err)
+	}
+	r.ex.failFrom = 1
+	if err := r.m.Reload(ctx, "nginx"); !errors.Is(err, ErrRefused) || !strings.Contains(err.Error(), "duplicate listen") {
+		t.Fatalf("broken config reloaded: %v", err)
+	}
+	r.ex.failFrom = 0
+	r.ex.Errors["systemctl reload nginx"] = errors.New("boom")
+	if err := r.m.Reload(ctx, "nginx"); err == nil || !strings.Contains(err.Error(), "boom") {
+		t.Fatalf("reload error: %v", err)
+	}
+	f, text, err := r.m.Config(ctx, r.id("_"))
+	if err != nil || f != "/etc/nginx/sites-available/default" || !strings.Contains(text, "default_server") {
+		t.Fatalf("config = %q %q %v", f, text, err)
+	}
+	if _, _, err := r.m.Config(ctx, "nope"); !errors.Is(err, ErrNotFound) {
+		t.Fatal(err)
+	}
+}

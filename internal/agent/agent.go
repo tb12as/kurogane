@@ -100,7 +100,7 @@ func New(cfg *config.Config, ex executor.Executor, version string) (*Agent, erro
 	a.Harden = harden.New(harden.Deps{Cfg: cfg, DB: a.DB, Ex: ex, Audit: a.Audit, SSH: a.SSH, Firewall: a.Firewall,
 		Alerts: a.Alerts, ServerID: "local", Latest: a.Metrics.Latest, Publish: a.Hub.Publish})
 	a.API = &api.Server{Cfg: cfg, DB: a.DB, Store: a.Store, Auth: a.Auth, Audit: a.Audit, Box: a.Box, Ex: ex,
-		Metrics: a.Metrics, Alerts: a.Alerts, SSH: a.SSH, Harden: a.Harden, Firewall: a.Firewall, Hub: a.Hub,
+		Metrics: a.Metrics, Sites: a.Sites, Alerts: a.Alerts, SSH: a.SSH, Harden: a.Harden, Firewall: a.Firewall, Hub: a.Hub,
 		UI: web.FS(), Version: version}
 	for _, h := range Hooks {
 		if err := h(a); err != nil {

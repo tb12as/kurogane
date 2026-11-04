@@ -1,0 +1,122 @@
+paths:
+  /sites:
+    get:
+      summary: nginx and Apache sites on this host (enabled and disabled) with the web servers' config test state
+      responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/SiteInventory"}}}}}
+  /sites/changes:
+    get:
+      summary: Site enable/disable history, newest first
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/SiteChange"}}}}}}
+  /sites/config:
+    get:
+      summary: The file that defines a site and its content (web:write; config may hold secrets)
+      parameters: [{name: id, in: query, required: true, schema: {type: string}}]
+      responses:
+        "200": {description: ok, content: {application/json: {schema: {type: object, properties: {file: {type: string}, content: {type: string}}}}}}
+        "404": {description: unknown site id}
+  /sites/plan:
+    post:
+      summary: Dry run of enabling or disabling a site; nothing changes
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/SiteToggle"}}}}
+      responses:
+        "200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/SitePlan"}}}}
+        "404": {description: unknown site id}
+        "409": {description: refused (already in that state, not toggleable)}
+  /sites/apply:
+    post:
+      summary: Enable or disable a site (web:write). Config test before and after, reload, probe; undone on any failure.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: "#/components/schemas/SiteToggle"}}}}
+      responses:
+        "200": {description: applied, content: {application/json: {schema: {$ref: "#/components/schemas/SiteChange"}}}}
+        "404": {description: unknown site id}
+        "409": {description: refused, or another change is in progress}
+        "422": {description: failed or rolled back; the message says why and the change is in /sites/changes}
+  /sites/rescan:
+    post:
+      summary: Re-read the configuration and run the config tests now (web:write)
+      responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/SiteInventory"}}}}}
+  /web/{server}/reload:
+    post:
+      summary: Config test, then systemctl reload of nginx or apache (web:write); refused while the test fails
+      parameters: [{name: server, in: path, required: true, schema: {type: string, enum: [nginx, apache]}}]
+      responses:
+        "200": {description: reloaded, content: {application/json: {schema: {type: object, properties: {reloaded: {type: boolean}}}}}}
+        "409": {description: config test fails}
+components:
+  schemas:
+    SiteToggle:
+      type: object
+      required: [id, enabled]
+      properties: {id: {type: string}, enabled: {type: boolean, description: true to enable, false to disable}}
+    WebListen:
+      type: object
+      properties: {addr: {type: string}, port: {type: integer}, tls: {type: boolean}, default: {type: boolean}}
+    WebServer:
+      type: object
+      required: [kind, unit, active, config_ok]
+      properties:
+        kind: {type: string, enum: [nginx, apache]}
+        unit: {type: string}
+        root: {type: string}
+        main: {type: string}
+        version: {type: string}
+        active: {type: boolean}
+        config_ok: {type: boolean}
+        config_error: {type: string}
+        tested_at: {type: string, format: date-time}
+        files: {type: integer}
+    Site:
+      type: object
+      required: [id, kind, name, listen, file, enabled, file_sites]
+      properties:
+        id: {type: string, description: "kind:file#index"}
+        kind: {type: string, enum: [nginx, apache]}
+        name: {type: string, description: "first server name, _ for a catch-all"}
+        names: {type: array, items: {type: string}}
+        listen: {type: array, items: {$ref: "#/components/schemas/WebListen"}}
+        root: {type: string}
+        upstreams: {type: array, items: {type: string}}
+        php: {type: boolean}
+        certs: {type: array, items: {type: string}}
+        cert_days: {type: number}
+        access_log: {type: string}
+        file: {type: string}
+        line: {type: integer}
+        enabled: {type: boolean}
+        default: {type: boolean}
+        toggle: {type: string, enum: [link, rename], description: absent when ServerKeeper will not toggle the site}
+        no_toggle: {type: string}
+        file_sites: {type: integer}
+        available: {type: string}
+    SiteInventory:
+      type: object
+      required: [enabled, servers, sites]
+      properties:
+        enabled: {type: boolean, description: false when web.enabled is off}
+        servers: {type: array, items: {$ref: "#/components/schemas/WebServer"}}
+        sites: {type: array, items: {$ref: "#/components/schemas/Site"}}
+        scanned_at: {type: string, format: date-time}
+    SitePlan:
+      type: object
+      properties:
+        site: {$ref: "#/components/schemas/Site"}
+        action: {type: string, enum: [enable, disable]}
+        ops: {type: array, items: {type: object, properties: {op: {type: string}, from: {type: string}, to: {type: string}}}}
+        diff: {type: string}
+        affected: {type: array, items: {$ref: "#/components/schemas/Site"}}
+        impact: {type: array, items: {type: string}}
+        warnings: {type: array, items: {type: string}}
+    SiteChange:
+      type: object
+      properties:
+        id: {type: string}
+        server_id: {type: string}
+        actor: {type: string}
+        site_id: {type: string}
+        site_name: {type: string}
+        kind: {type: string}
+        action: {type: string, enum: [enable, disable]}
+        ops: {type: string}
+        status: {type: string, enum: [applying, applied, failed, rolled_back]}
+        error: {type: string}
+        ts: {type: string, format: date-time}

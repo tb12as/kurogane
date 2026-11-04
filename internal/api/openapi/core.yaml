@@ -67,7 +67,7 @@ paths:
       responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/APIToken"}}}}}}
     post:
       summary: Create scoped API token (admin); plaintext returned once
-      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [name, scopes], properties: {name: {type: string}, scopes: {type: array, items: {type: string, enum: [read, "ssh:write", "harden:write", admin]}}, ttl: {type: string}}}}}}
+      requestBody: {required: true, content: {application/json: {schema: {type: object, required: [name, scopes], properties: {name: {type: string}, scopes: {type: array, items: {type: string, enum: [read, "ssh:write", "harden:write", "web:write", admin]}}, ttl: {type: string}}}}}}
       responses: {"200": {description: ok, content: {application/json: {schema: {type: object, properties: {token: {type: string}, info: {$ref: "#/components/schemas/APIToken"}}}}}}}
   /tokens/{id}:
     delete:

@@ -17,15 +17,16 @@ const (
 	ScopeRead   = "read"
 	ScopeSSH    = "ssh:write"
 	ScopeHarden = "harden:write"
+	ScopeWeb    = "web:write" // enable/disable web sites, reload web servers, view raw site config
 	ScopeAdmin  = "admin"
 )
 
-var AllScopes = []string{ScopeRead, ScopeSSH, ScopeHarden, ScopeAdmin}
+var AllScopes = []string{ScopeRead, ScopeSSH, ScopeHarden, ScopeWeb, ScopeAdmin}
 
 // Roles map to scopes (RBAC, v1).
 var Roles = map[string][]string{
-	"admin":    {ScopeAdmin, ScopeRead, ScopeSSH, ScopeHarden},
-	"operator": {ScopeRead, ScopeSSH, ScopeHarden},
+	"admin":    {ScopeAdmin, ScopeRead, ScopeSSH, ScopeHarden, ScopeWeb},
+	"operator": {ScopeRead, ScopeSSH, ScopeHarden, ScopeWeb},
 	"viewer":   {ScopeRead},
 }
 
@@ -157,7 +158,7 @@ func (a *Service) Logout(ctx context.Context, raw string) error {
 func (a *Service) CreateToken(ctx context.Context, name string, scopes []string, by string, ttl time.Duration) (string, db.APIToken, error) {
 	for _, s := range scopes {
 		if !validScope(s) {
-			return "", db.APIToken{}, fmt.Errorf("unknown scope %q (read, ssh:write, harden:write, admin)", s)
+			return "", db.APIToken{}, fmt.Errorf("unknown scope %q (read, ssh:write, harden:write, web:write, admin)", s)
 		}
 	}
 	raw := "sk_" + RandomToken(32)
