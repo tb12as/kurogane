@@ -3,6 +3,7 @@ package alert
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -378,6 +379,74 @@ func TestCertRules(t *testing.T) {
 		t.Fatal("cert_expiring must remind daily")
 	}
 	if txt, _ := certText("cert_expiring", "gone", &collector.Snapshot{}); txt != "Certificate gone is expiring" {
+		t.Fatal(txt)
+	}
+}
+
+func redisSnap(in collector.RedisInstance, kv ...any) *collector.Snapshot {
+	s := &collector.Snapshot{Redis: []collector.RedisInstance{in}}
+	l := map[string]string{"instance": in.Name}
+	for i := 0; i < len(kv); i += 2 {
+		s.Samples = append(s.Samples, collector.Sample{Metric: kv[i].(string), Labels: l, Value: kv[i+1].(float64)})
+	}
+	return s
+}
+
+func TestRedisRules(t *testing.T) {
+	healthy := []any{"redis.up", 1.0, "redis.rdb_ok", 1.0, "redis.memory_used_pct", 40.0, "redis.evicted_keys_ps", 0.0,
+		"redis.clients_pct", 10.0, "redis.rejected_connections_ps", 0.0, "redis.ping_ms", 0.4}
+	in := collector.RedisInstance{Name: "cache", Addr: "127.0.0.1:6379", Status: "up", MaxMemory: 1 << 30,
+		MemoryUsed: 1 << 29, MaxMemoryPolicy: "noeviction", Clients: 9, MaxClients: 10, RDBStatus: "err",
+		ChangesSinceSave: 1234}
+	for _, tc := range []struct {
+		rule, metric string
+		v            float64
+		wait         time.Duration
+		sev, text    string
+	}{
+		{"redis_down", "redis.up", 0, time.Minute + time.Second, "critical", "does not answer"},
+		{"redis_persistence_failing", "redis.rdb_ok", 0, 0, "critical", "1234 changes are not on disk"},
+		{"redis_memory_high", "redis.memory_used_pct", 95, 5*time.Minute + time.Second, "warning", "95.0% of maxmemory 1.0 GB"},
+		{"redis_evicting", "redis.evicted_keys_ps", 3, 5*time.Minute + time.Second, "warning", "evicting 3.0 keys/s"},
+		{"redis_clients_high", "redis.rejected_connections_ps", 2, 0, "warning", "9 of 10 client connections"},
+		{"redis_slow", "redis.ping_ms", 120, 5*time.Minute + time.Second, "warning", "120 ms to answer PING"},
+	} {
+		t.Run(tc.rule, func(t *testing.T) {
+			e, sink, now := setup(t, nil)
+			ctx := context.Background()
+			kv := append([]any{}, healthy...)
+			for i := 0; i < len(kv); i += 2 {
+				if kv[i] == tc.metric {
+					kv[i+1] = tc.v
+				}
+			}
+			e.Eval(ctx, redisSnap(in, healthy...))
+			e.Eval(ctx, redisSnap(in, kv...))
+			*now = now.Add(tc.wait)
+			e.Eval(ctx, redisSnap(in, kv...))
+			e.Flush(ctx)
+			if sink.n() != 1 || sink.msgs[0]["severity"] != tc.sev {
+				t.Fatalf("messages = %v", sink.msgs)
+			}
+			raw, _ := json.Marshal(sink.msgs[0])
+			if !strings.Contains(string(raw), tc.text) || !strings.Contains(string(raw), tc.rule) {
+				t.Fatalf("message lacks %q: %s", tc.text, raw)
+			}
+		})
+	}
+	// a replica that lost its primary, and wrong credentials
+	e, sink, now := setup(t, nil)
+	ctx := context.Background()
+	rep := collector.RedisInstance{Name: "replica", Status: "up", Role: "slave"}
+	e.Eval(ctx, redisSnap(rep, "redis.up", 1.0, "redis.replica_link_up", 0.0))
+	*now = now.Add(2*time.Minute + time.Second)
+	e.Eval(ctx, redisSnap(rep, "redis.up", 1.0, "redis.replica_link_up", 0.0))
+	e.Flush(ctx)
+	if sink.n() != 1 || !strings.Contains(fmt.Sprint(sink.msgs[0]), "lost its link to the primary") {
+		t.Fatalf("replication = %v", sink.msgs)
+	}
+	if txt := redisText("redis_down", "x", &collector.Snapshot{Redis: []collector.RedisInstance{{Name: "x",
+		Status: collector.RedisAuthFailed}}}, 0); !strings.Contains(txt, "rejects ServerKeeper's credentials") {
 		t.Fatal(txt)
 	}
 }
