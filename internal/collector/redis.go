@@ -141,7 +141,7 @@ func (c *redisCollector) detect(ctx context.Context) {
 			ts = append(ts, redisTarget{name: name, target: t, hasPass: t.Password != "", explicit: true})
 		}
 	} else {
-		for _, f := range redisConfFiles() {
+		for _, f := range RedisConfFiles() {
 			rc, err := redisinfo.ParseConfig(c.ex, f)
 			if err != nil {
 				continue
@@ -166,7 +166,8 @@ func (c *redisCollector) detect(ctx context.Context) {
 	c.mu.Unlock()
 }
 
-func redisConfFiles() []string {
+// RedisConfFiles lists the Redis config files on this host (also used by the REDIS-* hardening checks).
+func RedisConfFiles() []string {
 	out := []string{}
 	for _, f := range redisConfs {
 		if hostfs.Exists(f) {
