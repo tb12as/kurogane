@@ -54,6 +54,10 @@ serverkeeper tokens create ci --scopes read
 serverkeeper audit --since 24h
 serverkeeper certs list [--warn-days 14]  # TLS certificates; exits 1 if one is expiring, stale or unreadable
 serverkeeper certs rescan                 # scan now, e.g. right after a renewal
+serverkeeper sites list                   # nginx/Apache sites, enabled and disabled, with the config test state
+serverkeeper sites disable shop.example.org --dry-run
+serverkeeper sites enable shop.example.org [--yes]
+serverkeeper sites test | reload nginx | changes
 sudo serverkeeper uninstall [--purge] [--yes]   # --purge also deletes data, config and the system user
 ```
 
@@ -74,8 +78,8 @@ reloaded and an alert is sent. Disabling password or root login is refused when 
 
 ## Hardening
 
-About 45 checks (SSH, accounts, firewall, updates, sysctl, file permissions, services, logging, intrusion
-protection, filesystem, time, malware basics, TLS certificates), mapped to CIS IDs where one exists. Score =
+About 49 checks (SSH, accounts, firewall, updates, sysctl, file permissions, services, logging, intrusion
+protection, filesystem, time, malware basics, TLS certificates, web servers), mapped to CIS IDs where one exists. Score =
 100 × weighted passed / weighted applicable (Critical 10, High 5, Medium 3, Low 1); grades A ≥ 90, B ≥ 75,
 C ≥ 60, D < 60. Every fix shows a dry-run diff, takes a backup, re-runs the check, and can be reverted. Scans run
 daily (`harden.schedule`) and a passing check that starts failing raises a drift alert. Reports: JSON, Markdown,
@@ -98,11 +102,11 @@ auto-ban (`alerts.auto_ban`) is off by default.
 ## TLS certificates
 
 The agent finds certificates on its own: Let's Encrypt lineages (`/etc/letsencrypt/renewal/*.conf`, falling back to
-`live/`), every `ssl_certificate` in the nginx configuration (includes followed), and any PEM files listed in
+`live/`), every nginx `ssl_certificate` and Apache `SSLCertificateFile` (includes followed), and any PEM files listed in
 `collector.certs.paths`. It rescans hourly and records `cert.days_left` per certificate. Local TLS handshakes on
 `collector.certs.probe_ports` (default 443) show which certificate each name is really served with. They catch a
-certificate renewed on disk but never reloaded, and certificates served without a file the agent could find (Apache,
-Caddy, HAProxy).
+certificate renewed on disk but never reloaded, and certificates served without a file the agent could find (Caddy,
+HAProxy).
 
 - `cert_expiring` warns under 14 days (per-server threshold), turns critical under 3, and reminds daily.
 - `cert_stale_served` fires when a renewed certificate is still not served after an hour.
@@ -112,6 +116,33 @@ Caddy, HAProxy).
 The server page lists the certificates with a Rescan button; on the central server the dashboard shows each server's
 next expiry. Only `CERTIFICATE` PEM blocks are parsed and files named like private keys are never read. Turn the
 feature off with `collector.certs.enabled: false`.
+
+## Web sites (nginx and Apache)
+
+The agent reads the nginx and Apache configuration (Debian `apache2` and RHEL `httpd` layouts, includes followed) and
+lists every server block and virtual host, enabled or disabled, with its names, ports, root or upstream and
+certificate. Every 15 minutes, and after each change, it runs `nginx -t` / `apachectl configtest`. Two failing tests
+in a row raise `web_config_invalid`: the running server is fine, but the next reload or reboot would take every
+site down. The web server units are added to the service watch automatically.
+
+Enabling or disabling a site never edits a file. ServerKeeper only links or unlinks it in `sites-enabled` (Debian) or
+renames `X.conf` to `X.conf.disabled` in `conf.d`, through three narrow typed operations of the privileged parent.
+Each toggle:
+
+1. shows a dry run: the file move, every site in that file, and warnings (default site, a port left with no site,
+   an expiring certificate, a duplicate name, a site that proxies to ServerKeeper itself);
+2. is refused while the configuration already fails its test;
+3. runs the config test after the move, reloads, checks the unit is active and re-probes every other site that
+   answered before;
+4. is undone automatically (and the server reloaded again) if any step fails, raising `site_change_rolled_back`.
+
+Sites defined in the main config file, regular files in `sites-enabled`, and files that also hold shared settings
+(an `upstream` block, `Listen`) are shown but not toggled. The `WEB-*` hardening checks cover the config test,
+`server_tokens` / `ServerTokens`, TLS protocols and directory listings. Toggling and reading raw site files need the
+`web:write` scope (admin and operator roles). Turn the feature off with `web.enabled: false`.
+
+On the central server the Sites page answers "which server hosts this name?" across the fleet, and a toggle there is
+queued as a typed `SetSite` op that the agent runs with the same checks.
 
 ## Fleet (central server)
 
@@ -133,7 +164,7 @@ revokes SSH keys by person or group across all servers. It can only send typed o
 
 - Binds to `127.0.0.1` by default; TLS 1.3 for remote access; mTLS between agent and central server.
 - Admin login: Argon2id, mandatory TOTP, lockout after 5 failures. Optional OIDC SSO. API tokens are scoped
-  (`read`, `ssh:write`, `harden:write`, `admin`); RBAC roles admin, operator, viewer.
+  (`read`, `ssh:write`, `harden:write`, `web:write`, `admin`); RBAC roles admin, operator, viewer.
 - Privilege separation: when a `serverkeeper` system user exists, a root parent only executes an allowlist of typed
   operations for an unprivileged worker that runs the API, collectors and rules. There is no shell anywhere.
 - Every mutating action goes to an append-only audit log (who, what, before/after, source IP), kept for 1 year.

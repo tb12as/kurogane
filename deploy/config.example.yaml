@@ -55,6 +55,10 @@ alerts:
   # routing: {critical: [ops], info: [phone]}
   # auto_ban: {enabled: false, duration: 30m, max_bans: 50, allowlist: []}
 
+# nginx/Apache site inventory, config tests and safe enable/disable
+web:
+  enabled: true
+
 # v1 fleet: connect this agent to a central server
 # central:
 #   addr: central.example.com:9444
