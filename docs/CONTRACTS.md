@@ -36,11 +36,12 @@ Names are dotted; labels in braces. `_pct` = 0–100, `_bps` = bytes/s, `_ps` = 
 | Services | `service.active{unit}` (1 active, 0 otherwise) |
 | Agent self | `agent.cpu_pct`, `agent.rss_bytes`, `agent.collect_lag_ms`, `agent.goroutines`, `agent.store_bytes` |
 | HTTP (opt-in nginx tail) | `http.rps`, `http.4xx_ps`, `http.5xx_ps` |
+| Redis (`collector.redis`), label `instance` | `redis.up`, `redis.ping_ms`, `redis.uptime_s`, `redis.memory_used_bytes`, `redis.memory_rss_bytes`, `redis.maxmemory_bytes`, `redis.memory_used_pct` (only with maxmemory), `redis.fragmentation_ratio`, `redis.clients`, `redis.clients_pct`, `redis.blocked_clients`, `redis.rdb_ok`, `redis.rdb_changes_since_save`, `redis.rdb_last_save_age_s`, `redis.aof_ok` (only with AOF), `redis.replicas` (primary), `redis.replica_link_up` and `redis.replica_last_io_s` (replica), `redis.keys{instance,db}`, `redis.keys_total`; rates (skipped across a restart): `redis.ops_ps`, `redis.hit_ratio` (percent, only with lookups), `redis.evicted_keys_ps`, `redis.expired_keys_ps`, `redis.rejected_connections_ps`, `redis.net_in_bps`, `redis.net_out_bps`. A *needs_credentials* instance emits nothing. |
 | Web servers (`web.enabled`) | `web.config_ok{server}` (1 when `nginx -t` / `apachectl configtest` passes), `web.sites{server,state}` (state enabled or disabled) |
 | TLS certificates (`collector.certs`) | `cert.days_left{name}` (negative once expired, recomputed every tick from an hourly scan), `cert.stale_served{name}` (1 when a probed port serves an older certificate for the same names) |
 
 Details that are not numbers live in `collector.Snapshot` (`System`, `TopCPU`, `TopMem`, `Conns`, `Services`, `Mounts`,
-`Certs`). The site inventory lives in `sites.Manager`, not the snapshot.
+`Certs`, `Redis`). The site inventory lives in `sites.Manager`, not the snapshot.
 
 ## Cross-package APIs
 
@@ -50,6 +51,9 @@ Details that are not numbers live in `collector.Snapshot` (`System`, `TopCPU`, `
   nginx `ssl_certificate` and Apache `SSLCertificateFile` via `internal/webconf`, extra paths), leaf inspection and local TLS probes. Reads go through the
   executor so root-only certbot directories work under privsep. Only `CERTIFICATE` PEM blocks are decoded; paths
   naming private keys are never read.
+- `redisinfo.Dial(ctx, Target) (*Conn, error)` (`ErrNoAuth` = needs a password we lack, `ErrAuth` = rejected);
+  `Conn.Ping`, `Info`, `SlowLog(n)` (command names only); `ParseConfig(r, file)` reads redis.conf (bind, port, tls,
+  socket, requirepass, protected-mode, rename-command, ACL users with passwords masked).
 - `webconf.ParseNginx(r)` / `ParseApache(r) *Config` (nil when not configured): sites (`Block`) and every directive
   with file, line and context; `ParseNginxFile` / `ParseApacheFile` parse a disabled site file on its own.
 - `sites.New(Deps) *Manager`; `Run(ctx)`; `Inventory()`; `Scan(ctx, test)`; `Plan(ctx, id, enable)`;

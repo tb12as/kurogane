@@ -58,6 +58,7 @@ serverkeeper sites list                   # nginx/Apache sites, enabled and disa
 serverkeeper sites disable shop.example.org --dry-run
 serverkeeper sites enable shop.example.org [--yes]
 serverkeeper sites test | reload nginx | changes
+serverkeeper redis status                 # per Redis instance: up, memory, ops/s, hit ratio, clients, last save
 sudo serverkeeper uninstall [--purge] [--yes]   # --purge also deletes data, config and the system user
 ```
 
@@ -78,8 +79,8 @@ reloaded and an alert is sent. Disabling password or root login is refused when 
 
 ## Hardening
 
-About 49 checks (SSH, accounts, firewall, updates, sysctl, file permissions, services, logging, intrusion
-protection, filesystem, time, malware basics, TLS certificates, web servers), mapped to CIS IDs where one exists. Score =
+About 53 checks (SSH, accounts, firewall, updates, sysctl, file permissions, services, logging, intrusion
+protection, filesystem, time, malware basics, TLS certificates, web servers, Redis), mapped to CIS IDs where one exists. Score =
 100 × weighted passed / weighted applicable (Critical 10, High 5, Medium 3, Low 1); grades A ≥ 90, B ≥ 75,
 C ≥ 60, D < 60. Every fix shows a dry-run diff, takes a backup, re-runs the check, and can be reverted. Scans run
 daily (`harden.schedule`) and a passing check that starts failing raises a drift alert. Reports: JSON, Markdown,
@@ -116,6 +117,34 @@ HAProxy).
 The server page lists the certificates with a Rescan button; on the central server the dashboard shows each server's
 next expiry. Only `CERTIFICATE` PEM blocks are parsed and files named like private keys are never read. Turn the
 feature off with `collector.certs.enabled: false`.
+
+## Redis
+
+With `collector.redis.enabled: auto` (the default) the agent monitors every Redis it finds:
+`/etc/redis/redis.conf`, `/etc/redis.conf` and Debian `redis-<name>.conf` instances whose unit is enabled or whose
+port answers. Hosts without Redis are left alone. It connects over loopback with the `requirepass` from the config,
+or with the credentials you list under `collector.redis.instances`. The password is only held in memory. A dedicated
+read-only user is the cleanest setup:
+
+```
+ACL SETUSER serverkeeper on >PASSWORD -@all +ping +info +slowlog|get
+```
+
+The client only ever sends `AUTH`, `PING`, `INFO` and `SLOWLOG GET`. It never reads keys. Each instance reports up,
+PING time, memory against `maxmemory`, fragmentation, clients against `maxclients`, ops/s, hit ratio, evictions,
+expirations, rejected connections, network traffic, keys per database, persistence (last save, AOF) and replication.
+The slow log keeps command names only, because arguments can hold keys, values or passwords.
+
+A Redis that needs a password ServerKeeper does not have is shown as *needs credentials*, with the fix. It is not
+monitored and never alerts. A rejected password or an unreachable instance does alert.
+
+- Alerts: `redis_down`, `redis_persistence_failing` (critical), `redis_memory_high` (> 90 % of maxmemory),
+  `redis_evicting`, `redis_clients_high`, `redis_replication_broken` (critical) and `redis_slow` (PING > 50 ms).
+- Hardening: `REDIS-NOT-EXPOSED` (Critical: reachable from the network without a password), `REDIS-AUTH`,
+  `REDIS-PROTECTED-MODE` and `REDIS-DANGEROUS-COMMANDS`.
+
+The server page shows one card per instance and memory, ops/s, hit ratio and client charts. The central dashboard
+shows how many instances are up on each server. Redis forks such as Valkey are not detected.
 
 ## Web sites (nginx and Apache)
 
