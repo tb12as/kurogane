@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/tb12as/serverman/internal/auth"
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/sshmgr"
+	"github.com/tb12as/kurogane/internal/auth"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/sshmgr"
 )
 
 func init() { Register((*Server).sshRoutes) }

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tb12as/serverman/internal/api"
-	"github.com/tb12as/serverman/internal/certs"
+	"github.com/tb12as/kurogane/internal/api"
+	"github.com/tb12as/kurogane/internal/certs"
 )
 
 func TestPrintCerts(t *testing.T) {

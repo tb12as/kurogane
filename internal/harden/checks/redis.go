@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tb12as/serverman/internal/collector"
-	"github.com/tb12as/serverman/internal/redisinfo"
+	"github.com/tb12as/kurogane/internal/collector"
+	"github.com/tb12as/kurogane/internal/redisinfo"
 )
 
 // redisConf is one parsed instance with what the checks need.

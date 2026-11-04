@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/metricsdb"
-	"github.com/tb12as/serverman/internal/store"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/metricsdb"
+	"github.com/tb12as/kurogane/internal/store"
 )
 
 func TestBackupRestore(t *testing.T) {

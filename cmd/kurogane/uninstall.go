@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/tb12as/serverman/internal/metricsdb"
+	"github.com/tb12as/kurogane/internal/metricsdb"
 )
 
 var units = []string{"serverkeeper", "serverkeeper-server", "serverkeeper-vm"}

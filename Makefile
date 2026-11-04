@@ -15,11 +15,11 @@ web: openapi
 	cd web && pnpm install --frozen-lockfile && pnpm gen:api && pnpm generate
 
 build: web
-	go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o bin/serverkeeper ./cmd/serverkeeper
+	go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o bin/serverkeeper ./cmd/kurogane
 
 # go-only build using the committed UI output
 build-go:
-	go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o bin/serverkeeper ./cmd/serverkeeper
+	go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o bin/serverkeeper ./cmd/kurogane
 
 proto:
 	cd proto && go run github.com/bufbuild/buf/cmd/buf@v1.74.0 generate
@@ -58,7 +58,7 @@ size: build-go
 dist:
 	mkdir -p dist
 	for a in amd64 arm64; do \
-	  GOARCH=$$a go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o dist/serverkeeper-linux-$$a ./cmd/serverkeeper; \
+	  GOARCH=$$a go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o dist/serverkeeper-linux-$$a ./cmd/kurogane; \
 	done
 	cd dist && sha256sum serverkeeper-linux-* > checksums.txt
 

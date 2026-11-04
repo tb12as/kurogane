@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tb12as/serverman/internal/collector"
+	"github.com/tb12as/kurogane/internal/collector"
 )
 
 // PRD §5 acceptance: a 7-day store (24 h raw + 7 d rollups at a 10 s interval) stays under 200 MB.

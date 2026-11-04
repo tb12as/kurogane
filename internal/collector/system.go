@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 // sysCollector reports uptime, reboot-required and cached package update counts.

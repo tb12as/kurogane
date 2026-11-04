@@ -8,7 +8,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
-	"github.com/tb12as/serverman/internal/collector"
+	"github.com/tb12as/kurogane/internal/collector"
 )
 
 func init() {

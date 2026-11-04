@@ -12,16 +12,16 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
-	"github.com/tb12as/serverman/internal/alert"
-	"github.com/tb12as/serverman/internal/audit"
-	"github.com/tb12as/serverman/internal/certs"
-	"github.com/tb12as/serverman/internal/collector"
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/firewall"
-	"github.com/tb12as/serverman/internal/harden/checks"
-	"github.com/tb12as/serverman/internal/sshmgr"
+	"github.com/tb12as/kurogane/internal/alert"
+	"github.com/tb12as/kurogane/internal/audit"
+	"github.com/tb12as/kurogane/internal/certs"
+	"github.com/tb12as/kurogane/internal/collector"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/firewall"
+	"github.com/tb12as/kurogane/internal/harden/checks"
+	"github.com/tb12as/kurogane/internal/sshmgr"
 )
 
 type Deps struct {

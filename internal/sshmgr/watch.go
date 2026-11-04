@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tb12as/serverman/internal/alert"
-	"github.com/tb12as/serverman/internal/audit"
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/alert"
+	"github.com/tb12as/kurogane/internal/audit"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 const seenBucket = "ssh_seen_ips"

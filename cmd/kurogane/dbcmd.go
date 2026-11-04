@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/tb12as/serverman/internal/db"
+	"github.com/tb12as/kurogane/internal/db"
 )
 
 func init() {

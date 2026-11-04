@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/secret"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/secret"
 )
 
 func TestTOTPVector(t *testing.T) {

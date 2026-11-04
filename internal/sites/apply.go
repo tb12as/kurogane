@@ -13,11 +13,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tb12as/serverman/internal/alert"
-	"github.com/tb12as/serverman/internal/audit"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/webconf"
+	"github.com/tb12as/kurogane/internal/alert"
+	"github.com/tb12as/kurogane/internal/audit"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/webconf"
 )
 
 // Errors the API maps to status codes.

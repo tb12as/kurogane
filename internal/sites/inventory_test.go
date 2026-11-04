@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tb12as/serverman/internal/alert"
-	"github.com/tb12as/serverman/internal/certs"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/alert"
+	"github.com/tb12as/kurogane/internal/certs"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 var ctx = context.Background()

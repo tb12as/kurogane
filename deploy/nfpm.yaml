@@ -9,7 +9,7 @@ maintainer: ServerKeeper <maintainers@serverkeeper.dev>
 description: |
   Single-binary Linux server monitoring, SSH key management, hardening and
   Slack/Discord alerts.
-homepage: https://github.com/tb12as/serverman
+homepage: https://github.com/tb12as/kurogane
 license: TBD
 contents:
   - src: dist/serverkeeper-linux-${ARCH}

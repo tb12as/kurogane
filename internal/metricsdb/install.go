@@ -18,8 +18,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/executor"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/executor"
 )
 
 // Version is the pinned VictoriaMetrics single-node release.

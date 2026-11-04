@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 // netCollector reads /proc/net/dev (per interface) and /proc/net/snmp{,6} (new conns, udp packets).

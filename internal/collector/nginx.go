@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 // nginxCollector tails an access log by offset and counts requests and 4xx/5xx statuses.

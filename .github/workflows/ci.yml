@@ -25,7 +25,7 @@ jobs:
       - name: binary size < 30 MB (amd64, arm64)
         run: |
           make size
-          GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o /tmp/sk-arm64 ./cmd/serverkeeper
+          GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o /tmp/sk-arm64 ./cmd/kurogane
           [ $(stat -c %s /tmp/sk-arm64) -lt 31457280 ]
       - name: openapi spec up to date
         run: make openapi && git diff --exit-code internal/api/openapi.yaml

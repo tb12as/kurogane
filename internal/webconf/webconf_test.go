@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 type fsReader struct{}

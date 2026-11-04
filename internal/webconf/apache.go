@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 // Apache layouts: Debian (apache2) and RHEL (httpd).

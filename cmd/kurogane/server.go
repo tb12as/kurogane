@@ -11,14 +11,14 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	_ "github.com/tb12as/serverman/internal/agentlink" // agent side of the central link (agent.Hooks)
-	"github.com/tb12as/serverman/internal/auth"
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/metricsdb"
-	"github.com/tb12as/serverman/internal/secret"
-	"github.com/tb12as/serverman/internal/server"
+	_ "github.com/tb12as/kurogane/internal/agentlink" // agent side of the central link (agent.Hooks)
+	"github.com/tb12as/kurogane/internal/auth"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/metricsdb"
+	"github.com/tb12as/kurogane/internal/secret"
+	"github.com/tb12as/kurogane/internal/server"
 )
 
 const serverSection = `

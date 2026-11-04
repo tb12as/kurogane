@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 func TestAllowlist(t *testing.T) {

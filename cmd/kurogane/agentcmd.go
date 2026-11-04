@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/tb12as/serverman/internal/agent"
+	"github.com/tb12as/kurogane/internal/agent"
 )
 
 func init() {

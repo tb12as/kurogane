@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tb12as/serverman/internal/collector"
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/store"
+	"github.com/tb12as/kurogane/internal/collector"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/store"
 )
 
 func TestParseTime(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 const journaldDropin = "/etc/systemd/journald.conf.d/99-serverkeeper.conf"

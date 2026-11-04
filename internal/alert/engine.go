@@ -12,14 +12,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tb12as/serverman/internal/audit"
-	"github.com/tb12as/serverman/internal/collector"
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/firewall"
-	"github.com/tb12as/serverman/internal/notify"
-	"github.com/tb12as/serverman/internal/secret"
-	"github.com/tb12as/serverman/internal/store"
+	"github.com/tb12as/kurogane/internal/audit"
+	"github.com/tb12as/kurogane/internal/collector"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/firewall"
+	"github.com/tb12as/kurogane/internal/notify"
+	"github.com/tb12as/kurogane/internal/secret"
+	"github.com/tb12as/kurogane/internal/store"
 )
 
 // Event is an externally detected condition or one-shot event (SSH login, rollback, drift, ...).

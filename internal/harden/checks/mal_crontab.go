@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 var badCron = regexp.MustCompile(`(?i)((curl|wget)\b[^|#]*\|\s*(ba|da|z)?sh\b` +

@@ -10,8 +10,8 @@ import (
 	"syscall"
 
 	"github.com/spf13/cobra"
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/secret"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/secret"
 )
 
 // version is set by -ldflags at release time.

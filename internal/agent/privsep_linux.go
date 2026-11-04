@@ -14,9 +14,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/secret"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/secret"
 )
 
 // WorkerFD is the inherited socket fd in the unprivileged worker.

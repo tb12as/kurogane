@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/tb12as/serverman/deploy"
-	"github.com/tb12as/serverman/internal/auth"
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/secret"
+	"github.com/tb12as/kurogane/deploy"
+	"github.com/tb12as/kurogane/internal/auth"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/secret"
 )
 
 const configTmpl = `# /etc/serverkeeper/config.yaml (written by serverkeeper init)

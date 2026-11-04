@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/harden"
-	"github.com/tb12as/serverman/internal/harden/checks"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/harden"
+	"github.com/tb12as/kurogane/internal/harden/checks"
 )
 
 func clipS(s string, n int) string {

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/tb12as/serverman/internal/webconf"
+	"github.com/tb12as/kurogane/internal/webconf"
 )
 
 func portOf(t *testing.T, addr string) int {

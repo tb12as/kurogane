@@ -11,10 +11,10 @@ import (
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
-	"github.com/tb12as/serverman/internal/api"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/sites"
-	"github.com/tb12as/serverman/internal/webconf"
+	"github.com/tb12as/kurogane/internal/api"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/sites"
+	"github.com/tb12as/kurogane/internal/webconf"
 )
 
 func init() {

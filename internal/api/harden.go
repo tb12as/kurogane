@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tb12as/serverman/internal/auth"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/harden"
-	"github.com/tb12as/serverman/internal/harden/checks"
+	"github.com/tb12as/kurogane/internal/auth"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/harden"
+	"github.com/tb12as/kurogane/internal/harden/checks"
 )
 
 func init() { Register((*Server).hardenRoutes) }

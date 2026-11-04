@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tb12as/serverman/internal/collector"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/notify"
-	"github.com/tb12as/serverman/internal/store"
+	"github.com/tb12as/kurogane/internal/collector"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/notify"
+	"github.com/tb12as/kurogane/internal/store"
 )
 
 // builtin is a PRD §8.1 default rule; tmpl's %g takes the (overridable) threshold.

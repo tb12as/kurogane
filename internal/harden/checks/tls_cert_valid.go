@@ -6,7 +6,7 @@ import (
 	"math"
 	"strings"
 
-	"github.com/tb12as/serverman/internal/certs"
+	"github.com/tb12as/kurogane/internal/certs"
 )
 
 // certMinDays is the expiry horizon below which the check fails; the cert_expiring alert warns earlier.

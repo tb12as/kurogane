@@ -6,9 +6,9 @@ import (
 	"net/url"
 
 	"github.com/spf13/cobra"
-	"github.com/tb12as/serverman/internal/collector"
-	"github.com/tb12as/serverman/internal/store"
-	"github.com/tb12as/serverman/internal/tui"
+	"github.com/tb12as/kurogane/internal/collector"
+	"github.com/tb12as/kurogane/internal/store"
+	"github.com/tb12as/kurogane/internal/tui"
 )
 
 func init() {

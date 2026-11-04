@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tb12as/serverman/internal/executor"
+	"github.com/tb12as/kurogane/internal/executor"
 )
 
 func web(files map[string]string) map[string]string {

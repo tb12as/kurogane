@@ -28,7 +28,7 @@ esac
 
 mkdir -p "$DIR"
 echo "building..."
-go build -o "$BIN" ./cmd/serverkeeper
+go build -o "$BIN" ./cmd/kurogane
 
 if [ ! -f "$CFG" ]; then
   out=$("$BIN" init --yes -c "$CFG" --data-dir "$DIR/data" --admin-password "$PASS" 2>&1)

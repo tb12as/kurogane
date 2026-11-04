@@ -8,8 +8,8 @@ import (
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
-	"github.com/tb12as/serverman/internal/api"
-	"github.com/tb12as/serverman/internal/certs"
+	"github.com/tb12as/kurogane/internal/api"
+	"github.com/tb12as/kurogane/internal/certs"
 )
 
 func init() {

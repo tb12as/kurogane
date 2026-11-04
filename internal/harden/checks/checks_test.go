@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tb12as/serverman/internal/collector"
-	"github.com/tb12as/serverman/internal/executor"
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/collector"
+	"github.com/tb12as/kurogane/internal/executor"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 // Fixture describes a host: files (path ending in "/" = dir), modes, fake command outputs and service seams.

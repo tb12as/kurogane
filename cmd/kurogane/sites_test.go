@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tb12as/serverman/internal/api"
-	"github.com/tb12as/serverman/internal/sites"
-	"github.com/tb12as/serverman/internal/webconf"
+	"github.com/tb12as/kurogane/internal/api"
+	"github.com/tb12as/kurogane/internal/sites"
+	"github.com/tb12as/kurogane/internal/webconf"
 )
 
 func TestSitesCLI(t *testing.T) {

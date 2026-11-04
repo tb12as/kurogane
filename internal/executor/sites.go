@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
 // Web site toggling only moves files: it links or unlinks a sites-available file in sites-enabled (Debian), or

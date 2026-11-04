@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/tb12as/serverman/internal/backup"
-	"github.com/tb12as/serverman/internal/config"
-	"github.com/tb12as/serverman/internal/db"
-	"github.com/tb12as/serverman/internal/metricsdb"
-	"github.com/tb12as/serverman/internal/store"
+	"github.com/tb12as/kurogane/internal/backup"
+	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/db"
+	"github.com/tb12as/kurogane/internal/metricsdb"
+	"github.com/tb12as/kurogane/internal/store"
 )
 
 func init() {
