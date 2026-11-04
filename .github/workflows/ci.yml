@@ -1,7 +1,7 @@
 name: ci
 on:
-  push: {branches: [main]}
-  pull_request:
+  workflow_call:      # called by release.yml before publishing
+  workflow_dispatch:  # manual run: gh workflow run ci --ref <branch>
 
 permissions: {contents: read}
 

@@ -7,7 +7,12 @@ permissions:
   id-token: write   # keyless cosign signing
 
 jobs:
+  # full test suite; nothing is published unless every job passes
+  ci:
+    uses: ./.github/workflows/ci.yml
+
   release:
+    needs: ci
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -49,6 +54,7 @@ jobs:
           gh release create "$GITHUB_REF_NAME" dist/* --generate-notes
 
   docker:
+    needs: ci
     runs-on: ubuntu-24.04
     permissions: {contents: read, packages: write, id-token: write}
     steps:
