@@ -225,3 +225,83 @@ export interface Line {
   name: string
   data: [number, number][]
 }
+
+// web sites (internal/sites, internal/server/sites.go)
+export interface WebListen {
+  addr?: string
+  port: number
+  tls: boolean
+  default?: boolean
+}
+export interface WebServer {
+  kind: 'nginx' | 'apache'
+  unit: string
+  root?: string
+  main?: string
+  version?: string
+  active: boolean
+  config_ok: boolean
+  config_error?: string
+  tested_at?: string
+  files?: number
+}
+export interface Site {
+  id: string
+  kind: 'nginx' | 'apache'
+  name: string
+  names?: string[]
+  listen: WebListen[]
+  root?: string
+  upstreams?: string[]
+  php?: boolean
+  certs?: string[]
+  cert_days?: number
+  access_log?: string
+  file: string
+  line?: number
+  enabled: boolean
+  default?: boolean
+  toggle?: 'link' | 'rename'
+  no_toggle?: string
+  file_sites: number
+  available?: string
+}
+export interface SiteInventory {
+  enabled: boolean
+  servers: WebServer[]
+  sites: Site[]
+  scanned_at?: string
+}
+export interface SiteChange {
+  id: string
+  actor: string
+  site_id: string
+  site_name: string
+  kind: string
+  action: 'enable' | 'disable'
+  ops: string
+  status: string
+  error?: string
+  ts: string
+}
+export interface FleetWebServer extends WebServer {
+  server_id: string
+  server_name: string
+  connected: boolean
+  updated_at: string
+}
+export interface FleetSite {
+  server_id: string
+  server_name: string
+  id: string
+  kind: string
+  name: string
+  names?: string[]
+  ports?: number[]
+  tls: boolean
+  enabled: boolean
+  toggleable: boolean
+  no_toggle?: string
+  cert_days?: number
+  file: string
+}

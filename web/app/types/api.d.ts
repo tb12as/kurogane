@@ -1462,6 +1462,105 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/fleet/sites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sites reported by every agent; q matches any name or id, server narrows to one server (id or name) */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    server?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FleetSites"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/fleet/sites/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Queue a safe enable/disable of a site on one server (web:write); the result arrives as a fleet op */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        enabled: boolean;
+                        id: string;
+                        server: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description queued */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+                /** @description unknown server or site */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description not toggleable or already in that state */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/harden/checks": {
         parameters: {
             query?: never;
@@ -2233,6 +2332,277 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** nginx and Apache sites on this host (enabled and disabled) with the web servers' config test state */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SiteInventory"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sites/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable or disable a site (web:write). Config test before and after, reload, probe; undone on any failure. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SiteToggle"];
+                };
+            };
+            responses: {
+                /** @description applied */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SiteChange"];
+                    };
+                };
+                /** @description unknown site id */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description refused */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description failed or rolled back; the message says why and the change is in /sites/changes */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sites/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Site enable/disable history, newest first */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SiteChange"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sites/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The file that defines a site and its content (web:write; config may hold secrets) */
+        get: {
+            parameters: {
+                query: {
+                    id: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            content?: string;
+                            file?: string;
+                        };
+                    };
+                };
+                /** @description unknown site id */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sites/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dry run of enabling or disabling a site; nothing changes */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SiteToggle"];
+                };
+            };
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SitePlan"];
+                    };
+                };
+                /** @description unknown site id */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description refused (already in that state */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sites/rescan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Re-read the configuration and run the config tests now (web:write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SiteInventory"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -3047,7 +3417,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         name: string;
-                        scopes: ("read" | "ssh:write" | "harden:write" | "admin")[];
+                        scopes: ("read" | "ssh:write" | "harden:write" | "web:write" | "admin")[];
                         ttl?: string;
                     };
                 };
@@ -3283,6 +3653,53 @@ export interface paths {
             responses: {
                 /** @description ok */
                 200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/web/{server}/reload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Config test, then systemctl reload of nginx or apache (web:write); refused while the test fails */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    server: "nginx" | "apache";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description reloaded */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            reloaded?: boolean;
+                        };
+                    };
+                };
+                /** @description config test fails */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -3565,6 +3982,36 @@ export interface components {
             status?: "online" | "offline" | "unknown";
             tags?: string[];
         };
+        FleetSites: {
+            servers: {
+                active?: boolean;
+                config_error?: string;
+                config_ok?: boolean;
+                connected?: boolean;
+                kind?: string;
+                server_id?: string;
+                server_name?: string;
+                unit?: string;
+                /** Format: date-time */
+                updated_at?: string;
+                version?: string;
+            }[];
+            sites: {
+                cert_days?: number;
+                enabled?: boolean;
+                file?: string;
+                id?: string;
+                kind?: string;
+                name?: string;
+                names?: string[];
+                no_toggle?: string;
+                ports?: number[];
+                server_id?: string;
+                server_name?: string;
+                tls?: boolean;
+                toggleable?: boolean;
+            }[];
+        };
         HardenCheck: {
             auto_fix?: string;
             category?: string;
@@ -3799,6 +4246,77 @@ export interface components {
             /** Format: date-time */
             starts_at?: string;
         };
+        Site: {
+            access_log?: string;
+            available?: string;
+            cert_days?: number;
+            certs?: string[];
+            default?: boolean;
+            enabled: boolean;
+            file: string;
+            file_sites: number;
+            /** @description kind:file#index */
+            id: string;
+            /** @enum {string} */
+            kind: "nginx" | "apache";
+            line?: number;
+            listen: components["schemas"]["WebListen"][];
+            /** @description first server name, _ for a catch-all */
+            name: string;
+            names?: string[];
+            no_toggle?: string;
+            php?: boolean;
+            root?: string;
+            /**
+             * @description absent when ServerKeeper will not toggle the site
+             * @enum {string}
+             */
+            toggle?: "link" | "rename";
+            upstreams?: string[];
+        };
+        SiteChange: {
+            /** @enum {string} */
+            action?: "enable" | "disable";
+            actor?: string;
+            error?: string;
+            id?: string;
+            kind?: string;
+            ops?: string;
+            server_id?: string;
+            site_id?: string;
+            site_name?: string;
+            /** @enum {string} */
+            status?: "applying" | "applied" | "failed" | "rolled_back";
+            /** Format: date-time */
+            ts?: string;
+        };
+        SiteInventory: {
+            /** @description false when web.enabled is off */
+            enabled: boolean;
+            /** Format: date-time */
+            scanned_at?: string;
+            servers: components["schemas"]["WebServer"][];
+            sites: components["schemas"]["Site"][];
+        };
+        SitePlan: {
+            /** @enum {string} */
+            action?: "enable" | "disable";
+            affected?: components["schemas"]["Site"][];
+            diff?: string;
+            impact?: string[];
+            ops?: {
+                from?: string;
+                op?: string;
+                to?: string;
+            }[];
+            site?: components["schemas"]["Site"];
+            warnings?: string[];
+        };
+        SiteToggle: {
+            /** @description true to enable */
+            enabled: boolean;
+            id: string;
+        };
         Snapshot: {
             /** @description TLS certificates from the latest scan */
             certs?: components["schemas"]["Cert"][];
@@ -3884,6 +4402,26 @@ export interface components {
             role?: string;
             totp_enabled?: boolean;
             username?: string;
+        };
+        WebListen: {
+            addr?: string;
+            default?: boolean;
+            port?: number;
+            tls?: boolean;
+        };
+        WebServer: {
+            active: boolean;
+            config_error?: string;
+            config_ok: boolean;
+            files?: number;
+            /** @enum {string} */
+            kind: "nginx" | "apache";
+            main?: string;
+            root?: string;
+            /** Format: date-time */
+            tested_at?: string;
+            unit: string;
+            version?: string;
         };
     };
     responses: never;

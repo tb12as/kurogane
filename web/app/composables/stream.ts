@@ -6,7 +6,7 @@ let es: EventSource | null = null
 export const useLive = () => ({
   snap: useState<Snapshot | null>('live.snap', () => null),
   connected: useState('live.connected', () => false),
-  tick: useState('live.tick', () => ({ alert: 0, ssh: 0, harden: 0 })),
+  tick: useState('live.tick', () => ({ alert: 0, ssh: 0, harden: 0, sites: 0 })),
   last: useState<Record<string, any>>('live.last', () => ({})), // latest payload per event type
 })
 
@@ -23,6 +23,10 @@ export function startStream() {
       /* ignore malformed frame */
     }
   })
+  // a scan and a change both refresh the sites page
+  for (const ev of ['sites', 'site_change']) {
+    es.addEventListener(ev, () => l.tick.value.sites++)
+  }
   for (const k of ['alert', 'ssh', 'harden'] as const) {
     es.addEventListener(k, e => {
       try {
