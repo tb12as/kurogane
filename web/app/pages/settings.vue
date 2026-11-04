@@ -3,7 +3,7 @@ import QRCode from 'qrcode'
 import { toast } from 'vue-sonner'
 import type { APIToken, User } from '~/types/models'
 
-useHead({ title: 'Settings · ServerKeeper' })
+useHead({ title: 'Settings · Kurogane' })
 const tab = useTab('users')
 const admin = computed(() => can('admin'))
 
@@ -105,7 +105,7 @@ async function clearHistory() {
   refreshStorage()
 }
 
-// uninstall: runs `serverkeeper uninstall` as root 3 s after the response
+// uninstall: runs `kurogane uninstall` as root 3 s after the response
 const purge = ref(false)
 const confirmName = ref('')
 const uninstalling = ref(false)
@@ -347,7 +347,7 @@ async function uninstall() {
         <CardHeader>
           <CardTitle>Uninstall</CardTitle>
           <CardDescription>
-            Stops ServerKeeper and removes its units and binary from this server. Data and config are kept unless
+            Stops Kurogane and removes its units and binary from this server. Data and config are kept unless
             you purge them. The sshd drop-in and hardening changes are left in place.
           </CardDescription>
         </CardHeader>
@@ -356,14 +356,14 @@ async function uninstall() {
           <template v-else>
             <label class="flex items-center gap-2">
               <Switch v-model="purge" />
-              Also delete data, config and the serverkeeper user
+              Also delete data, config and the kurogane user
             </label>
             <div class="space-y-1">
               <Label for="un-name">Type the server name ({{ status?.server_name }}) to confirm</Label>
               <Input id="un-name" v-model="confirmName" autocomplete="off" class="max-w-xs" />
             </div>
             <ConfirmButton
-              :title="`Uninstall ServerKeeper from ${status?.server_name}?`"
+              :title="`Uninstall Kurogane from ${status?.server_name}?`"
               confirm="Uninstall"
               variant="destructive"
               size="default"

@@ -602,7 +602,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Log in with password and mandatory TOTP; sets sk_session and sk_csrf cookies */
+        /** Log in with password and mandatory TOTP; sets krgn_session and krgn_csrf cookies */
         post: {
             parameters: {
                 query?: never;
@@ -2038,7 +2038,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description metrics such as serverkeeper_cpu_total_pct, serverkeeper_cpu_core_pct{core="0"} */
+                /** @description metrics such as kurogane_cpu_total_pct, kurogane_cpu_core_pct{core="0"} */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -4184,7 +4184,7 @@ export interface components {
                 id?: number;
             }[];
             /**
-             * @description needs_credentials: Redis wants a password ServerKeeper does not have; shown, never alerted
+             * @description needs_credentials: Redis wants a password Kurogane does not have; shown, never alerted
              * @enum {string}
              */
             status: "up" | "down" | "auth_failed" | "needs_credentials";
@@ -4332,7 +4332,7 @@ export interface components {
             php?: boolean;
             root?: string;
             /**
-             * @description absent when ServerKeeper will not toggle the site
+             * @description absent when Kurogane will not toggle the site
              * @enum {string}
              */
             toggle?: "link" | "rename";

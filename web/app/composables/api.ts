@@ -22,7 +22,7 @@ export class ApiError extends Error {
 }
 
 export function csrfToken(): string {
-  const m = document.cookie.match(/(?:^|; )sk_csrf=([^;]*)/)
+  const m = document.cookie.match(/(?:^|; )krgn_csrf=([^;]*)/)
   return m ? decodeURIComponent(m[1]!) : useState<string>('csrf').value || ''
 }
 

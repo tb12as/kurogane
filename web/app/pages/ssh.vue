@@ -1,5 +1,5 @@
 <script setup lang="ts">
-useHead({ title: 'SSH · ServerKeeper' })
+useHead({ title: 'SSH · Kurogane' })
 const tab = useTab('keys')
 const { data: sessions, error: sErr, refresh } = useAsyncData('ssh.sessions', async () =>
   list(await api.get('/ssh/sessions'), 'sessions'),

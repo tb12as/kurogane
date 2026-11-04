@@ -9,7 +9,7 @@ const TYPES = ['slack', 'discord', 'telegram', 'email', 'pagerduty', 'webhook']
 const SECRET: Record<string, { label: string, hint: string }> = {
   slack: { label: 'Webhook URL', hint: 'https://hooks.slack.com/services/…' },
   discord: { label: 'Webhook URL', hint: 'https://discord.com/api/webhooks/…' },
-  webhook: { label: 'Webhook URL', hint: 'https://example.com/hooks/serverkeeper' },
+  webhook: { label: 'Webhook URL', hint: 'https://example.com/hooks/kurogane' },
   telegram: { label: 'Bot API URL', hint: 'https://api.telegram.org/bot<token>' },
   pagerduty: { label: 'Routing key', hint: 'Events API v2 integration key' },
   email: { label: 'SMTP password', hint: 'leave empty when the server needs no login' },
@@ -147,7 +147,7 @@ async function del(c: ChannelInfo) {
         </div>
         <div class="space-y-1">
           <Label for="c-env">Or read it from an environment variable</Label>
-          <Input id="c-env" v-model="cf.env" class="font-mono" placeholder="SK_SLACK_OPS" />
+          <Input id="c-env" v-model="cf.env" class="font-mono" placeholder="KRGN_SLACK_OPS" />
           <p class="text-xs text-muted-foreground">Keeps the secret out of the database; set it in the agent's environment.</p>
         </div>
         <DialogFooter><Button type="submit">Add channel</Button></DialogFooter>

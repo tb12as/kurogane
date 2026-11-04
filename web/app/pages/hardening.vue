@@ -2,7 +2,7 @@
 import { toast } from 'vue-sonner'
 import type { Ignore } from '~/types/models'
 
-useHead({ title: 'Hardening · ServerKeeper' })
+useHead({ title: 'Hardening · Kurogane' })
 const tab = useTab('results')
 const live = useLive()
 

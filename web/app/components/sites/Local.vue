@@ -197,7 +197,7 @@ async function view(x: Site) {
     <DialogScrollContent class="sm:max-w-3xl">
       <DialogHeader>
         <DialogTitle class="break-all font-mono text-base">{{ file?.file || 'Loading…' }}</DialogTitle>
-        <DialogDescription>Read-only. ServerKeeper never edits site files; it only links, unlinks or renames them.</DialogDescription>
+        <DialogDescription>Read-only. Kurogane never edits site files; it only links, unlinks or renames them.</DialogDescription>
       </DialogHeader>
       <pre class="max-h-[60vh] overflow-auto rounded-md bg-muted p-3 text-xs">{{ file?.content }}</pre>
     </DialogScrollContent>

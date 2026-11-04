@@ -60,7 +60,7 @@ onMounted(startStream)
     <header class="dark flex items-center justify-between border-b bg-background px-4 py-3 text-foreground md:hidden">
       <span class="flex items-center gap-2 font-semibold">
         <Logo class="size-6" />
-        ServerKeeper
+        Kurogane
       </span>
       <Button
         variant="ghost"
@@ -85,7 +85,7 @@ onMounted(startStream)
       <div class="flex h-full flex-col gap-4 p-3">
         <NuxtLink to="/" class="hidden items-center gap-2 px-2 pt-1 text-lg font-semibold md:flex">
           <Logo class="size-7" />
-          ServerKeeper
+          Kurogane
         </NuxtLink>
         <nav aria-label="Main" class="flex flex-col gap-0.5">
           <NuxtLink

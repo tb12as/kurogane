@@ -1,5 +1,5 @@
 <script setup lang="ts">
-useHead({ title: 'Sites · ServerKeeper' })
+useHead({ title: 'Sites · Kurogane' })
 const fleet = useFleet()
 const tab = useTab('sites')
 </script>
