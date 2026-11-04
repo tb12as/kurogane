@@ -111,6 +111,8 @@ var commands = map[string][]string{
 	"chown":              {"-h"},
 	"stat":               {"-c"},
 	"systemd-run":        {UninstallArgs[0]},
+	"nginx":              {"-t"},
+	"apachectl":          {"configtest"},
 }
 
 // UninstallArgs is the only systemd-run the worker may ask for: a delayed transient unit outside

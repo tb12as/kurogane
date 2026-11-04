@@ -15,6 +15,7 @@ import (
 	"github.com/tb12as/serverman/internal/api"
 	"github.com/tb12as/serverman/internal/audit"
 	"github.com/tb12as/serverman/internal/auth"
+	"github.com/tb12as/serverman/internal/certs"
 	"github.com/tb12as/serverman/internal/collector"
 	"github.com/tb12as/serverman/internal/config"
 	"github.com/tb12as/serverman/internal/db"
@@ -22,6 +23,7 @@ import (
 	"github.com/tb12as/serverman/internal/firewall"
 	"github.com/tb12as/serverman/internal/harden"
 	"github.com/tb12as/serverman/internal/secret"
+	"github.com/tb12as/serverman/internal/sites"
 	"github.com/tb12as/serverman/internal/sshmgr"
 	"github.com/tb12as/serverman/internal/store"
 	"github.com/tb12as/serverman/web"
@@ -41,6 +43,7 @@ type Agent struct {
 	SSH      *sshmgr.Manager
 	Harden   *harden.Service
 	Metrics  *collector.Manager
+	Sites    *sites.Manager // nil when web.enabled is off
 	API      *api.Server
 	Hub      *api.Hub
 	Version  string
@@ -86,6 +89,12 @@ func New(cfg *config.Config, ex executor.Executor, version string) (*Agent, erro
 		Firewall: a.Firewall, ServerID: "local", Publish: a.Hub.Publish})
 	a.Metrics = collector.NewManager(cfg.Collector, ex)
 	a.Metrics.StoreSize = a.Store.Size
+	if cfg.Web.Enabled {
+		a.Sites = sites.New(sites.Deps{Ex: ex, DB: a.DB, Store: a.Store, Audit: a.Audit, Fire: a.Alerts.Fire,
+			Publish: a.Hub.Publish, Certs: func() []certs.Cert { l, _ := a.Metrics.Certs(); return l }})
+		a.Metrics.AddCollector("web", a.Sites)
+		a.Metrics.Watch(sites.Units()...) // service_down covers the web servers without editing watch_services
+	}
 	a.Harden = harden.New(harden.Deps{Cfg: cfg, DB: a.DB, Ex: ex, Audit: a.Audit, SSH: a.SSH, Firewall: a.Firewall,
 		Alerts: a.Alerts, ServerID: "local", Latest: a.Metrics.Latest, Publish: a.Hub.Publish})
 	a.API = &api.Server{Cfg: cfg, DB: a.DB, Store: a.Store, Auth: a.Auth, Audit: a.Audit, Box: a.Box, Ex: ex,
@@ -146,6 +155,9 @@ func (a *Agent) Run(ctx context.Context) error {
 	start(a.Alerts.Run)
 	start(a.SSH.Run)
 	start(a.Harden.Run)
+	if a.Sites != nil {
+		start(a.Sites.Run)
+	}
 	for _, f := range a.Extra {
 		start(f)
 	}

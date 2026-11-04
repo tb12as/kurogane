@@ -94,7 +94,7 @@ func TestValidateAndDurations(t *testing.T) {
 		}
 	}
 	c, err := Load(filepath.Join(dir, "missing.yaml"))
-	if err != nil || !c.Collector.Certs.Enabled || c.Collector.Certs.Interval != time.Hour ||
+	if err != nil || !c.Web.Enabled || !c.Collector.Certs.Enabled || c.Collector.Certs.Interval != time.Hour ||
 		len(c.Collector.Certs.ProbePorts) != 1 || c.Collector.Certs.ProbePorts[0] != 443 {
 		t.Fatalf("cert defaults: %v %+v", err, c.Collector.Certs)
 	}

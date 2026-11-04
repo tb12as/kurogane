@@ -33,6 +33,12 @@ type Config struct {
 	Server       Server    `mapstructure:"server" json:"server"`
 	Auth         Auth      `mapstructure:"auth" json:"auth"`
 	Telemetry    Telemetry `mapstructure:"telemetry" json:"telemetry"`
+	Web          Web       `mapstructure:"web" json:"web"`
+}
+
+// Web configures nginx/Apache site management.
+type Web struct {
+	Enabled bool `mapstructure:"enabled" json:"enabled"`
 }
 
 // TLS enables remote access; required whenever listen is not loopback (§11.1).
@@ -196,6 +202,7 @@ func defaults(v *viper.Viper) {
 	v.SetDefault("collector.retention_raw", "24h")
 	v.SetDefault("collector.retention_rollup", "7d")
 	v.SetDefault("collector.certs.enabled", true)
+	v.SetDefault("web.enabled", true)
 	v.SetDefault("collector.certs.probe_ports", []int{443})
 	v.SetDefault("collector.certs.interval", "1h")
 	v.SetDefault("ssh.config_path", "/etc/ssh/sshd_config")

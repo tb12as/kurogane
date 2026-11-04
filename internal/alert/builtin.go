@@ -56,6 +56,7 @@ var builtins = []builtin{
 	{"ssh_rolled_back", "SSH config rolled back", "", "critical", 0, 0},
 	{"hardening_drift", "Hardening drift", "", "warning", 0, 0},
 	{"agent_offline", "Agent offline", "", "critical", 0, 0},
+	{"web_config_invalid", "Web server configuration test fails", "", "warning", 0, 0},
 }
 
 // critExpr escalates warning rules to critical (RAM < 5%, disk > 95%).
