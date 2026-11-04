@@ -16,6 +16,13 @@ collector:
     # paths: [/etc/haproxy/certs/site.pem]        # extra PEM files (private key files are never read)
     probe_ports: [443]                            # local TLS handshakes; [] disables
     interval: 1h
+  redis:                                          # Redis monitoring
+    enabled: auto                                 # auto: when a redis.conf exists and its unit is enabled or its port answers
+    # instances:                                  # empty = autodetect from /etc/redis/redis*.conf (requirepass is used)
+    #   - name: cache
+    #     addr: 127.0.0.1:6379                    # or unix:/run/redis/redis-server.sock
+    #     username: serverkeeper                  # read-only ACL user: -@all +ping +info +slowlog|get
+    #     password_file: /etc/serverkeeper/redis-cache.pass
 
 ssh:
   rollback_timeout: 120s

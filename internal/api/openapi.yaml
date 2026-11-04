@@ -497,7 +497,7 @@ components:
                     latest:
                         additionalProperties:
                             type: number
-                        description: 'cpu, mem, disk (max over mounts) percent; cert_days: days until the soonest TLS certificate expiry'
+                        description: 'cpu, mem, disk (max over mounts) percent; cert_days: days until the soonest TLS certificate expiry; redis_up / redis_total: healthy and monitored Redis instances'
                         type: object
                   type: object
         FleetServer:
@@ -833,6 +833,101 @@ components:
                     type: string
                 user:
                     type: string
+            type: object
+        RedisInstance:
+            properties:
+                addr:
+                    type: string
+                aof_enabled:
+                    type: boolean
+                aof_status:
+                    type: string
+                changes_since_save:
+                    type: number
+                clients:
+                    type: number
+                config_file:
+                    type: string
+                error:
+                    type: string
+                evicted_keys:
+                    type: number
+                hint:
+                    type: string
+                hit_ratio:
+                    description: percent; absent when there were no lookups
+                    type: number
+                keyspace:
+                    items:
+                        properties:
+                            expires:
+                                type: integer
+                            keys:
+                                type: integer
+                            name:
+                                type: string
+                        type: object
+                    type: array
+                last_save:
+                    format: date-time
+                    type: string
+                master_link:
+                    type: string
+                maxclients:
+                    type: number
+                maxmemory:
+                    type: number
+                maxmemory_policy:
+                    type: string
+                memory_rss:
+                    type: number
+                memory_used:
+                    type: number
+                mode:
+                    type: string
+                name:
+                    type: string
+                ops_ps:
+                    type: number
+                ping_ms:
+                    type: number
+                rdb_status:
+                    type: string
+                replicas:
+                    type: integer
+                role:
+                    type: string
+                slowlog:
+                    items:
+                        properties:
+                            at:
+                                format: date-time
+                                type: string
+                            command:
+                                description: command name only; arguments are never collected
+                                type: string
+                            duration_ns:
+                                type: integer
+                            id:
+                                type: integer
+                        type: object
+                    type: array
+                status:
+                    description: 'needs_credentials: Redis wants a password ServerKeeper does not have; shown, never alerted'
+                    enum:
+                        - up
+                        - down
+                        - auth_failed
+                        - needs_credentials
+                    type: string
+                uptime_s:
+                    type: number
+                version:
+                    type: string
+            required:
+                - name
+                - addr
+                - status
             type: object
         SSHChange:
             properties:
@@ -1244,6 +1339,11 @@ components:
                 mounts:
                     items:
                         $ref: '#/components/schemas/Mount'
+                    type: array
+                redis:
+                    description: monitored Redis instances
+                    items:
+                        $ref: '#/components/schemas/RedisInstance'
                     type: array
                 samples:
                     items:

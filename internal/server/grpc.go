@@ -341,6 +341,9 @@ func (c *Central) samples(id, name string, s *pb.Samples) {
 			ov["mem"] = v
 		case "disk.used_pct":
 			ov["disk"] = max(ov["disk"], v)
+		case "redis.up":
+			ov["redis_total"]++ // instances reporting; redis_up counts the healthy ones
+			ov["redis_up"] += v
 		case "cert.days_left":
 			if d, ok := ov["cert_days"]; !ok || v < d {
 				ov["cert_days"] = v // soonest certificate expiry on the server

@@ -49,6 +49,14 @@ var builtins = []builtin{
 	{"cert_expiring", "TLS certificate expiring", "cert.days_left < %g", "warning", 14, 0},
 	// renew-then-reload can take a few minutes; an hour means the reload was really missed
 	{"cert_stale_served", "Renewed TLS certificate not served", "cert.stale_served > %g", "warning", 0, time.Hour},
+	{"redis_down", "Redis down", "redis.up < %g", "critical", 1, time.Minute},
+	{"redis_persistence_failing", "Redis cannot save to disk", "redis.rdb_ok < 1 or redis.aof_ok < 1", "critical", 0, 0},
+	{"redis_memory_high", "Redis memory almost full", "redis.memory_used_pct > %g", "warning", 90, 5 * time.Minute},
+	{"redis_evicting", "Redis is evicting keys", "redis.evicted_keys_ps > %g", "warning", 0, 5 * time.Minute},
+	{"redis_clients_high", "Redis connections almost full", "redis.clients_pct > %g or redis.rejected_connections_ps > 0",
+		"warning", 80, 0},
+	{"redis_replication_broken", "Redis replica disconnected", "redis.replica_link_up < 1", "critical", 0, 2 * time.Minute},
+	{"redis_slow", "Redis slow to answer", "redis.ping_ms > %g", "warning", 50, 5 * time.Minute},
 	// fired by other packages through Engine.Fire
 	{"ssh_bruteforce", "SSH brute force", "", "warning", 0, 0},
 	{"ssh_login", "New SSH login", "", "info", 0, 0},
@@ -200,6 +208,9 @@ func describe(r *rule, in inst, s *collector.Snapshot, held time.Duration) (stri
 		text = fmt.Sprintf("Watched unit %s is not active (%s)", l["unit"], sub)
 	case "updates_pending":
 		text = fmt.Sprintf("%d security updates pending, reboot required: %v", s.System.SecurityUpdates, s.System.RebootRequired)
+	case "redis_down", "redis_persistence_failing", "redis_memory_high", "redis_evicting", "redis_clients_high",
+		"redis_replication_broken", "redis_slow":
+		text = redisText(r.ID, l["instance"], s, in.v)
 	case "cert_expiring", "cert_stale_served":
 		text, fields = certText(r.ID, l["name"], s)
 	default:
@@ -209,6 +220,54 @@ func describe(r *rule, in inst, s *collector.Snapshot, held time.Duration) (stri
 		}
 	}
 	return title, text, fields
+}
+
+// redisText describes a Redis alert with the instance's own numbers and the usual fix.
+func redisText(id, name string, s *collector.Snapshot, v float64) string {
+	var in collector.RedisInstance
+	for _, x := range s.Redis {
+		if x.Name == name {
+			in = x
+		}
+	}
+	who := "Redis " + name
+	if in.Addr != "" {
+		who += " (" + in.Addr + ")"
+	}
+	switch id {
+	case "redis_down":
+		if in.Status == collector.RedisAuthFailed {
+			return who + " rejects ServerKeeper's credentials: check password_file or requirepass and the ACL user."
+		}
+		msg := who + " does not answer"
+		if in.Error != "" {
+			msg += ": " + in.Error
+		}
+		return msg + ". Check `systemctl status redis-server` and the Redis log."
+	case "redis_persistence_failing":
+		what := "the last RDB save failed"
+		if in.RDBStatus == "ok" {
+			what = "AOF writes are failing"
+		}
+		return fmt.Sprintf("%s: %s, %.0f changes are not on disk and would be lost on a restart. Usually a full "+
+			"disk, wrong permissions on Redis's dir, or a failed fork (vm.overcommit_memory).", who, what, in.ChangesSinceSave)
+	case "redis_memory_high":
+		return fmt.Sprintf("%s uses %s of maxmemory %s (%s). Policy %s: when full, Redis evicts keys or rejects "+
+			"writes.", who, pct(v), bytesH(in.MaxMemory), bytesH(in.MemoryUsed), in.MaxMemoryPolicy)
+	case "redis_evicting":
+		return fmt.Sprintf("%s is evicting %.1f keys/s to stay under maxmemory %s (policy %s). Fine for a pure "+
+			"cache; data loss for anything else: raise maxmemory or find what grew.", who, v, bytesH(in.MaxMemory),
+			in.MaxMemoryPolicy)
+	case "redis_clients_high":
+		return fmt.Sprintf("%s has %.0f of %.0f client connections; new connections are refused when it is full. "+
+			"Look for a connection leak or raise maxclients.", who, in.Clients, in.MaxClients)
+	case "redis_replication_broken":
+		return who + " lost its link to the primary: reads may be stale. Check the network and the primary's log."
+	case "redis_slow":
+		return fmt.Sprintf("%s takes %.0f ms to answer PING: look for slow commands (KEYS, big SMEMBERS) in its "+
+			"slow log, swapping, or a busy CPU.", who, v)
+	}
+	return who
 }
 
 // certText names the certificate, its expiry and what to do about it.

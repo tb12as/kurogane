@@ -69,16 +69,17 @@ func ParseKey(k string) (string, map[string]string) {
 
 // Snapshot is the latest full collection: numeric samples plus details for UI, TUI and alerts.
 type Snapshot struct {
-	TS       time.Time      `json:"ts"`
-	Samples  []Sample       `json:"samples"`
-	System   SystemInfo     `json:"system"`
-	TopCPU   []Proc         `json:"top_cpu"`
-	TopMem   []Proc         `json:"top_mem"`
-	Conns    ConnInfo       `json:"conns"`
-	Services []ServiceState `json:"services"`
-	Mounts   []Mount        `json:"mounts"`
-	Certs    []certs.Cert   `json:"certs"`
-	Lag      time.Duration  `json:"lag_ns"`
+	TS       time.Time       `json:"ts"`
+	Samples  []Sample        `json:"samples"`
+	System   SystemInfo      `json:"system"`
+	TopCPU   []Proc          `json:"top_cpu"`
+	TopMem   []Proc          `json:"top_mem"`
+	Conns    ConnInfo        `json:"conns"`
+	Services []ServiceState  `json:"services"`
+	Mounts   []Mount         `json:"mounts"`
+	Certs    []certs.Cert    `json:"certs"`
+	Redis    []RedisInstance `json:"redis"`
+	Lag      time.Duration   `json:"lag_ns"`
 }
 
 // Value returns the first sample value for a metric/labels match (labels may be a subset).

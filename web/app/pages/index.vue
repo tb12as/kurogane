@@ -172,6 +172,7 @@ const hard = computed(() => status.value?.hardening)
               <TableHead>Memory</TableHead>
               <TableHead>Disk (max)</TableHead>
               <TableHead>Next cert expiry</TableHead>
+              <TableHead>Redis</TableHead>
               <TableHead>Alerts</TableHead>
               <TableHead>Score</TableHead>
               <TableHead>Last seen</TableHead>
@@ -193,6 +194,12 @@ const hard = computed(() => status.value?.hardening)
                 <span v-if="x.latest?.cert_days === undefined" class="text-muted-foreground">-</span>
                 <span v-else :class="x.latest.cert_days < 3 ? 'text-crit' : x.latest.cert_days < 14 ? 'text-warn' : ''">
                   {{ daysLeft(x.latest.cert_days) }}
+                </span>
+              </TableCell>
+              <TableCell class="whitespace-nowrap tabular-nums">
+                <span v-if="!x.latest?.redis_total" class="text-muted-foreground">-</span>
+                <span v-else :class="(x.latest.redis_up ?? 0) < x.latest.redis_total ? 'text-crit' : ''">
+                  {{ x.latest.redis_up ?? 0 }}/{{ x.latest.redis_total }} up
                 </span>
               </TableCell>
               <TableCell class="tabular-nums">{{ x.active_alerts || 0 }}</TableCell>

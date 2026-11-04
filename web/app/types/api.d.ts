@@ -3959,7 +3959,7 @@ export interface components {
         FleetOverviewRow: components["schemas"]["FleetServer"] & {
             active_alerts?: number;
             connected?: boolean;
-            /** @description cpu, mem, disk (max over mounts) percent; cert_days: days until the soonest TLS certificate expiry */
+            /** @description cpu, mem, disk (max over mounts) percent; cert_days: days until the soonest TLS certificate expiry; redis_up / redis_total: healthy and monitored Redis instances */
             latest?: {
                 [key: string]: number;
             };
@@ -4130,6 +4130,54 @@ export interface components {
             rss?: number;
             state?: string;
             user?: string;
+        };
+        RedisInstance: {
+            addr: string;
+            aof_enabled?: boolean;
+            aof_status?: string;
+            changes_since_save?: number;
+            clients?: number;
+            config_file?: string;
+            error?: string;
+            evicted_keys?: number;
+            hint?: string;
+            /** @description percent; absent when there were no lookups */
+            hit_ratio?: number;
+            keyspace?: {
+                expires?: number;
+                keys?: number;
+                name?: string;
+            }[];
+            /** Format: date-time */
+            last_save?: string;
+            master_link?: string;
+            maxclients?: number;
+            maxmemory?: number;
+            maxmemory_policy?: string;
+            memory_rss?: number;
+            memory_used?: number;
+            mode?: string;
+            name: string;
+            ops_ps?: number;
+            ping_ms?: number;
+            rdb_status?: string;
+            replicas?: number;
+            role?: string;
+            slowlog?: {
+                /** Format: date-time */
+                at?: string;
+                /** @description command name only; arguments are never collected */
+                command?: string;
+                duration_ns?: number;
+                id?: number;
+            }[];
+            /**
+             * @description needs_credentials: Redis wants a password ServerKeeper does not have; shown, never alerted
+             * @enum {string}
+             */
+            status: "up" | "down" | "auth_failed" | "needs_credentials";
+            uptime_s?: number;
+            version?: string;
         };
         SSHChange: {
             actor?: string;
@@ -4324,6 +4372,8 @@ export interface components {
             /** @description collection lag in nanoseconds */
             lag_ns?: number;
             mounts?: components["schemas"]["Mount"][];
+            /** @description monitored Redis instances */
+            redis?: components["schemas"]["RedisInstance"][];
             samples?: components["schemas"]["Sample"][];
             services?: components["schemas"]["ServiceState"][];
             system?: components["schemas"]["SystemInfo"];

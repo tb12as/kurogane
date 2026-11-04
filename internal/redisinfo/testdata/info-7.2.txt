@@ -1,0 +1,54 @@
+# Server
+redis_version:7.2.4
+redis_mode:standalone
+os:Linux 6.8.0-45-generic x86_64
+process_id:812
+tcp_port:6379
+uptime_in_seconds:86400
+executable:/usr/bin/redis-server
+config_file:/etc/redis/redis.conf
+
+# Clients
+connected_clients:12
+blocked_clients:1
+maxclients:10000
+
+# Memory
+used_memory:104857600
+used_memory_human:100.00M
+used_memory_rss:125829120
+maxmemory:209715200
+maxmemory_policy:allkeys-lru
+mem_fragmentation_ratio:1.20
+
+# Persistence
+loading:0
+rdb_changes_since_last_save:42
+rdb_bgsave_in_progress:0
+rdb_last_save_time:1762200000
+rdb_last_bgsave_status:ok
+aof_enabled:0
+aof_last_write_status:ok
+
+# Stats
+total_connections_received:1000
+total_commands_processed:500000
+instantaneous_ops_per_sec:120
+total_net_input_bytes:10000000
+total_net_output_bytes:20000000
+rejected_connections:0
+expired_keys:300
+evicted_keys:7
+keyspace_hits:9000
+keyspace_misses:1000
+
+# Replication
+role:master
+connected_slaves:1
+slave0:ip=10.0.0.5,port=6379,state=online,offset=1000,lag=0
+master_repl_offset:1200
+
+# Keyspace
+db0:keys=1500,expires=200,avg_ttl=3600000
+db10:keys=3,expires=0,avg_ttl=0
+db2:keys=40,expires=40,avg_ttl=100
