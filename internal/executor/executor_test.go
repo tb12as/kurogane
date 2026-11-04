@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -197,5 +198,51 @@ func TestRemoteAllOps(t *testing.T) {
 	err := &RunError{Cmd: "x", Err: os.ErrPermission}
 	if !errors.As(error(err), &re) || !errors.Is(err, os.ErrPermission) {
 		t.Fatal("RunError must unwrap")
+	}
+}
+
+func TestCannotRun(t *testing.T) {
+	_, err := Local{}.Run(context.Background(), "apachectl", "configtest")
+	if _, lerr := exec.LookPath("apachectl"); lerr == nil {
+		t.Skip("apachectl installed")
+	}
+	if !CannotRun(err) {
+		t.Fatalf("local: %v", err)
+	}
+	if !CannotRun(&RunError{Err: errors.New(exec.ErrNotFound.Error())}) {
+		t.Fatal("remote text form not detected")
+	}
+	nginx := &RunError{Cmd: "nginx -t", Err: errors.New("exit status 1"),
+		Stderr: `nginx: [emerg] open() "/run/nginx.pid" failed (13: Permission denied)`}
+	if !CannotRun(nginx) {
+		t.Fatal("nginx non-root not detected")
+	}
+	if CannotRun(nil) || CannotRun(&RunError{Err: errors.New("exit status 1")}) {
+		t.Fatal("false positive")
+	}
+}
+
+func TestRemoteGlob(t *testing.T) {
+	dir := t.TempDir()
+	old := hostfs.Root
+	hostfs.Root = dir
+	defer func() { hostfs.Root = old }()
+	os.MkdirAll(filepath.Join(dir, "home/u/.valet/Nginx/sub"), 0o755)
+	os.WriteFile(filepath.Join(dir, "home/u/.valet/Nginx/b.test"), nil, 0o644)
+	os.WriteFile(filepath.Join(dir, "home/u/.valet/Nginx/a.test"), nil, 0o644)
+
+	a, b := net.Pipe()
+	go Serve(a, Local{})
+	r := NewRemote(b)
+
+	got := strings.Join(r.Glob("/home/u/.valet/Nginx/*"), ",")
+	if got != "/home/u/.valet/Nginx/a.test,/home/u/.valet/Nginx/b.test" {
+		t.Fatalf("glob: %s", got)
+	}
+	if g := r.Glob("/home/u/.valet/Nginx"); len(g) != 2 {
+		t.Fatalf("dir include: %v", g)
+	}
+	if g := r.Glob("/nope/*"); len(g) != 0 {
+		t.Fatalf("missing: %v", g)
 	}
 }

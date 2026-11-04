@@ -345,7 +345,8 @@ func configTest(ctx context.Context, ex executor.Executor, kind string) (bool, s
 	} else {
 		_, err = ex.Run(ctx, "apachectl", "configtest")
 	}
-	if err == nil {
+	// not installed (config left behind) or the agent is not root: the test cannot say anything, skip it
+	if err == nil || executor.CannotRun(err) {
 		return true, ""
 	}
 	var re *executor.RunError

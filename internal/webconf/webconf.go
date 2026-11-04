@@ -5,8 +5,6 @@ package webconf
 
 import (
 	"path"
-	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -99,40 +97,18 @@ func abs(root, p string) string {
 	return path.Join(root, p)
 }
 
-// glob expands a host-path pattern under hostfs.Root, sorted; a pattern without wildcards is returned when the
-// file exists. A directory expands to the files directly inside it (Apache Include semantics).
-func glob(pat string) []string {
-	if !strings.ContainsAny(pat, "*?[") {
-		if fi, err := statHost(pat); err == nil && fi.IsDir() {
-			pat = strings.TrimRight(pat, "/") + "/*"
-		} else {
-			if err != nil {
-				return nil
-			}
-			return []string{pat}
-		}
-	}
-	ms, _ := filepath.Glob(hostfs.P(pat))
-	out := make([]string, 0, len(ms))
-	for _, m := range ms {
-		if fi, err := statReal(m); err == nil && fi.IsDir() {
-			continue
-		}
-		out = append(out, unroot(m))
-	}
-	sort.Strings(out)
-	return out
+// globber is a Reader that expands globs itself: the privsep executor does it as root, so includes into
+// directories the worker cannot enter (a 0750 home holding Valet's sites) are still found.
+type globber interface {
+	Glob(pat string) []string
 }
 
-func unroot(m string) string {
-	if hostfs.Root == "/" || hostfs.Root == "" {
-		return m
+// glob expands an include pattern (hostfs.Glob semantics) through r when it can.
+func glob(r Reader, pat string) []string {
+	if g, ok := r.(globber); ok {
+		return g.Glob(pat)
 	}
-	rel, err := filepath.Rel(hostfs.Root, m)
-	if err != nil {
-		return m
-	}
-	return "/" + rel
+	return hostfs.Glob(pat)
 }
 
 // ParseListen parses an nginx listen value or an Apache VirtualHost/Listen address.

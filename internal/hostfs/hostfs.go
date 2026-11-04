@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -130,4 +131,40 @@ func HasBinary(name string) bool {
 		}
 	}
 	return false
+}
+
+// Glob expands a host-path pattern under Root, sorted; a pattern without wildcards is returned when the file
+// exists. A directory expands to the files directly inside it (Apache Include semantics).
+func Glob(pat string) []string {
+	if !strings.ContainsAny(pat, "*?[") {
+		fi, err := os.Stat(P(pat))
+		if err != nil {
+			return nil
+		}
+		if !fi.IsDir() {
+			return []string{pat}
+		}
+		pat = strings.TrimRight(pat, "/") + "/*"
+	}
+	ms, _ := filepath.Glob(P(pat))
+	out := make([]string, 0, len(ms))
+	for _, m := range ms {
+		if fi, err := os.Stat(m); err == nil && fi.IsDir() {
+			continue
+		}
+		out = append(out, unroot(m))
+	}
+	sort.Strings(out)
+	return out
+}
+
+func unroot(m string) string {
+	if Root == "/" || Root == "" {
+		return m
+	}
+	rel, err := filepath.Rel(Root, m)
+	if err != nil {
+		return m
+	}
+	return "/" + rel
 }

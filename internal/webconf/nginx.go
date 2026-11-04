@@ -1,7 +1,6 @@
 package webconf
 
 import (
-	"os"
 	"strings"
 
 	"github.com/tb12as/serverman/internal/hostfs"
@@ -12,9 +11,6 @@ const (
 	NginxRoot = "/etc/nginx"
 	NginxMain = "/etc/nginx/nginx.conf"
 )
-
-func statHost(p string) (os.FileInfo, error) { return os.Stat(hostfs.P(p)) }
-func statReal(p string) (os.FileInfo, error) { return os.Stat(p) }
 
 type token struct {
 	s      string
@@ -81,8 +77,9 @@ func tokenize(b []byte, file string) []token {
 
 // expandNginx tokenizes file and splices included files in place (globs relative to /etc/nginx).
 func expandNginx(r Reader, file string, depth int, seen map[string]bool, files *[]string) []token {
-	// the Exists check keeps a host without nginx from logging a failed privileged read every scan
-	if depth > 10 || seen[file] || len(seen) > 500 || !hostfs.Exists(file) {
+	// the Exists check keeps a host without nginx from logging a failed privileged read every scan; included
+	// files come from glob, which already saw them (and the worker may not be able to stat them)
+	if depth > 10 || seen[file] || len(seen) > 500 || (depth == 0 && !hostfs.Exists(file)) {
 		return nil
 	}
 	seen[file] = true
@@ -95,7 +92,7 @@ func expandNginx(r Reader, file string, depth int, seen map[string]bool, files *
 	var out []token
 	for i := 0; i < len(in); i++ {
 		if in[i].s == "include" && !in[i].quoted && i+2 < len(in) && in[i+2].punct(";") {
-			for _, f := range glob(abs(NginxRoot, in[i+1].s)) {
+			for _, f := range glob(r, abs(NginxRoot, in[i+1].s)) {
 				out = append(out, expandNginx(r, f, depth+1, seen, files)...)
 			}
 			i += 2

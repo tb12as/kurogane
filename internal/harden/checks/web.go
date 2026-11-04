@@ -48,7 +48,11 @@ func init() {
 					if w.Server == webconf.Apache {
 						cmd, args = "apachectl", []string{"configtest"}
 					}
-					if _, err := c.e.Ex.Run(ctx, cmd, args...); err != nil {
+					_, err := c.e.Ex.Run(ctx, cmd, args...)
+					if executor.CannotRun(err) {
+						continue // not installed (config left behind) or the agent is not root
+					}
+					if err != nil {
 						msg := err.Error()
 						var re *executor.RunError
 						if errors.As(err, &re) && re.Stderr != "" {
@@ -61,6 +65,9 @@ func init() {
 				}
 				if len(bad) > 0 {
 					return c.res(Fail, strings.Join(bad, "; "))
+				}
+				if len(good) == 0 {
+					return c.res(NA, "the config test cannot run here: the server is not installed or the agent is not root")
 				}
 				return c.res(Pass, strings.Join(good, "; "))
 			}, nil)
