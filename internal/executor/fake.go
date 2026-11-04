@@ -43,6 +43,29 @@ func (f *Fake) Run(_ context.Context, cmd string, args ...string) ([]byte, error
 	return nil, nil
 }
 
+// site toggles act on hostfs.Root like Local; Errors["link-site <link>"] (or unlink-site / rename-site <from>)
+// injects a failure.
+func (f *Fake) siteOp(k string, op func() error) error {
+	f.mu.Lock()
+	f.Calls = append(f.Calls, k)
+	err, ok := f.Errors[k]
+	f.mu.Unlock()
+	if ok {
+		return err
+	}
+	return op()
+}
+
+func (f *Fake) LinkSite(target, link string) error {
+	return f.siteOp("link-site "+link, func() error { return f.Local.LinkSite(target, link) })
+}
+func (f *Fake) UnlinkSite(link string) error {
+	return f.siteOp("unlink-site "+link, func() error { return f.Local.UnlinkSite(link) })
+}
+func (f *Fake) RenameSite(from, to string) error {
+	return f.siteOp("rename-site "+from, func() error { return f.Local.RenameSite(from, to) })
+}
+
 // Chown is a no-op in tests (temp files belong to the test user).
 func (f *Fake) Chown(p string, uid, gid int) error {
 	if !writable(p) && !writable(p+"/") {

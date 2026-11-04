@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type fleetSrv struct {
@@ -207,6 +208,11 @@ type addKeyOp struct {
 	ExpiresAt time.Time `json:"expires_at"`
 }
 
+type setSiteOp struct {
+	SiteID  string `json:"site_id"`
+	Enabled bool   `json:"enabled"`
+}
+
 type removeKeyOp struct {
 	Fingerprint string `json:"fingerprint"`
 	User        string `json:"user"`
@@ -233,6 +239,12 @@ func toPB(op db.FleetOp) (*pb.Op, error) {
 		m.Kind = &pb.Op_RemoveKey{RemoveKey: &pb.RemoveKey{Fingerprint: p.Fingerprint, User: p.User}}
 	case "run_scan":
 		m.Kind = &pb.Op_RunScan{RunScan: &pb.RunScan{}}
+	case "set_site":
+		var p setSiteOp
+		if err := json.Unmarshal(op.Payload, &p); err != nil {
+			return nil, err
+		}
+		m.Kind = &pb.Op_SetSite{SetSite: &pb.SetSite{SiteId: p.SiteID, Enabled: p.Enabled}}
 	default:
 		return nil, errors.New("unknown op kind " + op.Kind)
 	}
@@ -274,6 +286,14 @@ func (c *Central) handle(ctx context.Context, id, name string, m *pb.AgentMessag
 		}
 	case *pb.AgentMessage_OpResult:
 		c.opResult(ctx, id, x.OpResult)
+	case *pb.AgentMessage_Sites:
+		b, err := protojson.MarshalOptions{UseProtoNames: true, EmitUnpopulated: true}.Marshal(x.Sites)
+		if err == nil {
+			err = c.DB.SaveFleetSites(ctx, db.FleetSites{ServerID: id, Data: b, UpdatedAt: now})
+		}
+		if err != nil {
+			slog.Warn("save fleet sites", "server", name, "err", err)
+		}
 	case *pb.AgentMessage_Scan:
 		s := x.Scan
 		srv, err := c.DB.GetServer(ctx, id)

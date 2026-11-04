@@ -36,6 +36,7 @@ message AgentMessage {
     AuditEntry audit = 5;
     OpResult op_result = 6;
     ScanResult scan = 7;
+    Sites sites = 8;
   }
 }
 
@@ -96,6 +97,36 @@ message ScanResult {
   int32 failed = 6;
 }
 
+// Sites is the agent's web site inventory, sent on connect and whenever it changes.
+message Sites {
+  repeated WebServerInfo servers = 1;
+  repeated SiteInfo sites = 2;
+}
+
+message WebServerInfo {
+  string kind = 1;
+  string unit = 2;
+  string version = 3;
+  bool active = 4;
+  bool config_ok = 5;
+  string config_error = 6;
+}
+
+message SiteInfo {
+  string id = 1;
+  string kind = 2;
+  string name = 3;
+  repeated string names = 4;
+  repeated int32 ports = 5;
+  bool tls = 6;
+  bool enabled = 7;
+  bool toggleable = 8;
+  bool has_cert_days = 9;
+  double cert_days = 10;
+  string file = 11;
+  string no_toggle = 12;
+}
+
 message CentralMessage {
   oneof msg {
     Op op = 1;
@@ -108,6 +139,7 @@ message Op {
     AddKey add_key = 2;
     RemoveKey remove_key = 3;
     RunScan run_scan = 4;
+    SetSite set_site = 5;
   }
 }
 
@@ -124,3 +156,9 @@ message RemoveKey {
 }
 
 message RunScan {}
+
+// SetSite enables or disables one web site with the agent's safe toggle (test, reload, probe, rollback).
+message SetSite {
+  string site_id = 1;
+  bool enabled = 2;
+}

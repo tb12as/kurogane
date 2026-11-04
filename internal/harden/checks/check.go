@@ -162,6 +162,7 @@ type Env struct {
 	ConfigPath    string        // agent config.yaml (IPS-BRUTEFORCE fix persists there)
 	Certs         certs.Options // TLS-CERT-VALID discovery (collector.certs)
 	CertsOff      bool
+	WebOff        bool // web.enabled: false skips the WEB-* checks
 }
 
 var (

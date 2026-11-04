@@ -26,6 +26,7 @@ import (
 	"github.com/tb12as/serverman/internal/firewall"
 	"github.com/tb12as/serverman/internal/harden"
 	"github.com/tb12as/serverman/internal/secret"
+	"github.com/tb12as/serverman/internal/sites"
 	"github.com/tb12as/serverman/internal/sshmgr"
 	"github.com/tb12as/serverman/internal/store"
 )
@@ -41,6 +42,7 @@ type Server struct {
 	Box      *secret.Box
 	Ex       executor.Executor
 	Metrics  *collector.Manager
+	Sites    *sites.Manager
 	Alerts   *alert.Engine
 	SSH      *sshmgr.Manager
 	Harden   *harden.Service

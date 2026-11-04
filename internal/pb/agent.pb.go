@@ -171,6 +171,7 @@ type AgentMessage struct {
 	//	*AgentMessage_Audit
 	//	*AgentMessage_OpResult
 	//	*AgentMessage_Scan
+	//	*AgentMessage_Sites
 	Msg           isAgentMessage_Msg `protobuf_oneof:"msg"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -276,6 +277,15 @@ func (x *AgentMessage) GetScan() *ScanResult {
 	return nil
 }
 
+func (x *AgentMessage) GetSites() *Sites {
+	if x != nil {
+		if x, ok := x.Msg.(*AgentMessage_Sites); ok {
+			return x.Sites
+		}
+	}
+	return nil
+}
+
 type isAgentMessage_Msg interface {
 	isAgentMessage_Msg()
 }
@@ -308,6 +318,10 @@ type AgentMessage_Scan struct {
 	Scan *ScanResult `protobuf:"bytes,7,opt,name=scan,proto3,oneof"`
 }
 
+type AgentMessage_Sites struct {
+	Sites *Sites `protobuf:"bytes,8,opt,name=sites,proto3,oneof"`
+}
+
 func (*AgentMessage_Hello) isAgentMessage_Msg() {}
 
 func (*AgentMessage_Heartbeat) isAgentMessage_Msg() {}
@@ -321,6 +335,8 @@ func (*AgentMessage_Audit) isAgentMessage_Msg() {}
 func (*AgentMessage_OpResult) isAgentMessage_Msg() {}
 
 func (*AgentMessage_Scan) isAgentMessage_Msg() {}
+
+func (*AgentMessage_Sites) isAgentMessage_Msg() {}
 
 type Hello struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -855,6 +871,275 @@ func (x *ScanResult) GetFailed() int32 {
 	return 0
 }
 
+// Sites is the agent's web site inventory, sent on connect and whenever it changes.
+type Sites struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Servers       []*WebServerInfo       `protobuf:"bytes,1,rep,name=servers,proto3" json:"servers,omitempty"`
+	Sites         []*SiteInfo            `protobuf:"bytes,2,rep,name=sites,proto3" json:"sites,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Sites) Reset() {
+	*x = Sites{}
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Sites) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Sites) ProtoMessage() {}
+
+func (x *Sites) ProtoReflect() protoreflect.Message {
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Sites.ProtoReflect.Descriptor instead.
+func (*Sites) Descriptor() ([]byte, []int) {
+	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *Sites) GetServers() []*WebServerInfo {
+	if x != nil {
+		return x.Servers
+	}
+	return nil
+}
+
+func (x *Sites) GetSites() []*SiteInfo {
+	if x != nil {
+		return x.Sites
+	}
+	return nil
+}
+
+type WebServerInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Kind          string                 `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
+	Unit          string                 `protobuf:"bytes,2,opt,name=unit,proto3" json:"unit,omitempty"`
+	Version       string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+	Active        bool                   `protobuf:"varint,4,opt,name=active,proto3" json:"active,omitempty"`
+	ConfigOk      bool                   `protobuf:"varint,5,opt,name=config_ok,json=configOk,proto3" json:"config_ok,omitempty"`
+	ConfigError   string                 `protobuf:"bytes,6,opt,name=config_error,json=configError,proto3" json:"config_error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WebServerInfo) Reset() {
+	*x = WebServerInfo{}
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WebServerInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WebServerInfo) ProtoMessage() {}
+
+func (x *WebServerInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WebServerInfo.ProtoReflect.Descriptor instead.
+func (*WebServerInfo) Descriptor() ([]byte, []int) {
+	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *WebServerInfo) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *WebServerInfo) GetUnit() string {
+	if x != nil {
+		return x.Unit
+	}
+	return ""
+}
+
+func (x *WebServerInfo) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *WebServerInfo) GetActive() bool {
+	if x != nil {
+		return x.Active
+	}
+	return false
+}
+
+func (x *WebServerInfo) GetConfigOk() bool {
+	if x != nil {
+		return x.ConfigOk
+	}
+	return false
+}
+
+func (x *WebServerInfo) GetConfigError() string {
+	if x != nil {
+		return x.ConfigError
+	}
+	return ""
+}
+
+type SiteInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Kind          string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Names         []string               `protobuf:"bytes,4,rep,name=names,proto3" json:"names,omitempty"`
+	Ports         []int32                `protobuf:"varint,5,rep,packed,name=ports,proto3" json:"ports,omitempty"`
+	Tls           bool                   `protobuf:"varint,6,opt,name=tls,proto3" json:"tls,omitempty"`
+	Enabled       bool                   `protobuf:"varint,7,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	Toggleable    bool                   `protobuf:"varint,8,opt,name=toggleable,proto3" json:"toggleable,omitempty"`
+	HasCertDays   bool                   `protobuf:"varint,9,opt,name=has_cert_days,json=hasCertDays,proto3" json:"has_cert_days,omitempty"`
+	CertDays      float64                `protobuf:"fixed64,10,opt,name=cert_days,json=certDays,proto3" json:"cert_days,omitempty"`
+	File          string                 `protobuf:"bytes,11,opt,name=file,proto3" json:"file,omitempty"`
+	NoToggle      string                 `protobuf:"bytes,12,opt,name=no_toggle,json=noToggle,proto3" json:"no_toggle,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SiteInfo) Reset() {
+	*x = SiteInfo{}
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SiteInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SiteInfo) ProtoMessage() {}
+
+func (x *SiteInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SiteInfo.ProtoReflect.Descriptor instead.
+func (*SiteInfo) Descriptor() ([]byte, []int) {
+	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *SiteInfo) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SiteInfo) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *SiteInfo) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SiteInfo) GetNames() []string {
+	if x != nil {
+		return x.Names
+	}
+	return nil
+}
+
+func (x *SiteInfo) GetPorts() []int32 {
+	if x != nil {
+		return x.Ports
+	}
+	return nil
+}
+
+func (x *SiteInfo) GetTls() bool {
+	if x != nil {
+		return x.Tls
+	}
+	return false
+}
+
+func (x *SiteInfo) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *SiteInfo) GetToggleable() bool {
+	if x != nil {
+		return x.Toggleable
+	}
+	return false
+}
+
+func (x *SiteInfo) GetHasCertDays() bool {
+	if x != nil {
+		return x.HasCertDays
+	}
+	return false
+}
+
+func (x *SiteInfo) GetCertDays() float64 {
+	if x != nil {
+		return x.CertDays
+	}
+	return 0
+}
+
+func (x *SiteInfo) GetFile() string {
+	if x != nil {
+		return x.File
+	}
+	return ""
+}
+
+func (x *SiteInfo) GetNoToggle() string {
+	if x != nil {
+		return x.NoToggle
+	}
+	return ""
+}
+
 type CentralMessage struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Msg:
@@ -867,7 +1152,7 @@ type CentralMessage struct {
 
 func (x *CentralMessage) Reset() {
 	*x = CentralMessage{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[10]
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -879,7 +1164,7 @@ func (x *CentralMessage) String() string {
 func (*CentralMessage) ProtoMessage() {}
 
 func (x *CentralMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[10]
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -892,7 +1177,7 @@ func (x *CentralMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CentralMessage.ProtoReflect.Descriptor instead.
 func (*CentralMessage) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{10}
+	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *CentralMessage) GetMsg() isCentralMessage_Msg {
@@ -929,6 +1214,7 @@ type Op struct {
 	//	*Op_AddKey
 	//	*Op_RemoveKey
 	//	*Op_RunScan
+	//	*Op_SetSite
 	Kind          isOp_Kind `protobuf_oneof:"kind"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -936,7 +1222,7 @@ type Op struct {
 
 func (x *Op) Reset() {
 	*x = Op{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[11]
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -948,7 +1234,7 @@ func (x *Op) String() string {
 func (*Op) ProtoMessage() {}
 
 func (x *Op) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[11]
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -961,7 +1247,7 @@ func (x *Op) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Op.ProtoReflect.Descriptor instead.
 func (*Op) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{11}
+	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *Op) GetId() string {
@@ -1005,6 +1291,15 @@ func (x *Op) GetRunScan() *RunScan {
 	return nil
 }
 
+func (x *Op) GetSetSite() *SetSite {
+	if x != nil {
+		if x, ok := x.Kind.(*Op_SetSite); ok {
+			return x.SetSite
+		}
+	}
+	return nil
+}
+
 type isOp_Kind interface {
 	isOp_Kind()
 }
@@ -1021,11 +1316,17 @@ type Op_RunScan struct {
 	RunScan *RunScan `protobuf:"bytes,4,opt,name=run_scan,json=runScan,proto3,oneof"`
 }
 
+type Op_SetSite struct {
+	SetSite *SetSite `protobuf:"bytes,5,opt,name=set_site,json=setSite,proto3,oneof"`
+}
+
 func (*Op_AddKey) isOp_Kind() {}
 
 func (*Op_RemoveKey) isOp_Kind() {}
 
 func (*Op_RunScan) isOp_Kind() {}
+
+func (*Op_SetSite) isOp_Kind() {}
 
 type AddKey struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1039,7 +1340,7 @@ type AddKey struct {
 
 func (x *AddKey) Reset() {
 	*x = AddKey{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[12]
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1051,7 +1352,7 @@ func (x *AddKey) String() string {
 func (*AddKey) ProtoMessage() {}
 
 func (x *AddKey) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[12]
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1064,7 +1365,7 @@ func (x *AddKey) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddKey.ProtoReflect.Descriptor instead.
 func (*AddKey) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{12}
+	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *AddKey) GetUser() string {
@@ -1105,7 +1406,7 @@ type RemoveKey struct {
 
 func (x *RemoveKey) Reset() {
 	*x = RemoveKey{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[13]
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1117,7 +1418,7 @@ func (x *RemoveKey) String() string {
 func (*RemoveKey) ProtoMessage() {}
 
 func (x *RemoveKey) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[13]
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1130,7 +1431,7 @@ func (x *RemoveKey) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveKey.ProtoReflect.Descriptor instead.
 func (*RemoveKey) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{13}
+	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *RemoveKey) GetFingerprint() string {
@@ -1155,7 +1456,7 @@ type RunScan struct {
 
 func (x *RunScan) Reset() {
 	*x = RunScan{}
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[14]
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1167,7 +1468,7 @@ func (x *RunScan) String() string {
 func (*RunScan) ProtoMessage() {}
 
 func (x *RunScan) ProtoReflect() protoreflect.Message {
-	mi := &file_serverkeeper_v1_agent_proto_msgTypes[14]
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1180,7 +1481,60 @@ func (x *RunScan) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunScan.ProtoReflect.Descriptor instead.
 func (*RunScan) Descriptor() ([]byte, []int) {
-	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{14}
+	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{17}
+}
+
+// SetSite enables or disables one web site with the agent's safe toggle (test, reload, probe, rollback).
+type SetSite struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SiteId        string                 `protobuf:"bytes,1,opt,name=site_id,json=siteId,proto3" json:"site_id,omitempty"`
+	Enabled       bool                   `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetSite) Reset() {
+	*x = SetSite{}
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetSite) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetSite) ProtoMessage() {}
+
+func (x *SetSite) ProtoReflect() protoreflect.Message {
+	mi := &file_serverkeeper_v1_agent_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetSite.ProtoReflect.Descriptor instead.
+func (*SetSite) Descriptor() ([]byte, []int) {
+	return file_serverkeeper_v1_agent_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *SetSite) GetSiteId() string {
+	if x != nil {
+		return x.SiteId
+	}
+	return ""
+}
+
+func (x *SetSite) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
 }
 
 var File_serverkeeper_v1_agent_proto protoreflect.FileDescriptor
@@ -1197,7 +1551,7 @@ const file_serverkeeper_v1_agent_proto_rawDesc = "" +
 	"\tserver_id\x18\x01 \x01(\tR\bserverId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x19\n" +
 	"\bcert_pem\x18\x03 \x01(\fR\acertPem\x12\x15\n" +
-	"\x06ca_pem\x18\x04 \x01(\fR\x05caPem\"\x8e\x03\n" +
+	"\x06ca_pem\x18\x04 \x01(\fR\x05caPem\"\xbe\x03\n" +
 	"\fAgentMessage\x12.\n" +
 	"\x05hello\x18\x01 \x01(\v2\x16.serverkeeper.v1.HelloH\x00R\x05hello\x12:\n" +
 	"\theartbeat\x18\x02 \x01(\v2\x1a.serverkeeper.v1.HeartbeatH\x00R\theartbeat\x124\n" +
@@ -1205,7 +1559,8 @@ const file_serverkeeper_v1_agent_proto_rawDesc = "" +
 	"\x05alert\x18\x04 \x01(\v2\x1b.serverkeeper.v1.AlertEventH\x00R\x05alert\x123\n" +
 	"\x05audit\x18\x05 \x01(\v2\x1b.serverkeeper.v1.AuditEntryH\x00R\x05audit\x128\n" +
 	"\top_result\x18\x06 \x01(\v2\x19.serverkeeper.v1.OpResultH\x00R\bopResult\x121\n" +
-	"\x04scan\x18\a \x01(\v2\x1b.serverkeeper.v1.ScanResultH\x00R\x04scanB\x05\n" +
+	"\x04scan\x18\a \x01(\v2\x1b.serverkeeper.v1.ScanResultH\x00R\x04scan\x12.\n" +
+	"\x05sites\x18\b \x01(\v2\x16.serverkeeper.v1.SitesH\x00R\x05sitesB\x05\n" +
 	"\x03msg\"|\n" +
 	"\x05Hello\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
@@ -1254,16 +1609,43 @@ const file_serverkeeper_v1_agent_proto_rawDesc = "" +
 	"\n" +
 	"started_at\x18\x04 \x01(\x03R\tstartedAt\x12\x16\n" +
 	"\x06passed\x18\x05 \x01(\x05R\x06passed\x12\x16\n" +
-	"\x06failed\x18\x06 \x01(\x05R\x06failed\">\n" +
+	"\x06failed\x18\x06 \x01(\x05R\x06failed\"r\n" +
+	"\x05Sites\x128\n" +
+	"\aservers\x18\x01 \x03(\v2\x1e.serverkeeper.v1.WebServerInfoR\aservers\x12/\n" +
+	"\x05sites\x18\x02 \x03(\v2\x19.serverkeeper.v1.SiteInfoR\x05sites\"\xa9\x01\n" +
+	"\rWebServerInfo\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x12\n" +
+	"\x04unit\x18\x02 \x01(\tR\x04unit\x12\x18\n" +
+	"\aversion\x18\x03 \x01(\tR\aversion\x12\x16\n" +
+	"\x06active\x18\x04 \x01(\bR\x06active\x12\x1b\n" +
+	"\tconfig_ok\x18\x05 \x01(\bR\bconfigOk\x12!\n" +
+	"\fconfig_error\x18\x06 \x01(\tR\vconfigError\"\xac\x02\n" +
+	"\bSiteInfo\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x14\n" +
+	"\x05names\x18\x04 \x03(\tR\x05names\x12\x14\n" +
+	"\x05ports\x18\x05 \x03(\x05R\x05ports\x12\x10\n" +
+	"\x03tls\x18\x06 \x01(\bR\x03tls\x12\x18\n" +
+	"\aenabled\x18\a \x01(\bR\aenabled\x12\x1e\n" +
+	"\n" +
+	"toggleable\x18\b \x01(\bR\n" +
+	"toggleable\x12\"\n" +
+	"\rhas_cert_days\x18\t \x01(\bR\vhasCertDays\x12\x1b\n" +
+	"\tcert_days\x18\n" +
+	" \x01(\x01R\bcertDays\x12\x12\n" +
+	"\x04file\x18\v \x01(\tR\x04file\x12\x1b\n" +
+	"\tno_toggle\x18\f \x01(\tR\bnoToggle\">\n" +
 	"\x0eCentralMessage\x12%\n" +
 	"\x02op\x18\x01 \x01(\v2\x13.serverkeeper.v1.OpH\x00R\x02opB\x05\n" +
-	"\x03msg\"\xc4\x01\n" +
+	"\x03msg\"\xfb\x01\n" +
 	"\x02Op\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x122\n" +
 	"\aadd_key\x18\x02 \x01(\v2\x17.serverkeeper.v1.AddKeyH\x00R\x06addKey\x12;\n" +
 	"\n" +
 	"remove_key\x18\x03 \x01(\v2\x1a.serverkeeper.v1.RemoveKeyH\x00R\tremoveKey\x125\n" +
-	"\brun_scan\x18\x04 \x01(\v2\x18.serverkeeper.v1.RunScanH\x00R\arunScanB\x06\n" +
+	"\brun_scan\x18\x04 \x01(\v2\x18.serverkeeper.v1.RunScanH\x00R\arunScan\x125\n" +
+	"\bset_site\x18\x05 \x01(\v2\x18.serverkeeper.v1.SetSiteH\x00R\asetSiteB\x06\n" +
 	"\x04kind\"p\n" +
 	"\x06AddKey\x12\x12\n" +
 	"\x04user\x18\x01 \x01(\tR\x04user\x12\x1d\n" +
@@ -1275,7 +1657,10 @@ const file_serverkeeper_v1_agent_proto_rawDesc = "" +
 	"\tRemoveKey\x12 \n" +
 	"\vfingerprint\x18\x01 \x01(\tR\vfingerprint\x12\x12\n" +
 	"\x04user\x18\x02 \x01(\tR\x04user\"\t\n" +
-	"\aRunScan2\xa1\x01\n" +
+	"\aRunScan\"<\n" +
+	"\aSetSite\x12\x17\n" +
+	"\asite_id\x18\x01 \x01(\tR\x06siteId\x12\x18\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled2\xa1\x01\n" +
 	"\x05Fleet\x12I\n" +
 	"\x06Enroll\x12\x1e.serverkeeper.v1.EnrollRequest\x1a\x1f.serverkeeper.v1.EnrollResponse\x12M\n" +
 	"\aConnect\x12\x1d.serverkeeper.v1.AgentMessage\x1a\x1f.serverkeeper.v1.CentralMessage(\x010\x01B,Z*github.com/tb12as/serverman/internal/pb;pbb\x06proto3"
@@ -1292,7 +1677,7 @@ func file_serverkeeper_v1_agent_proto_rawDescGZIP() []byte {
 	return file_serverkeeper_v1_agent_proto_rawDescData
 }
 
-var file_serverkeeper_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_serverkeeper_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_serverkeeper_v1_agent_proto_goTypes = []any{
 	(*EnrollRequest)(nil),  // 0: serverkeeper.v1.EnrollRequest
 	(*EnrollResponse)(nil), // 1: serverkeeper.v1.EnrollResponse
@@ -1304,11 +1689,15 @@ var file_serverkeeper_v1_agent_proto_goTypes = []any{
 	(*AuditEntry)(nil),     // 7: serverkeeper.v1.AuditEntry
 	(*OpResult)(nil),       // 8: serverkeeper.v1.OpResult
 	(*ScanResult)(nil),     // 9: serverkeeper.v1.ScanResult
-	(*CentralMessage)(nil), // 10: serverkeeper.v1.CentralMessage
-	(*Op)(nil),             // 11: serverkeeper.v1.Op
-	(*AddKey)(nil),         // 12: serverkeeper.v1.AddKey
-	(*RemoveKey)(nil),      // 13: serverkeeper.v1.RemoveKey
-	(*RunScan)(nil),        // 14: serverkeeper.v1.RunScan
+	(*Sites)(nil),          // 10: serverkeeper.v1.Sites
+	(*WebServerInfo)(nil),  // 11: serverkeeper.v1.WebServerInfo
+	(*SiteInfo)(nil),       // 12: serverkeeper.v1.SiteInfo
+	(*CentralMessage)(nil), // 13: serverkeeper.v1.CentralMessage
+	(*Op)(nil),             // 14: serverkeeper.v1.Op
+	(*AddKey)(nil),         // 15: serverkeeper.v1.AddKey
+	(*RemoveKey)(nil),      // 16: serverkeeper.v1.RemoveKey
+	(*RunScan)(nil),        // 17: serverkeeper.v1.RunScan
+	(*SetSite)(nil),        // 18: serverkeeper.v1.SetSite
 }
 var file_serverkeeper_v1_agent_proto_depIdxs = []int32{
 	3,  // 0: serverkeeper.v1.AgentMessage.hello:type_name -> serverkeeper.v1.Hello
@@ -1318,19 +1707,23 @@ var file_serverkeeper_v1_agent_proto_depIdxs = []int32{
 	7,  // 4: serverkeeper.v1.AgentMessage.audit:type_name -> serverkeeper.v1.AuditEntry
 	8,  // 5: serverkeeper.v1.AgentMessage.op_result:type_name -> serverkeeper.v1.OpResult
 	9,  // 6: serverkeeper.v1.AgentMessage.scan:type_name -> serverkeeper.v1.ScanResult
-	11, // 7: serverkeeper.v1.CentralMessage.op:type_name -> serverkeeper.v1.Op
-	12, // 8: serverkeeper.v1.Op.add_key:type_name -> serverkeeper.v1.AddKey
-	13, // 9: serverkeeper.v1.Op.remove_key:type_name -> serverkeeper.v1.RemoveKey
-	14, // 10: serverkeeper.v1.Op.run_scan:type_name -> serverkeeper.v1.RunScan
-	0,  // 11: serverkeeper.v1.Fleet.Enroll:input_type -> serverkeeper.v1.EnrollRequest
-	2,  // 12: serverkeeper.v1.Fleet.Connect:input_type -> serverkeeper.v1.AgentMessage
-	1,  // 13: serverkeeper.v1.Fleet.Enroll:output_type -> serverkeeper.v1.EnrollResponse
-	10, // 14: serverkeeper.v1.Fleet.Connect:output_type -> serverkeeper.v1.CentralMessage
-	13, // [13:15] is the sub-list for method output_type
-	11, // [11:13] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	10, // 7: serverkeeper.v1.AgentMessage.sites:type_name -> serverkeeper.v1.Sites
+	11, // 8: serverkeeper.v1.Sites.servers:type_name -> serverkeeper.v1.WebServerInfo
+	12, // 9: serverkeeper.v1.Sites.sites:type_name -> serverkeeper.v1.SiteInfo
+	14, // 10: serverkeeper.v1.CentralMessage.op:type_name -> serverkeeper.v1.Op
+	15, // 11: serverkeeper.v1.Op.add_key:type_name -> serverkeeper.v1.AddKey
+	16, // 12: serverkeeper.v1.Op.remove_key:type_name -> serverkeeper.v1.RemoveKey
+	17, // 13: serverkeeper.v1.Op.run_scan:type_name -> serverkeeper.v1.RunScan
+	18, // 14: serverkeeper.v1.Op.set_site:type_name -> serverkeeper.v1.SetSite
+	0,  // 15: serverkeeper.v1.Fleet.Enroll:input_type -> serverkeeper.v1.EnrollRequest
+	2,  // 16: serverkeeper.v1.Fleet.Connect:input_type -> serverkeeper.v1.AgentMessage
+	1,  // 17: serverkeeper.v1.Fleet.Enroll:output_type -> serverkeeper.v1.EnrollResponse
+	13, // 18: serverkeeper.v1.Fleet.Connect:output_type -> serverkeeper.v1.CentralMessage
+	17, // [17:19] is the sub-list for method output_type
+	15, // [15:17] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_serverkeeper_v1_agent_proto_init() }
@@ -1346,14 +1739,16 @@ func file_serverkeeper_v1_agent_proto_init() {
 		(*AgentMessage_Audit)(nil),
 		(*AgentMessage_OpResult)(nil),
 		(*AgentMessage_Scan)(nil),
+		(*AgentMessage_Sites)(nil),
 	}
-	file_serverkeeper_v1_agent_proto_msgTypes[10].OneofWrappers = []any{
+	file_serverkeeper_v1_agent_proto_msgTypes[13].OneofWrappers = []any{
 		(*CentralMessage_Op)(nil),
 	}
-	file_serverkeeper_v1_agent_proto_msgTypes[11].OneofWrappers = []any{
+	file_serverkeeper_v1_agent_proto_msgTypes[14].OneofWrappers = []any{
 		(*Op_AddKey)(nil),
 		(*Op_RemoveKey)(nil),
 		(*Op_RunScan)(nil),
+		(*Op_SetSite)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1361,7 +1756,7 @@ func file_serverkeeper_v1_agent_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_serverkeeper_v1_agent_proto_rawDesc), len(file_serverkeeper_v1_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

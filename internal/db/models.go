@@ -66,6 +66,28 @@ type SSHChange struct {
 	BackupPath string    `json:"backup_path"`
 }
 
+// SiteChange is one web site enable/disable attempt.
+type SiteChange struct {
+	ID       string    `json:"id"`
+	ServerID string    `json:"server_id"`
+	Actor    string    `json:"actor"`
+	SiteID   string    `json:"site_id"`
+	SiteName string    `json:"site_name"`
+	Kind     string    `json:"kind"`   // nginx | apache
+	Action   string    `json:"action"` // enable | disable
+	Ops      string    `json:"ops"`    // the file moves, human readable
+	Status   string    `json:"status"` // applying | applied | failed | rolled_back
+	Error    string    `json:"error,omitempty"`
+	TS       time.Time `json:"ts"`
+}
+
+// FleetSites is the site inventory one agent last reported to the central server.
+type FleetSites struct {
+	ServerID  string          `json:"server_id"`
+	Data      json.RawMessage `json:"data"`
+	UpdatedAt time.Time       `json:"updated_at"`
+}
+
 type Scan struct {
 	ID         string          `json:"id"`
 	ServerID   string          `json:"server_id"`

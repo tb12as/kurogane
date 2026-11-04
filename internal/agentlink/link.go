@@ -22,6 +22,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -32,10 +33,12 @@ import (
 	"github.com/tb12as/serverman/internal/db"
 	"github.com/tb12as/serverman/internal/hostfs"
 	"github.com/tb12as/serverman/internal/pb"
+	"github.com/tb12as/serverman/internal/sites"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/protobuf/proto"
 )
 
 // ServerName must match the central gRPC certificate SAN (server.ServerName).
@@ -56,6 +59,9 @@ func init() {
 		}
 		l := &Link{Cfg: a.Cfg, DB: a.DB, Version: a.Version, AddKey: a.SSH.AddKey, RemoveKey: a.SSH.RemoveKey,
 			Scan: a.Harden.Scan}
+		if a.Sites != nil {
+			l.Sites, l.ApplySite = a.Sites.Inventory, a.Sites.Apply
+		}
 		a.OnSnapshot = append(a.OnSnapshot, l.OnSnapshot)
 		prev := a.Audit.Forward
 		a.Audit.Forward = func(e db.AuditEntry) {
@@ -78,6 +84,9 @@ type Link struct {
 	AddKey    func(ctx context.Context, user, pubkey, label string, expires time.Time) (db.SSHKey, error)
 	RemoveKey func(ctx context.Context, fingerprint, user string) (int, error)
 	Scan      func(ctx context.Context) (db.Scan, error)
+	// Sites and ApplySite are nil when site management is off.
+	Sites     func() sites.Inventory
+	ApplySite func(ctx context.Context, id string, enabled bool) (db.SiteChange, error)
 
 	mu      sync.Mutex
 	out     []*pb.AgentMessage
@@ -86,6 +95,7 @@ type Link struct {
 	wake    chan struct{}
 	alerts  map[string]string // event id -> forwarded state signature
 	scanID  string
+	siteSig string // signature of the last site inventory sent
 }
 
 func (l *Link) init() {
@@ -202,11 +212,53 @@ func (l *Link) PollOnce(ctx context.Context) {
 		l.alerts = keep
 		l.mu.Unlock()
 	}
+	l.pushSites(false)
 	sc, err := l.DB.GetScan(ctx, "latest")
 	if err != nil || sc.ID == "" || !l.newScan(sc.ID) {
 		return
 	}
 	l.push(scanMsg(sc), false)
+}
+
+// pushSites queues the site inventory when it changed since the last send (always when force).
+func (l *Link) pushSites(force bool) {
+	if l.Sites == nil {
+		return
+	}
+	m, sig := sitesMsg(l.Sites())
+	l.mu.Lock()
+	same := sig == l.siteSig && !force
+	l.siteSig = sig
+	l.mu.Unlock()
+	if !same {
+		l.push(m, false)
+	}
+}
+
+// sitesMsg summarizes the inventory; the signature ignores scan times so only real changes are sent.
+func sitesMsg(inv sites.Inventory) (*pb.AgentMessage, string) {
+	m := &pb.Sites{}
+	for _, w := range inv.Servers {
+		m.Servers = append(m.Servers, &pb.WebServerInfo{Kind: w.Kind, Unit: w.Unit, Version: w.Version, Active: w.Active,
+			ConfigOk: w.ConfigOK, ConfigError: w.ConfigError})
+	}
+	for _, s := range inv.Sites {
+		x := &pb.SiteInfo{Id: s.ID, Kind: s.Kind, Name: s.Name, Names: s.Names, Enabled: s.Enabled,
+			Toggleable: s.Toggle != "", File: s.File, NoToggle: s.NoToggle}
+		for _, l := range s.Listen {
+			x.Tls = x.Tls || l.TLS
+			if !slices.Contains(x.Ports, int32(l.Port)) {
+				x.Ports = append(x.Ports, int32(l.Port))
+			}
+		}
+		if s.CertDays != nil {
+			x.HasCertDays, x.CertDays = true, *s.CertDays
+		}
+		m.Sites = append(m.Sites, x)
+	}
+	b, _ := proto.MarshalOptions{Deterministic: true}.Marshal(m)
+	sum := sha256.Sum256(b)
+	return &pb.AgentMessage{Msg: &pb.AgentMessage_Sites{Sites: m}}, hex.EncodeToString(sum[:])
 }
 
 func (l *Link) newScan(id string) bool {
@@ -277,6 +329,7 @@ func (l *Link) session(ctx context.Context) error {
 	if err := st.Send(l.hello()); err != nil {
 		return err
 	}
+	l.pushSites(true) // a new session may reach a central server that lost or never had the inventory
 	slog.Info("connected to central server", "addr", l.Cfg.Central.Addr)
 
 	errc := make(chan error, 1)
@@ -364,6 +417,13 @@ func (l *Link) exec(ctx context.Context, op *pb.Op) *pb.AgentMessage {
 				l.push(scanMsg(sc), false)
 			}
 		}
+	case *pb.Op_SetSite:
+		if l.ApplySite == nil {
+			err = errors.New("site management is off on this agent: set web.enabled: true")
+			break
+		}
+		res, err = l.ApplySite(ctx, k.SetSite.SiteId, k.SetSite.Enabled)
+		l.pushSites(false)
 	default:
 		err = errors.New("unsupported op: upgrade the agent")
 	}

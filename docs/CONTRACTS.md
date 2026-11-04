@@ -36,24 +36,32 @@ Names are dotted; labels in braces. `_pct` = 0–100, `_bps` = bytes/s, `_ps` = 
 | Services | `service.active{unit}` (1 active, 0 otherwise) |
 | Agent self | `agent.cpu_pct`, `agent.rss_bytes`, `agent.collect_lag_ms`, `agent.goroutines`, `agent.store_bytes` |
 | HTTP (opt-in nginx tail) | `http.rps`, `http.4xx_ps`, `http.5xx_ps` |
+| Web servers (`web.enabled`) | `web.config_ok{server}` (1 when `nginx -t` / `apachectl configtest` passes), `web.sites{server,state}` (state enabled or disabled) |
 | TLS certificates (`collector.certs`) | `cert.days_left{name}` (negative once expired, recomputed every tick from an hourly scan), `cert.stale_served{name}` (1 when a probed port serves an older certificate for the same names) |
 
 Details that are not numbers live in `collector.Snapshot` (`System`, `TopCPU`, `TopMem`, `Conns`, `Services`, `Mounts`,
-`Certs`).
+`Certs`). The site inventory lives in `sites.Manager`, not the snapshot.
 
 ## Cross-package APIs
 
 - `collector.NewManager(cfg config.Collector, ex) *Manager`; `Run(ctx, sink func(*Snapshot))`; `Latest() *Snapshot`;
   `Certs()` / `RescanCerts(ctx)` return the certificate scan and its time.
 - `certs.Scan(ctx, r certs.Reader, certs.Options) []certs.Cert`: discovery (Let's Encrypt renewal configs and `live/`,
-  nginx `ssl_certificate` with includes, extra paths), leaf inspection and local TLS probes. Reads go through the
+  nginx `ssl_certificate` and Apache `SSLCertificateFile` via `internal/webconf`, extra paths), leaf inspection and local TLS probes. Reads go through the
   executor so root-only certbot directories work under privsep. Only `CERTIFICATE` PEM blocks are decoded; paths
   naming private keys are never read.
+- `webconf.ParseNginx(r)` / `ParseApache(r) *Config` (nil when not configured): sites (`Block`) and every directive
+  with file, line and context; `ParseNginxFile` / `ParseApacheFile` parse a disabled site file on its own.
+- `sites.New(Deps) *Manager`; `Run(ctx)`; `Inventory()`; `Scan(ctx, test)`; `Plan(ctx, id, enable)`;
+  `Apply(ctx, id, enable) (db.SiteChange, error)`; `Reload(ctx, kind)`; `Config(ctx, id)`; `Changes(ctx)`. Errors
+  wrap `sites.ErrNotFound`, `ErrRefused` or `ErrBusy`. Toggles go through `Executor.LinkSite`, `UnlinkSite` and
+  `RenameSite`, which only move files inside the sites-enabled/sites-available and conf.d directories.
 - `firewall.New(ex) *Manager`; `Ban(ctx, ip, d, reason)`, `Unban(ctx, ip)`, `Bans() []Ban`, `Backend() string`.
 - `alert.NewEngine(Deps) (*Engine, error)`; `Run(ctx)`; `Eval(ctx, *collector.Snapshot)`; `Fire(ctx, alert.Event)`.
   One-shot events set `Once: true`; conditions detected elsewhere fire and later send `Resolve: true` with the same
   `Rule` + `Labels`. Rule ids for externally fired events: `ssh_bruteforce`, `ssh_login`, `ssh_config_changed`,
-  `ssh_rolled_back`, `hardening_drift`, `agent_offline`, `updates_pending`, `ddos`.
+  `ssh_rolled_back`, `hardening_drift`, `agent_offline`, `updates_pending`, `ddos`, `web_config_invalid`,
+  `site_change_rolled_back`.
 - `notify.New(config.Channel, *secret.Box) (Notifier, error)`; `Notifier.Send(ctx, notify.Alert) error`.
 - `sshmgr.New(Deps) *Manager`; `Run(ctx)`; `Settings(ctx)`; `SafeApply(ctx, set, rollback)`; `AddKey`; `RemoveKey`;
   `BruteforceActive()`.

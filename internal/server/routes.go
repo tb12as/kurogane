@@ -26,6 +26,8 @@ func (c *Central) routes(s *api.Server) {
 	s.Route("DELETE /servers/{id}", auth.ScopeAdmin, c.deleteServer)
 	s.Route("GET /servers/{id}/metrics/history", auth.ScopeRead, c.history)
 	s.Route("GET /fleet/overview", auth.ScopeRead, c.overview)
+	s.Route("GET /fleet/sites", auth.ScopeRead, c.fleetSites)
+	s.Route("POST /fleet/sites/apply", auth.ScopeWeb, c.fleetSiteApply)
 	s.Route("POST /fleet/enrollment-tokens", auth.ScopeAdmin, func(r *http.Request) (any, error) {
 		var q struct {
 			Name string `json:"name"`

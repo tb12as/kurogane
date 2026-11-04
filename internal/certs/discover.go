@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	"time"
 
 	"github.com/tb12as/serverman/internal/hostfs"
+	"github.com/tb12as/serverman/internal/webconf"
 )
 
 // Reader reads host files. The agent passes its executor, so root-only certbot directories are read by the
@@ -37,17 +37,15 @@ type Source struct {
 	Path        string
 	Origin      string
 	Lineage     string   // Let's Encrypt lineage (live/<name>)
-	ServerNames []string // nginx server_name values
+	ServerNames []string // nginx server_name / Apache ServerName and ServerAlias values
 }
 
 const (
 	leRenewal = "/etc/letsencrypt/renewal"
 	leLive    = "/etc/letsencrypt/live"
-	nginxConf = "/etc/nginx/nginx.conf"
-	nginxDir  = "/etc/nginx"
 )
 
-// Discover lists certificate files from Let's Encrypt, the nginx configuration and extra, de-duplicated by
+// Discover lists certificate files from Let's Encrypt, the nginx and Apache configuration and extra, de-duplicated by
 // path. A file found in several places keeps the first origin and the union of its nginx server names.
 func Discover(r Reader, extra []string) []Source {
 	var out []Source
@@ -71,7 +69,7 @@ func Discover(r Reader, extra []string) []Source {
 	for _, s := range letsEncrypt(r) {
 		add(s)
 	}
-	for _, s := range nginx(r) {
+	for _, s := range webServers(r) {
 		add(s)
 	}
 	for _, p := range extra {
@@ -135,155 +133,41 @@ func renewalValue(b []byte, key string) string {
 	return ""
 }
 
-// ---- nginx ----
+// ---- web servers ----
 
-type frame struct {
-	name  string
-	names []string
-	certs []string
-}
-
-// nginx walks nginx.conf with includes expanded and returns each ssl_certificate with its server names.
-func nginx(r Reader) []Source {
-	toks := expand(r, nginxConf, 0, map[string]bool{})
-	if len(toks) == 0 {
-		return nil
-	}
+// webServers lists certificates referenced by nginx (ssl_certificate in server{} and http{}) and Apache
+// (SSLCertificateFile in a VirtualHost or globally), with the names of the sites using them.
+func webServers(r Reader) []Source {
 	var out []Source
-	stack := []*frame{{name: "main"}}
-	var stmt []string
-	for _, t := range toks {
-		top := stack[len(stack)-1]
-		switch t {
-		case "{":
-			name := ""
-			if len(stmt) > 0 {
-				name = stmt[0]
+	for _, c := range []*webconf.Config{webconf.ParseNginx(r), webconf.ParseApache(r)} {
+		if c == nil {
+			continue
+		}
+		origin := OriginNginx
+		if c.Server == webconf.Apache {
+			origin = OriginApache
+		}
+		for _, b := range c.Blocks {
+			for _, p := range b.Certs {
+				out = append(out, Source{Path: certPath(c.Root, p), Origin: origin, ServerNames: b.Names})
 			}
-			stack = append(stack, &frame{name: name})
-			stmt = nil
-		case "}":
-			if len(stack) > 1 {
-				stack = stack[:len(stack)-1]
-				if top.name == "server" {
-					for _, c := range top.certs {
-						out = append(out, Source{Path: c, Origin: OriginNginx, ServerNames: top.names})
-					}
+		}
+		for _, name := range []string{"ssl_certificate", "sslcertificatefile"} {
+			for _, d := range c.Find(name) {
+				if d.Block == 0 && len(d.Args) > 0 {
+					out = append(out, Source{Path: certPath(c.Root, d.Args[0]), Origin: origin})
 				}
 			}
-			stmt = nil
-		case ";":
-			if len(stmt) >= 2 {
-				switch {
-				case stmt[0] == "server_name" && top.name == "server":
-					top.names = append(top.names, stmt[1:]...)
-				case stmt[0] == "ssl_certificate" && top.name == "server":
-					top.certs = append(top.certs, nginxPath(stmt[1]))
-				case stmt[0] == "ssl_certificate" && top.name == "http":
-					out = append(out, Source{Path: nginxPath(stmt[1]), Origin: OriginNginx})
-				}
-			}
-			stmt = nil
-		default:
-			stmt = append(stmt, t)
 		}
 	}
 	return out
 }
 
-func nginxPath(p string) string {
+func certPath(root, p string) string {
 	if path.IsAbs(p) {
 		return p
 	}
-	return nginxDir + "/" + p
-}
-
-// expand tokenizes file and splices included files in place (globs relative to /etc/nginx).
-func expand(r Reader, file string, depth int, seen map[string]bool) []string {
-	// the Exists check keeps a host without nginx from logging a failed privileged read every scan
-	if depth > 10 || seen[file] || len(seen) > 500 || !hostfs.Exists(file) {
-		return nil
-	}
-	seen[file] = true
-	b, err := r.ReadFile(file)
-	if err != nil {
-		return nil
-	}
-	in := tokenize(b)
-	var out []string
-	for i := 0; i < len(in); i++ {
-		if in[i] == "include" && i+2 < len(in) && in[i+2] == ";" {
-			for _, f := range glob(nginxPath(in[i+1])) {
-				out = append(out, expand(r, f, depth+1, seen)...)
-			}
-			i += 2
-			continue
-		}
-		out = append(out, in[i])
-	}
-	return out
-}
-
-func glob(pat string) []string {
-	if !strings.ContainsAny(pat, "*?[") {
-		return []string{pat}
-	}
-	ms, _ := filepath.Glob(hostfs.P(pat))
-	out := make([]string, 0, len(ms))
-	for _, m := range ms {
-		if hostfs.Root != "/" && hostfs.Root != "" {
-			rel, err := filepath.Rel(hostfs.Root, m)
-			if err != nil {
-				continue
-			}
-			m = "/" + rel
-		}
-		out = append(out, m)
-	}
-	sort.Strings(out)
-	return out
-}
-
-// tokenize splits nginx config into words and the punctuation tokens ";", "{" and "}".
-func tokenize(b []byte) []string {
-	var out []string
-	var cur strings.Builder
-	flush := func() {
-		if cur.Len() > 0 {
-			out = append(out, cur.String())
-			cur.Reset()
-		}
-	}
-	for i := 0; i < len(b); i++ {
-		c := b[i]
-		switch {
-		case c == '#':
-			flush()
-			for i < len(b) && b[i] != '\n' {
-				i++
-			}
-		case c == '"' || c == '\'':
-			flush()
-			j := i + 1
-			for j < len(b) && b[j] != c {
-				if b[j] == '\\' {
-					j++
-				}
-				j++
-			}
-			out = append(out, string(b[i+1:min(j, len(b))]))
-			i = j
-		case c == ';' || c == '{' || c == '}':
-			flush()
-			out = append(out, string(c))
-		case c == ' ' || c == '\t' || c == '\n' || c == '\r':
-			flush()
-		default:
-			cur.WriteByte(c)
-		}
-	}
-	flush()
-	return out
+	return path.Join(root, p)
 }
 
 // ---- scan ----

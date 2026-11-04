@@ -66,7 +66,7 @@ func New(d Deps) *Service {
 	env := &checks.Env{Ex: d.Ex, Latest: d.Latest, ExpectedPorts: cfg.Harden.ExpectedPorts,
 		ConfigPath: config.DefaultPath, SetBruteforce: func(on bool) { cfg.SSH.Bruteforce.Enabled = on },
 		Certs:    certs.Options{Paths: cfg.Collector.Certs.Paths, Ports: cfg.Collector.Certs.ProbePorts},
-		CertsOff: !cfg.Collector.Certs.Enabled}
+		CertsOff: !cfg.Collector.Certs.Enabled, WebOff: !cfg.Web.Enabled}
 	if d.SSH != nil {
 		env.Settings = d.SSH.Settings
 		env.Bruteforce = d.SSH.BruteforceActive

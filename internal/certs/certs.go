@@ -26,6 +26,7 @@ import (
 const (
 	OriginLetsEncrypt = "letsencrypt"
 	OriginNginx       = "nginx"
+	OriginApache      = "apache"
 	OriginConfig      = "config"
 	OriginLive        = "live" // seen only on a probed port, no file found
 )

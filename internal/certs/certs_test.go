@@ -145,13 +145,6 @@ func TestWeakAndCovers(t *testing.T) {
 	}
 }
 
-func TestTokenize(t *testing.T) {
-	got := strings.Join(tokenize([]byte("server { # c ; {\n ssl_certificate \"/a b.pem\";\n server_name x 'y';}")), "|")
-	if got != "server|{|ssl_certificate|/a b.pem|;|server_name|x|y|;|}" {
-		t.Fatal(got)
-	}
-}
-
 func fixture(t *testing.T) (string, map[string]pair) {
 	dir := root(t)
 	now := time.Now()
@@ -210,8 +203,8 @@ func TestDiscover(t *testing.T) {
 	}
 	want := []string{
 		"letsencrypt:/etc/letsencrypt/live/example.com/fullchain.pem:example.com:example.com,www.example.com",
-		"nginx:/etc/nginx/certs/default.pem::",
 		"nginx:/etc/ssl/shop chain.pem::shop.example.org",
+		"nginx:/etc/nginx/certs/default.pem::",
 		"config:/srv/api.pem::",
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
@@ -330,5 +323,24 @@ func TestProbeName(t *testing.T) {
 		if got := probeName(tc.c); got != tc.want {
 			t.Errorf("probeName(%+v) = %q, want %q", tc.c, got, tc.want)
 		}
+	}
+}
+
+func TestDiscoverApache(t *testing.T) {
+	dir := root(t)
+	write(t, dir, "etc/httpd/conf/httpd.conf", []byte("ServerRoot /etc/httpd\nIncludeOptional conf.d/*.conf\n"+
+		"SSLCertificateFile /etc/pki/tls/certs/localhost.crt\n"))
+	write(t, dir, "etc/httpd/conf.d/shop.conf", []byte("<VirtualHost *:443>\nServerName shop.example.org\n"+
+		"ServerAlias www.shop.example.org\nSSLEngine on\nSSLCertificateFile certs/shop.pem\n"+
+		"SSLCertificateKeyFile /etc/httpd/certs/shop.key\n</VirtualHost>\n"))
+	srcs := Discover(&fsReader{}, nil)
+	var got []string
+	for _, s := range srcs {
+		got = append(got, s.Origin+":"+s.Path+":"+strings.Join(s.ServerNames, ","))
+	}
+	want := "apache:/etc/httpd/certs/shop.pem:shop.example.org,www.shop.example.org\n" +
+		"apache:/etc/pki/tls/certs/localhost.crt:"
+	if strings.Join(got, "\n") != want {
+		t.Fatalf("got\n%s", strings.Join(got, "\n"))
 	}
 }

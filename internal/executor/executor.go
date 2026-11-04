@@ -28,6 +28,10 @@ type Executor interface {
 	MkdirAll(path string, mode os.FileMode) error
 	Chown(path string, uid, gid int) error
 	Run(ctx context.Context, cmd string, args ...string) ([]byte, error)
+	// Site toggles (sites.go): move files only, never write contents.
+	LinkSite(target, link string) error
+	UnlinkSite(link string) error
+	RenameSite(from, to string) error
 }
 
 // ErrDenied is returned for operations outside the allowlist.
@@ -111,6 +115,8 @@ var commands = map[string][]string{
 	"chown":              {"-h"},
 	"stat":               {"-c"},
 	"systemd-run":        {UninstallArgs[0]},
+	"nginx":              {"-t"},
+	"apachectl":          {"configtest"},
 }
 
 // UninstallArgs is the only systemd-run the worker may ask for: a delayed transient unit outside

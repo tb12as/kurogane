@@ -3,6 +3,7 @@ package collector
 import (
 	"context"
 	"log/slog"
+	"slices"
 	"sync/atomic"
 	"time"
 
@@ -53,6 +54,20 @@ func NewManager(cfg config.Collector, ex executor.Executor) *Manager {
 		m.cols = append(m.cols, named{"certs", m.certs})
 	}
 	return m
+}
+
+// AddCollector registers an extra collector (e.g. the web site inventory); call before Run.
+func (m *Manager) AddCollector(name string, c Collector) {
+	m.cols = append(m.cols, named{name, c})
+}
+
+// Watch adds systemd units to the service watch (service.active / service_down); call before Run.
+func (m *Manager) Watch(units ...string) {
+	for _, u := range units {
+		if !slices.Contains(m.svc.units, u) {
+			m.svc.units = append(m.svc.units, u)
+		}
+	}
 }
 
 // Latest returns the most recent snapshot, or nil before the first full tick.

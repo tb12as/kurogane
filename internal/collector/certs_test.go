@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -103,5 +104,26 @@ func TestCertCollectorDefaults(t *testing.T) {
 	}
 	if _, ok := c.r.(hostReader); !ok {
 		t.Fatal("nil executor must fall back to host reads")
+	}
+}
+
+type constCollector struct{}
+
+func (constCollector) Collect(context.Context) ([]Sample, error) {
+	return []Sample{{Metric: "web.config_ok", Labels: map[string]string{"server": "nginx"}, Value: 1}}, nil
+}
+
+func TestAddCollectorAndWatch(t *testing.T) {
+	root(t, "t1")
+	ex := executor.NewFake()
+	ex.Outputs["systemctl show -p ActiveState,SubState -- ssh nginx"] = "ActiveState=active\nSubState=running\n\n" +
+		"ActiveState=failed\nSubState=failed\n"
+	m := NewManager(config.Collector{Interval: time.Second, WatchServices: []string{"ssh"}}, ex)
+	m.AddCollector("web", constCollector{})
+	m.Watch("nginx", "ssh")
+	s := m.collect(ctx, 0)
+	get(t, s.Samples, `web.config_ok{server="nginx"}`)
+	if v := get(t, s.Samples, `service.active{unit="nginx"}`); v != 0 {
+		t.Fatalf("nginx active = %v", v)
 	}
 }

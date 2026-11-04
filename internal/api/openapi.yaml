@@ -536,6 +536,73 @@ components:
                         type: string
                     type: array
             type: object
+        FleetSites:
+            properties:
+                servers:
+                    items:
+                        properties:
+                            active:
+                                type: boolean
+                            config_error:
+                                type: string
+                            config_ok:
+                                type: boolean
+                            connected:
+                                type: boolean
+                            kind:
+                                type: string
+                            server_id:
+                                type: string
+                            server_name:
+                                type: string
+                            unit:
+                                type: string
+                            updated_at:
+                                format: date-time
+                                type: string
+                            version:
+                                type: string
+                        type: object
+                    type: array
+                sites:
+                    items:
+                        properties:
+                            cert_days:
+                                type: number
+                            enabled:
+                                type: boolean
+                            file:
+                                type: string
+                            id:
+                                type: string
+                            kind:
+                                type: string
+                            name:
+                                type: string
+                            names:
+                                items:
+                                    type: string
+                                type: array
+                            no_toggle:
+                                type: string
+                            ports:
+                                items:
+                                    type: integer
+                                type: array
+                            server_id:
+                                type: string
+                            server_name:
+                                type: string
+                            tls:
+                                type: boolean
+                            toggleable:
+                                type: boolean
+                        type: object
+                    type: array
+            required:
+                - servers
+                - sites
+            type: object
         HardenCheck:
             properties:
                 auto_fix:
@@ -994,6 +1061,174 @@ components:
                     format: date-time
                     type: string
             type: object
+        Site:
+            properties:
+                access_log:
+                    type: string
+                available:
+                    type: string
+                cert_days:
+                    type: number
+                certs:
+                    items:
+                        type: string
+                    type: array
+                default:
+                    type: boolean
+                enabled:
+                    type: boolean
+                file:
+                    type: string
+                file_sites:
+                    type: integer
+                id:
+                    description: kind:file#index
+                    type: string
+                kind:
+                    enum:
+                        - nginx
+                        - apache
+                    type: string
+                line:
+                    type: integer
+                listen:
+                    items:
+                        $ref: '#/components/schemas/WebListen'
+                    type: array
+                name:
+                    description: first server name, _ for a catch-all
+                    type: string
+                names:
+                    items:
+                        type: string
+                    type: array
+                no_toggle:
+                    type: string
+                php:
+                    type: boolean
+                root:
+                    type: string
+                toggle:
+                    description: absent when ServerKeeper will not toggle the site
+                    enum:
+                        - link
+                        - rename
+                    type: string
+                upstreams:
+                    items:
+                        type: string
+                    type: array
+            required:
+                - id
+                - kind
+                - name
+                - listen
+                - file
+                - enabled
+                - file_sites
+            type: object
+        SiteChange:
+            properties:
+                action:
+                    enum:
+                        - enable
+                        - disable
+                    type: string
+                actor:
+                    type: string
+                error:
+                    type: string
+                id:
+                    type: string
+                kind:
+                    type: string
+                ops:
+                    type: string
+                server_id:
+                    type: string
+                site_id:
+                    type: string
+                site_name:
+                    type: string
+                status:
+                    enum:
+                        - applying
+                        - applied
+                        - failed
+                        - rolled_back
+                    type: string
+                ts:
+                    format: date-time
+                    type: string
+            type: object
+        SiteInventory:
+            properties:
+                enabled:
+                    description: false when web.enabled is off
+                    type: boolean
+                scanned_at:
+                    format: date-time
+                    type: string
+                servers:
+                    items:
+                        $ref: '#/components/schemas/WebServer'
+                    type: array
+                sites:
+                    items:
+                        $ref: '#/components/schemas/Site'
+                    type: array
+            required:
+                - enabled
+                - servers
+                - sites
+            type: object
+        SitePlan:
+            properties:
+                action:
+                    enum:
+                        - enable
+                        - disable
+                    type: string
+                affected:
+                    items:
+                        $ref: '#/components/schemas/Site'
+                    type: array
+                diff:
+                    type: string
+                impact:
+                    items:
+                        type: string
+                    type: array
+                ops:
+                    items:
+                        properties:
+                            from:
+                                type: string
+                            op:
+                                type: string
+                            to:
+                                type: string
+                        type: object
+                    type: array
+                site:
+                    $ref: '#/components/schemas/Site'
+                warnings:
+                    items:
+                        type: string
+                    type: array
+            type: object
+        SiteToggle:
+            properties:
+                enabled:
+                    description: true to enable
+                    false to disable: null
+                    type: boolean
+                id:
+                    type: string
+            required:
+                - id
+                - enabled
+            type: object
         Snapshot:
             properties:
                 certs:
@@ -1162,6 +1397,49 @@ components:
                     type: boolean
                 username:
                     type: string
+            type: object
+        WebListen:
+            properties:
+                addr:
+                    type: string
+                default:
+                    type: boolean
+                port:
+                    type: integer
+                tls:
+                    type: boolean
+            type: object
+        WebServer:
+            properties:
+                active:
+                    type: boolean
+                config_error:
+                    type: string
+                config_ok:
+                    type: boolean
+                files:
+                    type: integer
+                kind:
+                    enum:
+                        - nginx
+                        - apache
+                    type: string
+                main:
+                    type: string
+                root:
+                    type: string
+                tested_at:
+                    format: date-time
+                    type: string
+                unit:
+                    type: string
+                version:
+                    type: string
+            required:
+                - kind
+                - unit
+                - active
+                - config_ok
             type: object
     securitySchemes:
         bearer:
@@ -1905,6 +2183,57 @@ paths:
                                 type: array
                     description: queued
             summary: Queue RunScan on every server (or servers with tag) (admin)
+    /fleet/sites:
+        get:
+            parameters:
+                - in: query
+                  name: q
+                  schema:
+                    type: string
+                - in: query
+                  name: server
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/FleetSites'
+                    description: ok
+            summary: Sites reported by every agent; q matches any name or id, server narrows to one server (id or name)
+    /fleet/sites/apply:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                enabled:
+                                    type: boolean
+                                id:
+                                    type: string
+                                server:
+                                    type: string
+                            required:
+                                - server
+                                - id
+                                - enabled
+                            type: object
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties: true
+                                type: object
+                    description: queued
+                "404":
+                    description: unknown server or site
+                "409":
+                    description: not toggleable or already in that state
+            summary: Queue a safe enable/disable of a site on one server (web:write); the result arrives as a fleet op
     /harden/checks:
         get:
             responses:
@@ -2295,6 +2624,105 @@ paths:
                                 $ref: '#/components/schemas/Error'
                     description: VictoriaMetrics unreachable
             summary: Fleet time series from VictoriaMetrics, same shape as /metrics/history
+    /sites:
+        get:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SiteInventory'
+                    description: ok
+            summary: nginx and Apache sites on this host (enabled and disabled) with the web servers' config test state
+    /sites/apply:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SiteToggle'
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SiteChange'
+                    description: applied
+                "404":
+                    description: unknown site id
+                "409":
+                    description: refused
+                    or another change is in progress: null
+                "422":
+                    description: failed or rolled back; the message says why and the change is in /sites/changes
+            summary: Enable or disable a site (web:write). Config test before and after, reload, probe; undone on any failure.
+    /sites/changes:
+        get:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: '#/components/schemas/SiteChange'
+                                type: array
+                    description: ok
+            summary: Site enable/disable history, newest first
+    /sites/config:
+        get:
+            parameters:
+                - in: query
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                properties:
+                                    content:
+                                        type: string
+                                    file:
+                                        type: string
+                                type: object
+                    description: ok
+                "404":
+                    description: unknown site id
+            summary: The file that defines a site and its content (web:write; config may hold secrets)
+    /sites/plan:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SiteToggle'
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SitePlan'
+                    description: ok
+                "404":
+                    description: unknown site id
+                "409":
+                    description: refused (already in that state
+                    not toggleable): null
+            summary: Dry run of enabling or disabling a site; nothing changes
+    /sites/rescan:
+        post:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SiteInventory'
+                    description: ok
+            summary: Re-read the configuration and run the config tests now (web:write)
     /ssh/bans:
         get:
             responses:
@@ -2668,6 +3096,7 @@ paths:
                                             - read
                                             - ssh:write
                                             - harden:write
+                                            - web:write
                                             - admin
                                         type: string
                                     type: array
@@ -2802,6 +3231,30 @@ paths:
                 "200":
                     description: ok
             summary: Clear login lockout (admin)
+    /web/{server}/reload:
+        post:
+            parameters:
+                - in: path
+                  name: server
+                  required: true
+                  schema:
+                    enum:
+                        - nginx
+                        - apache
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                properties:
+                                    reloaded:
+                                        type: boolean
+                                type: object
+                    description: reloaded
+                "409":
+                    description: config test fails
+            summary: Config test, then systemctl reload of nginx or apache (web:write); refused while the test fails
 security:
     - bearer: []
     - session: []

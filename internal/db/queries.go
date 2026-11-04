@@ -121,6 +121,9 @@ func (s *SQLite) TouchServer(ctx context.Context, id string, at time.Time, statu
 }
 
 func (s *SQLite) DeleteServer(ctx context.Context, id string) error {
+	if _, err := s.w.ExecContext(ctx, "DELETE FROM fleet_sites WHERE server_id=?", id); err != nil {
+		return err
+	}
 	_, err := s.w.ExecContext(ctx, "DELETE FROM servers WHERE id=?", id)
 	return err
 }
@@ -365,6 +368,71 @@ func (s *SQLite) ListSSHChanges(ctx context.Context, limit int) ([]SSHChange, er
 		}
 		c.TS, c.Deadline = fromUnix(ts), fromUnix(dl)
 		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
+// ---- site changes ----
+
+func (s *SQLite) SaveSiteChange(ctx context.Context, c SiteChange) error {
+	if c.ServerID == "" {
+		c.ServerID = "local"
+	}
+	_, err := s.w.ExecContext(ctx, `INSERT INTO site_changes(id,server_id,actor,site_id,site_name,kind,action,ops,status,error,ts)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET status=excluded.status, error=excluded.error`,
+		c.ID, c.ServerID, c.Actor, c.SiteID, c.SiteName, c.Kind, c.Action, c.Ops, c.Status, c.Error, unix(c.TS))
+	return err
+}
+
+func (s *SQLite) ListSiteChanges(ctx context.Context, limit int) ([]SiteChange, error) {
+	if limit <= 0 {
+		limit = 100
+	}
+	rows, err := s.r.QueryContext(ctx, `SELECT id,server_id,actor,site_id,site_name,kind,action,ops,status,error,ts
+		FROM site_changes ORDER BY ts DESC LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []SiteChange{}
+	for rows.Next() {
+		var c SiteChange
+		var ts int64
+		if err := rows.Scan(&c.ID, &c.ServerID, &c.Actor, &c.SiteID, &c.SiteName, &c.Kind, &c.Action, &c.Ops, &c.Status,
+			&c.Error, &ts); err != nil {
+			return nil, err
+		}
+		c.TS = fromUnix(ts)
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
+// ---- fleet sites (central) ----
+
+func (s *SQLite) SaveFleetSites(ctx context.Context, f FleetSites) error {
+	_, err := s.w.ExecContext(ctx, `INSERT INTO fleet_sites(server_id,data,updated_at) VALUES(?,?,?)
+		ON CONFLICT(server_id) DO UPDATE SET data=excluded.data, updated_at=excluded.updated_at`,
+		f.ServerID, string(f.Data), unix(f.UpdatedAt))
+	return err
+}
+
+func (s *SQLite) ListFleetSites(ctx context.Context) ([]FleetSites, error) {
+	rows, err := s.r.QueryContext(ctx, `SELECT server_id,data,updated_at FROM fleet_sites ORDER BY server_id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []FleetSites{}
+	for rows.Next() {
+		var f FleetSites
+		var data string
+		var ts int64
+		if err := rows.Scan(&f.ServerID, &data, &ts); err != nil {
+			return nil, err
+		}
+		f.Data, f.UpdatedAt = json.RawMessage(data), fromUnix(ts)
+		out = append(out, f)
 	}
 	return out, rows.Err()
 }

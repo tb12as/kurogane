@@ -9,6 +9,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -21,6 +22,7 @@ import (
 	"time"
 
 	"github.com/tb12as/serverman/internal/agentlink"
+	"github.com/tb12as/serverman/internal/api"
 	"github.com/tb12as/serverman/internal/auth"
 	"github.com/tb12as/serverman/internal/collector"
 	"github.com/tb12as/serverman/internal/config"
@@ -28,6 +30,8 @@ import (
 	"github.com/tb12as/serverman/internal/notify"
 	"github.com/tb12as/serverman/internal/pb"
 	"github.com/tb12as/serverman/internal/secret"
+	"github.com/tb12as/serverman/internal/sites"
+	"github.com/tb12as/serverman/internal/webconf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -216,6 +220,26 @@ func TestAgentRoundTrip(t *testing.T) {
 		added <- user + "|" + label
 		return db.SSHKey{Fingerprint: "SHA256:abc", User: user, Type: "ssh-ed25519", PublicKey: pub}, nil
 	}
+	var siteMu sync.Mutex
+	days := 9.5
+	inv := sites.Inventory{
+		Servers: []sites.WebServer{{Kind: "nginx", Unit: "nginx", Version: "1.24.0", Active: true, ConfigOK: true}},
+		Sites: []sites.Site{
+			{ID: "nginx:/etc/nginx/sites-enabled/shop#0", Kind: "nginx", Name: "shop.example.org",
+				Names: []string{"shop.example.org", "www.shop.example.org"}, Enabled: true, Toggle: "link",
+				Listen: []webconf.Listen{{Port: 443, TLS: true}, {Addr: "::", Port: 443, TLS: true}}, CertDays: &days},
+			{ID: "nginx:/etc/nginx/nginx.conf#0", Kind: "nginx", Name: "status.local", Names: []string{"status.local"},
+				Enabled: true, NoToggle: "defined in nginx.conf", Listen: []webconf.Listen{{Port: 8081}}},
+		}}
+	l.Sites = func() sites.Inventory { siteMu.Lock(); defer siteMu.Unlock(); return inv }
+	applied := make(chan string, 1)
+	l.ApplySite = func(_ context.Context, id string, enabled bool) (db.SiteChange, error) {
+		siteMu.Lock()
+		inv.Sites[0].Enabled = enabled
+		siteMu.Unlock()
+		applied <- id
+		return db.SiteChange{ID: "c1", SiteID: id, Status: "applied"}, nil
+	}
 	go l.Run(ctx)
 
 	var srv db.Server
@@ -245,6 +269,56 @@ func TestAgentRoundTrip(t *testing.T) {
 		t.Fatalf("overview latest = %v", ov)
 	}
 
+	// the site inventory arrives on connect; search finds it by any name
+	fleet := func(q string) FleetSites {
+		v, err := e.c.fleetSites(httptest.NewRequest("GET", "/api/v1/fleet/sites?"+q, nil))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return v.(FleetSites)
+	}
+	eventually(t, "fleet sites", func() bool { return len(fleet("").Sites) == 2 })
+	fs := fleet("q=WWW.shop&server=web-01")
+	if len(fs.Sites) != 1 || fs.Sites[0].ServerName != "web-01" || !fs.Sites[0].TLS || len(fs.Sites[0].Ports) != 1 ||
+		fs.Sites[0].CertDays == nil || *fs.Sites[0].CertDays != 9.5 || len(fs.Servers) != 1 || fs.Servers[0].Version != "1.24.0" {
+		t.Fatalf("fleet sites = %+v", fs)
+	}
+	if len(fleet("server=other").Sites) != 0 {
+		t.Fatal("server filter ignored")
+	}
+	apply := func(body string) (any, error) {
+		return e.c.fleetSiteApply(httptest.NewRequest("POST", "/api/v1/fleet/sites/apply", strings.NewReader(body)))
+	}
+	for body, code := range map[string]int{
+		`{"server":"nope","id":"x","enabled":false}`:                                      404,
+		`{"server":"web-01","id":"x","enabled":false}`:                                    404,
+		`{"server":"web-01","id":"nginx:/etc/nginx/nginx.conf#0","enabled":false}`:        409,
+		`{"server":"web-01","id":"nginx:/etc/nginx/sites-enabled/shop#0","enabled":true}`: 409,
+	} {
+		_, err := apply(body)
+		var he *api.HTTPError
+		if !errors.As(err, &he) || he.Code != code {
+			t.Errorf("%s: want %d, got %v", body, code, err)
+		}
+	}
+	sop, err := apply(`{"server":"web-01","id":"nginx:/etc/nginx/sites-enabled/shop#0","enabled":false}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case id := <-applied:
+		if id != "nginx:/etc/nginx/sites-enabled/shop#0" {
+			t.Fatal(id)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("SetSite op not delivered")
+	}
+	eventually(t, "site op result and new inventory", func() bool {
+		ops, _ := e.c.DB.ListOps(ctx, 10)
+		s := fleet("q=shop").Sites
+		return len(ops) == 1 && ops[0].ID == sop.(db.FleetOp).ID && ops[0].Status == "done" && len(s) == 1 && !s[0].Enabled
+	})
+
 	o := addKeyOp{User: "deploy", PublicKey: "ssh-ed25519 AAAA", Label: "budi"}
 	op, err := e.c.Enqueue(ctx, srv.ID, "add_key", o)
 	if err != nil {
@@ -260,7 +334,12 @@ func TestAgentRoundTrip(t *testing.T) {
 	}
 	eventually(t, "op result", func() bool {
 		ops, _ := e.c.DB.ListOps(ctx, 10)
-		return len(ops) == 1 && ops[0].ID == op.ID && ops[0].Status == "done"
+		for _, o := range ops {
+			if o.ID == op.ID {
+				return o.Status == "done"
+			}
+		}
+		return false
 	})
 	if keys, _ := e.c.DB.FindKeys(ctx, "SHA256:abc"); len(keys) != 1 || keys[0].ServerID != srv.ID {
 		t.Fatalf("central inventory: %+v", keys)
