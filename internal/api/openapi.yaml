@@ -536,6 +536,73 @@ components:
                         type: string
                     type: array
             type: object
+        FleetSites:
+            properties:
+                servers:
+                    items:
+                        properties:
+                            active:
+                                type: boolean
+                            config_error:
+                                type: string
+                            config_ok:
+                                type: boolean
+                            connected:
+                                type: boolean
+                            kind:
+                                type: string
+                            server_id:
+                                type: string
+                            server_name:
+                                type: string
+                            unit:
+                                type: string
+                            updated_at:
+                                format: date-time
+                                type: string
+                            version:
+                                type: string
+                        type: object
+                    type: array
+                sites:
+                    items:
+                        properties:
+                            cert_days:
+                                type: number
+                            enabled:
+                                type: boolean
+                            file:
+                                type: string
+                            id:
+                                type: string
+                            kind:
+                                type: string
+                            name:
+                                type: string
+                            names:
+                                items:
+                                    type: string
+                                type: array
+                            no_toggle:
+                                type: string
+                            ports:
+                                items:
+                                    type: integer
+                                type: array
+                            server_id:
+                                type: string
+                            server_name:
+                                type: string
+                            tls:
+                                type: boolean
+                            toggleable:
+                                type: boolean
+                        type: object
+                    type: array
+            required:
+                - servers
+                - sites
+            type: object
         HardenCheck:
             properties:
                 auto_fix:
@@ -2116,6 +2183,57 @@ paths:
                                 type: array
                     description: queued
             summary: Queue RunScan on every server (or servers with tag) (admin)
+    /fleet/sites:
+        get:
+            parameters:
+                - in: query
+                  name: q
+                  schema:
+                    type: string
+                - in: query
+                  name: server
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/FleetSites'
+                    description: ok
+            summary: Sites reported by every agent; q matches any name or id, server narrows to one server (id or name)
+    /fleet/sites/apply:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                enabled:
+                                    type: boolean
+                                id:
+                                    type: string
+                                server:
+                                    type: string
+                            required:
+                                - server
+                                - id
+                                - enabled
+                            type: object
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                additionalProperties: true
+                                type: object
+                    description: queued
+                "404":
+                    description: unknown server or site
+                "409":
+                    description: not toggleable or already in that state
+            summary: Queue a safe enable/disable of a site on one server (web:write); the result arrives as a fleet op
     /harden/checks:
         get:
             responses:

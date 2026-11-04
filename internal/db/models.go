@@ -81,6 +81,13 @@ type SiteChange struct {
 	TS       time.Time `json:"ts"`
 }
 
+// FleetSites is the site inventory one agent last reported to the central server.
+type FleetSites struct {
+	ServerID  string          `json:"server_id"`
+	Data      json.RawMessage `json:"data"`
+	UpdatedAt time.Time       `json:"updated_at"`
+}
+
 type Scan struct {
 	ID         string          `json:"id"`
 	ServerID   string          `json:"server_id"`

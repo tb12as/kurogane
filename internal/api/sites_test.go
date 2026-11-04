@@ -25,8 +25,8 @@ func TestSitesRoutes(t *testing.T) {
 	st.do("POST", "/api/v1/sites/plan", st.read, SiteToggle{ID: "x"}, 503)
 
 	fixture(t, hostfs.Root, map[string]string{
-		"/etc/nginx/nginx.conf":              "http { include /etc/nginx/conf.d/*.conf; }\n",
-		"/etc/nginx/conf.d/shop.conf":        "server { listen 1; server_name shop.example.org; }\n",
+		"/etc/nginx/nginx.conf":               "http { include /etc/nginx/conf.d/*.conf; }\n",
+		"/etc/nginx/conf.d/shop.conf":         "server { listen 1; server_name shop.example.org; }\n",
 		"/etc/nginx/conf.d/old.conf.disabled": "server { listen 1; server_name old.example.org; }\n",
 	})
 	st.srv.Sites = sites.New(sites.Deps{Ex: st.srv.Ex, DB: st.srv.DB, Audit: st.srv.Audit})
