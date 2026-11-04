@@ -17,8 +17,8 @@ import (
 
 // SSH-8: certificate authority with short-lived user certificates.
 const (
-	CAKeyPath = "/etc/serverkeeper/ssh_ca"
-	CAPubPath = "/etc/ssh/serverkeeper_ca.pub"
+	CAKeyPath = "/etc/kurogane/ssh_ca"
+	CAPubPath = "/etc/ssh/kurogane_ca.pub"
 )
 
 // InitCA creates the CA key (once), publishes its public key and trusts it via SafeApply.
@@ -36,7 +36,7 @@ func (m *Manager) InitCA(ctx context.Context, rollback time.Duration) (string, e
 	if err != nil {
 		return "", err
 	}
-	pemBlock, err := ssh.MarshalPrivateKey(priv, "serverkeeper user CA")
+	pemBlock, err := ssh.MarshalPrivateKey(priv, "kurogane user CA")
 	if err != nil {
 		return "", err
 	}
@@ -44,7 +44,7 @@ func (m *Manager) InitCA(ctx context.Context, rollback time.Duration) (string, e
 	if err != nil {
 		return "", err
 	}
-	line := strings.TrimSpace(string(ssh.MarshalAuthorizedKey(sp))) + " serverkeeper-user-ca"
+	line := strings.TrimSpace(string(ssh.MarshalAuthorizedKey(sp))) + " kurogane-user-ca"
 	if err := m.d.Ex.WriteFile(CAKeyPath, pem.EncodeToMemory(pemBlock), 0o600); err != nil {
 		return "", err
 	}
@@ -75,7 +75,7 @@ func (m *Manager) Sign(ctx context.Context, pubkey string, principals []string, 
 	}
 	b, err := m.d.Ex.ReadFile(CAKeyPath)
 	if err != nil {
-		return "", fmt.Errorf("no SSH CA: run `serverkeeper ssh ca init` first (%w)", err)
+		return "", fmt.Errorf("no SSH CA: run `kurogane ssh ca init` first (%w)", err)
 	}
 	signer, err := ssh.ParsePrivateKey(b)
 	if err != nil {

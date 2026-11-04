@@ -34,7 +34,7 @@ func init() {
 			CIS:       "5.2.13",
 			Rationale: "CBC ciphers, SHA1/MD5 MACs and SHA1 or group1 key exchange have known weaknesses.",
 			Remediation: "Remove weak algorithms from Ciphers, MACs and KexAlgorithms in sshd_config " +
-				"(`serverkeeper harden fix SSH-CIPHERS` keeps only the strong ones you already offer)."}, e, "ciphers")
+				"(`kurogane harden fix SSH-CIPHERS` keeps only the strong ones you already offer)."}, e, "ciphers")
 		c.eval = func(m map[string]string) (bool, string) {
 			var weak []string
 			for _, k := range []string{"ciphers", "macs", "kexalgorithms"} {

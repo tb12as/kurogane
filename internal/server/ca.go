@@ -20,7 +20,7 @@ import (
 
 // ServerName is the DNS SAN of the central gRPC certificate; agents verify against it instead of the dial
 // address, so central can be reached by any IP or name. Agent certs never carry it (CN = server id, client EKU).
-const ServerName = "serverkeeper-central"
+const ServerName = "kurogane-central"
 
 // CA is the central server's own certificate authority (ECDSA P-256), stored under data_dir/ca with 0600 keys.
 type CA struct {
@@ -42,7 +42,7 @@ func LoadOrCreateCA(dir string) (*CA, error) {
 	}
 	kb, err := os.ReadFile(key)
 	if err != nil {
-		return nil, fmt.Errorf("read %s: %w (restore it from backup or re-run `serverkeeper server init`)", key, err)
+		return nil, fmt.Errorf("read %s: %w (restore it from backup or re-run `kurogane server init`)", key, err)
 	}
 	c, err := tls.X509KeyPair(cb, kb)
 	if err != nil {
@@ -73,7 +73,7 @@ func createCA(dir, crt, key string) (*CA, error) {
 	if err != nil {
 		return nil, err
 	}
-	tpl := &x509.Certificate{SerialNumber: serial(), Subject: pkix.Name{CommonName: "ServerKeeper central CA"},
+	tpl := &x509.Certificate{SerialNumber: serial(), Subject: pkix.Name{CommonName: "Kurogane central CA"},
 		NotBefore: time.Now().Add(-time.Hour), NotAfter: time.Now().AddDate(20, 0, 0), IsCA: true,
 		BasicConstraintsValid: true, MaxPathLenZero: true, KeyUsage: x509.KeyUsageCertSign | x509.KeyUsageCRLSign}
 	der, err := x509.CreateCertificate(rand.Reader, tpl, tpl, &k.PublicKey, k)

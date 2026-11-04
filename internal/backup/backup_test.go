@@ -60,10 +60,10 @@ func TestBackupRestore(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if m.Files["serverkeeper.db"] == "" || m.Files["agent.db"] == "" || m.VMBytes != 6 {
+		if m.Files["kurogane.db"] == "" || m.Files["agent.db"] == "" || m.VMBytes != 6 {
 			t.Fatalf("%+v", m)
 		}
-		if fi, _ := os.Stat(filepath.Join(p, "serverkeeper.db")); fi.Mode().Perm() != 0o600 {
+		if fi, _ := os.Stat(filepath.Join(p, "kurogane.db")); fi.Mode().Perm() != 0o600 {
 			t.Fatalf("backup db mode %o", fi.Mode().Perm())
 		}
 		// distinct directory names need distinct seconds
@@ -104,7 +104,7 @@ func TestBackupRestore(t *testing.T) {
 	}
 
 	// tampered backup is refused
-	os.WriteFile(filepath.Join(last, "serverkeeper.db"), []byte("x"), 0o600)
+	os.WriteFile(filepath.Join(last, "kurogane.db"), []byte("x"), 0o600)
 	if _, err := Restore(last, RestoreOpts{MetaDB: cfg.MetaDB()}); err == nil {
 		t.Fatal("corrupt backup accepted")
 	}

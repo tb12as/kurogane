@@ -167,14 +167,14 @@ func TestSafeApplyConfirm(t *testing.T) {
 		t.Fatal(err)
 	}
 	if plan.Mode != "drop-in" || !strings.Contains(plan.Diff, "+PasswordAuthentication no") ||
-		!strings.Contains(plan.Diff, "disabled by serverkeeper") {
+		!strings.Contains(plan.Diff, "disabled by kurogane") {
 		t.Fatalf("plan: %+v\n%s", plan, plan.Diff)
 	}
 	ch, err := e.m.SafeApplyFrom(ctx, map[string]string{"PasswordAuthentication": "no"}, time.Minute, "1.2.3.4 5 6.7.8.9 22")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !e.ex.Called("sshd -t -f /etc/ssh/sshd_config.sk-candidate") || !e.ex.Called("systemctl reload ssh") {
+	if !e.ex.Called("sshd -t -f /etc/ssh/sshd_config.krgn-candidate") || !e.ex.Called("systemctl reload ssh") {
 		t.Fatalf("calls: %v", e.ex.Calls)
 	}
 	if !strings.Contains(read(t, e.root, DropIn), "PasswordAuthentication no") {
@@ -272,7 +272,7 @@ func TestSSH4Refusals(t *testing.T) {
 
 func TestValidationErrorMapsLine(t *testing.T) {
 	e := setup(t, "Include /etc/ssh/sshd_config.d/*.conf\nPasswordAuthentication yes\n", true)
-	e.ex.Errors["sshd -t -f /etc/ssh/sshd_config.sk-candidate"] = &executor.RunError{Cmd: "sshd", Stderr: "/etc/ssh/sshd_config.sk-candidate line 1: Bad configuration option"}
+	e.ex.Errors["sshd -t -f /etc/ssh/sshd_config.krgn-candidate"] = &executor.RunError{Cmd: "sshd", Stderr: "/etc/ssh/sshd_config.krgn-candidate line 1: Bad configuration option"}
 	_, err := e.m.SafeApply(context.Background(), map[string]string{"MaxAuthTries": "3"}, time.Minute)
 	if err == nil || !strings.Contains(err.Error(), "rejected the new config: "+DropIn+" line 2: Bad") {
 		t.Fatalf("want error mapped to original file line, got %v", err)

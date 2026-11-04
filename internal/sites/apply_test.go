@@ -148,7 +148,7 @@ func TestPlanWarnings(t *testing.T) {
 	r.m.inv = inv
 	r.m.mu.Unlock()
 	p, _ := r.m.Plan(ctx, r.id("api.example.com"), false)
-	if !strings.Contains(strings.Join(p.Warnings, "\n"), "proxies to ServerKeeper itself") {
+	if !strings.Contains(strings.Join(p.Warnings, "\n"), "proxies to Kurogane itself") {
 		t.Errorf("self warning missing: %v", p.Warnings)
 	}
 	p, _ = r.m.Plan(ctx, r.id("old.example.org"), true)

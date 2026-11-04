@@ -52,7 +52,7 @@ func init() {
 			if err := c.get("/status", nil, &st); err != nil {
 				return err
 			}
-			fmt.Printf("%s  (serverkeeper %s)\n", st.ServerName, st.Version)
+			fmt.Printf("%s  (kurogane %s)\n", st.ServerName, st.Version)
 			fmt.Printf("OS        %s, kernel %s, up %.1f days\n", st.System.OS, st.System.Kernel, st.System.Uptime/86400)
 			fmt.Printf("CPU       %.1f%%   load %.2f\n", st.Metrics["cpu.total_pct"], st.Metrics["load.1"])
 			fmt.Printf("Memory    %.1f%% available   swap %.1f%% used\n", st.Metrics["mem.available_pct"], st.Metrics["swap.used_pct"])
@@ -65,7 +65,7 @@ func init() {
 			if st.Hardening != nil {
 				fmt.Printf("Hardening %.0f/100 (grade %s)\n", st.Hardening.Score, st.Hardening.Grade)
 			} else {
-				fmt.Println("Hardening no scan yet: run `serverkeeper harden scan`")
+				fmt.Println("Hardening no scan yet: run `kurogane harden scan`")
 			}
 			fmt.Printf("Alerts    %d active\n", len(st.Alerts))
 			for _, a := range st.Alerts {

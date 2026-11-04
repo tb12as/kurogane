@@ -931,7 +931,7 @@ components:
                         type: object
                     type: array
                 status:
-                    description: 'needs_credentials: Redis wants a password ServerKeeper does not have; shown, never alerted'
+                    description: 'needs_credentials: Redis wants a password Kurogane does not have; shown, never alerted'
                     enum:
                         - up
                         - down
@@ -1228,7 +1228,7 @@ components:
                 root:
                     type: string
                 toggle:
-                    description: absent when ServerKeeper will not toggle the site
+                    description: absent when Kurogane will not toggle the site
                     enum:
                         - link
                         - rename
@@ -1575,11 +1575,11 @@ components:
             type: http
         session:
             in: cookie
-            name: sk_session
+            name: krgn_session
             type: apiKey
 info:
     description: 'REST API (/api/v1). Auth: Bearer API token (scopes read, ssh:write, harden:write, admin) or session cookie + X-CSRF-Token header.'
-    title: ServerKeeper API
+    title: Kurogane API
     version: "1.0"
 openapi: 3.1.0
 paths:
@@ -1947,7 +1947,7 @@ paths:
                                 $ref: '#/components/schemas/Error'
                     description: locked after 5 failures
             security: []
-            summary: Log in with password and mandatory TOTP; sets sk_session and sk_csrf cookies
+            summary: Log in with password and mandatory TOTP; sets krgn_session and krgn_csrf cookies
     /auth/logout:
         post:
             responses:
@@ -2601,7 +2601,7 @@ paths:
                         text/plain:
                             schema:
                                 type: string
-                    description: metrics such as serverkeeper_cpu_total_pct, serverkeeper_cpu_core_pct{core="0"}
+                    description: metrics such as kurogane_cpu_total_pct, kurogane_cpu_core_pct{core="0"}
                 "503":
                     content:
                         application/json:

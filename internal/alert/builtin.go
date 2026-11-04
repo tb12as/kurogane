@@ -237,7 +237,7 @@ func redisText(id, name string, s *collector.Snapshot, v float64) string {
 	switch id {
 	case "redis_down":
 		if in.Status == collector.RedisAuthFailed {
-			return who + " rejects ServerKeeper's credentials: check password_file or requirepass and the ACL user."
+			return who + " rejects Kurogane's credentials: check password_file or requirepass and the ACL user."
 		}
 		msg := who + " does not answer"
 		if in.Error != "" {

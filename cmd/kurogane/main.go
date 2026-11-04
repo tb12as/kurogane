@@ -1,4 +1,4 @@
-// Command serverkeeper is the ServerKeeper agent, central server and CLI (PRD §10.1).
+// Command kurogane is the Kurogane agent, central server and CLI (PRD §10.1).
 package main
 
 import (
@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	"github.com/spf13/cobra"
@@ -27,7 +28,7 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:           "serverkeeper",
+	Use:           cliName(os.Args[0]),
 	Short:         "Monitor, secure and harden a Linux server from one binary",
 	SilenceUsage:  true,
 	SilenceErrors: true,
@@ -41,11 +42,19 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+// cliName is the name usage and help print: krgn when invoked through the short link, else kurogane.
+func cliName(arg0 string) string {
+	if filepath.Base(arg0) == "krgn" {
+		return "krgn"
+	}
+	return "kurogane"
+}
+
 func init() {
 	pf := rootCmd.PersistentFlags()
 	pf.StringVarP(&flagConfig, "config", "c", config.DefaultPath, "config file")
 	pf.StringVar(&flagAPI, "api", "", "API base URL (default from config listen)")
-	pf.StringVar(&flagToken, "token", "", "API token (default $SK_TOKEN or the local CLI token)")
+	pf.StringVar(&flagToken, "token", "", "API token (default $KRGN_TOKEN or the local CLI token)")
 	pf.BoolVar(&flagInsecure, "insecure", false, "skip TLS verification (self-signed certs)")
 	pf.BoolVar(&flagJSON, "json", false, "print JSON")
 	pf.BoolVarP(&flagVerbose, "verbose", "v", false, "debug logging")

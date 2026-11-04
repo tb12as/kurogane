@@ -12,7 +12,7 @@ type Reader interface {
 	ReadFile(path string) ([]byte, error)
 }
 
-// Config is what ServerKeeper needs from a redis.conf (last value wins, as in Redis).
+// Config is what Kurogane needs from a redis.conf (last value wins, as in Redis).
 type Config struct {
 	File          string            `json:"file"`
 	Port          int               `json:"port"` // 0 = TCP disabled
@@ -167,7 +167,7 @@ func (c Config) Loopback() bool {
 	return true
 }
 
-// Target returns how ServerKeeper connects: TCP on a loopback address when TCP is on, else TLS, else the socket.
+// Target returns how Kurogane connects: TCP on a loopback address when TCP is on, else TLS, else the socket.
 func (c Config) Target() Target {
 	host := "127.0.0.1"
 	for _, b := range c.Bind {

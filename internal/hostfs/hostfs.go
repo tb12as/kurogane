@@ -12,11 +12,11 @@ import (
 	"strings"
 )
 
-// Root is the host root; SK_ROOT overrides it (tests, chroots, containers mounting the host at /host).
+// Root is the host root; KRGN_ROOT overrides it (tests, chroots, containers mounting the host at /host).
 var Root = rootFromEnv()
 
 func rootFromEnv() string {
-	if r := os.Getenv("SK_ROOT"); r != "" {
+	if r := os.Getenv("KRGN_ROOT"); r != "" {
 		return r
 	}
 	return "/"

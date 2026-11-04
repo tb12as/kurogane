@@ -108,7 +108,7 @@ func (c *sshCheck) Fix(ctx context.Context, dryRun bool) (Diff, error) {
 	if len(d.SSH) == 0 {
 		d.SSH, d.SSHOld = nil, nil
 	}
-	d.Note = "sshd change uses safe-apply: confirm with `serverkeeper ssh confirm` before the rollback timer expires"
+	d.Note = "sshd change uses safe-apply: confirm with `kurogane ssh confirm` before the rollback timer expires"
 	return c.finish(ctx, d, dryRun)
 }
 
@@ -147,7 +147,7 @@ func sshName(k string) string {
 // ---- sysctl ----
 
 // SysctlFile is the drop-in all sysctl fixes write.
-const SysctlFile = "/etc/sysctl.d/99-serverkeeper.conf"
+const SysctlFile = "/etc/sysctl.d/99-kurogane.conf"
 
 type kv struct{ k, v string }
 
@@ -249,7 +249,7 @@ func SysctlEdit(content string, set map[string]string, del []string) string {
 		out = append(out, l)
 	}
 	if len(out) == 0 && len(set) > 0 {
-		out = append(out, "# managed by serverkeeper harden (revert with `serverkeeper harden revert <fix-id>`)")
+		out = append(out, "# managed by kurogane harden (revert with `kurogane harden revert <fix-id>`)")
 	}
 	for _, k := range sortedKeys(set) {
 		if !done[k] {

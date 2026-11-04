@@ -7,7 +7,7 @@ import (
 	"github.com/tb12as/kurogane/internal/hostfs"
 )
 
-const journaldDropin = "/etc/systemd/journald.conf.d/99-serverkeeper.conf"
+const journaldDropin = "/etc/systemd/journald.conf.d/99-kurogane.conf"
 
 func journalPersistent() (applies, ok bool, ev string) {
 	if !hostfs.Exists("/etc/systemd/journald.conf") && !hostfs.Exists("/etc/systemd/journald.conf.d") &&

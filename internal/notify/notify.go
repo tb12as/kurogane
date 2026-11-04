@@ -78,7 +78,7 @@ func Secret(ch config.Channel, box *secret.Box) (string, error) {
 	}
 	if ch.WebhookURL == "" {
 		return "", fmt.Errorf("channel %s: no webhook_url or webhook_url_env configured: "+
-			"add one with `serverkeeper alert channels add`", ch.Name)
+			"add one with `kurogane alert channels add`", ch.Name)
 	}
 	if !secret.IsSealed(ch.WebhookURL) {
 		return ch.WebhookURL, nil

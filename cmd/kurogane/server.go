@@ -22,7 +22,7 @@ import (
 )
 
 const serverSection = `
-# v1 central server (serverkeeper server init)
+# v1 central server (kurogane server init)
 server:
   grpc_listen: 0.0.0.0:9444      # agents connect here (mutual TLS)
   http_listen: 127.0.0.1:9443    # web UI / API (SSH tunnel or TLS)
@@ -39,14 +39,14 @@ server:
     keep: 7
 `
 
-// fleetClient talks to the central API (server.http_listen) unless --api / SK_API is given.
+// fleetClient talks to the central API (server.http_listen) unless --api / KRGN_API is given.
 func fleetClient() (*client, error) {
 	cfg, err := loadConfig()
 	if err != nil {
 		return nil, err
 	}
 	base := flagAPI
-	if base == "" && os.Getenv("SK_API") == "" {
+	if base == "" && os.Getenv("KRGN_API") == "" {
 		scheme := "http"
 		if cfg.TLS.Cert != "" {
 			scheme = "https"
@@ -104,8 +104,8 @@ func init() {
 				return err
 			}
 			chownServer(cfg)
-			fmt.Println("\nDone. Start the central server:  systemctl enable --now serverkeeper-server")
-			fmt.Println("Enroll an agent:                 serverkeeper server token create --name web-01")
+			fmt.Println("\nDone. Start the central server:  systemctl enable --now kurogane-server")
+			fmt.Println("Enroll an agent:                 kurogane server token create --name web-01")
 			return nil
 		},
 	}
@@ -114,11 +114,11 @@ func init() {
 	f.StringVar(&mode, "vm-mode", "systemd", "run VictoriaMetrics as its own systemd unit or as a child process")
 	f.StringVar(&adminUser, "admin-user", "admin", "admin username")
 	f.StringVar(&adminPass, "admin-password", "", "create the admin user with this password")
-	f.StringVar(&dataDir, "data-dir", "/var/lib/serverkeeper", "data directory (new config only)")
+	f.StringVar(&dataDir, "data-dir", "/var/lib/kurogane", "data directory (new config only)")
 
 	run := &cobra.Command{
 		Use:   "run",
-		Short: "Run the central server in the foreground (used by serverkeeper-server.service)",
+		Short: "Run the central server in the foreground (used by kurogane-server.service)",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			cfg, err := loadConfig()
 			if err != nil {
@@ -189,18 +189,18 @@ func writeServerConfig(dataDir, mode string) error {
 		return err
 	}
 	host, _ := os.Hostname()
-	body := fmt.Sprintf("# /etc/serverkeeper/config.yaml (central server)\nserver_name: %s\ndata_dir: %s\n"+
+	body := fmt.Sprintf("# /etc/kurogane/config.yaml (central server)\nserver_name: %s\ndata_dir: %s\n"+
 		"secret_key: %s\n", host, dataDir, filepath.Join(filepath.Dir(flagConfig), "secret.key")) +
 		fmt.Sprintf(serverSection, mode, dataDir, dataDir)
-	if err := os.MkdirAll(filepath.Dir(flagConfig), 0o755); err != nil { // #nosec G301 -- /etc/serverkeeper must be traversable
+	if err := os.MkdirAll(filepath.Dir(flagConfig), 0o755); err != nil { // #nosec G301 -- /etc/kurogane must be traversable
 		return err
 	}
-	return os.WriteFile(flagConfig, []byte(body), 0o640) // #nosec G306 -- config is 0640 root:serverkeeper; secrets live in secret.key
+	return os.WriteFile(flagConfig, []byte(body), 0o640) // #nosec G306 -- config is 0640 root:kurogane; secrets live in secret.key
 }
 
-// chownServer hands the data dir, secret key and config to the `serverkeeper` user the central unit runs as.
+// chownServer hands the data dir, secret key and config to the `kurogane` user the central unit runs as.
 func chownServer(cfg *config.Config) {
-	u, err := user.Lookup("serverkeeper")
+	u, err := user.Lookup("kurogane")
 	if os.Geteuid() != 0 || err != nil {
 		return
 	}

@@ -209,7 +209,7 @@ func init() {
 			if err := c.do("PATCH", "/ssh/config", body, &ch); err != nil {
 				return err
 			}
-			fmt.Printf("\nApplied change %s; sshd reloaded.\nNOW open a NEW SSH session and run `serverkeeper ssh confirm` "+
+			fmt.Printf("\nApplied change %s; sshd reloaded.\nNOW open a NEW SSH session and run `kurogane ssh confirm` "+
 				"before %s, otherwise the previous config is restored automatically.\n", ch.ID, ch.Deadline)
 			return nil
 		}}
@@ -333,7 +333,7 @@ func init() {
 				return err
 			}
 			fmt.Println(out["ca_public_key"])
-			fmt.Println("sshd now trusts this CA; confirm the change with `serverkeeper ssh confirm` from a new session")
+			fmt.Println("sshd now trusts this CA; confirm the change with `kurogane ssh confirm` from a new session")
 			return nil
 		}})
 	var pubFile, ttl string

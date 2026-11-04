@@ -117,7 +117,7 @@ func init() {
 			if err := c.do("POST", "/alerts/channels", b, nil); err != nil {
 				return err
 			}
-			fmt.Printf("channel %s added; send a test with `serverkeeper alert test %s`\n", chName, chName)
+			fmt.Printf("channel %s added; send a test with `kurogane alert test %s`\n", chName, chName)
 			return nil
 		}}
 	chAdd.Flags().StringVar(&chName, "name", "", "channel name (default: type)")

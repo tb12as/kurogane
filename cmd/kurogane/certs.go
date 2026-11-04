@@ -18,8 +18,8 @@ func init() {
 	list := &cobra.Command{
 		Use:   "list",
 		Short: "List certificates; exits 1 when one expires within --warn-days or is served stale",
-		Example: "  serverkeeper certs list\n" +
-			"  serverkeeper certs list --warn-days 30 --json",
+		Example: "  kurogane certs list\n" +
+			"  kurogane certs list --warn-days 30 --json",
 		RunE: func(*cobra.Command, []string) error { return certsCmd("GET", "/certs", warnDays) },
 	}
 	list.Flags().Float64Var(&warnDays, "warn-days", 14, "exit 1 when a certificate has fewer days left")
@@ -59,7 +59,7 @@ func printCerts(out io.Writer, r api.CertsResponse) {
 		fmt.Fprintln(out, "certificate monitoring is off: set collector.certs.enabled: true")
 		return
 	case r.ScannedAt.IsZero():
-		fmt.Fprintln(out, "no scan yet: the first runs a few seconds after the agent starts, or run `serverkeeper certs rescan`")
+		fmt.Fprintln(out, "no scan yet: the first runs a few seconds after the agent starts, or run `kurogane certs rescan`")
 		return
 	case len(r.Certs) == 0:
 		fmt.Fprintf(out, "no certificates found (scanned %s): add files to collector.certs.paths\n", ts(r.ScannedAt))

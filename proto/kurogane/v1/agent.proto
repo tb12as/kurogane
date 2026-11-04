@@ -2,7 +2,7 @@
 // defined in Op; there is deliberately no message that runs an arbitrary command.
 syntax = "proto3";
 
-package serverkeeper.v1;
+package kurogane.v1;
 
 option go_package = "github.com/tb12as/kurogane/internal/pb;pb";
 

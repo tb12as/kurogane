@@ -33,14 +33,14 @@ var Roles = map[string][]string{
 const (
 	MaxFailures   = 5
 	LockDuration  = 15 * time.Minute
-	SessionCookie = "sk_session"
-	CSRFCookie    = "sk_csrf"
+	SessionCookie = "krgn_session"
+	CSRFCookie    = "krgn_csrf"
 	CSRFHeader    = "X-CSRF-Token"
 )
 
 var (
 	ErrBadCredentials = errors.New("invalid username, password or TOTP code")
-	ErrLocked         = errors.New("account locked after 5 failed logins: wait 15 minutes or unlock with `serverkeeper users unlock`")
+	ErrLocked         = errors.New("account locked after 5 failed logins: wait 15 minutes or unlock with `kurogane users unlock`")
 	ErrUnauthorized   = errors.New("authentication required: log in or pass an API token (Authorization: Bearer ...)")
 	ErrForbidden      = errors.New("insufficient scope for this action")
 	ErrCSRF           = errors.New("missing or invalid CSRF token")
@@ -80,7 +80,7 @@ func NewService(s db.Store, box *secret.Box, ttl time.Duration) *Service {
 	if ttl <= 0 {
 		ttl = 12 * time.Hour
 	}
-	return &Service{S: s, Box: box, SessionTTL: ttl, Issuer: "ServerKeeper", now: time.Now}
+	return &Service{S: s, Box: box, SessionTTL: ttl, Issuer: "Kurogane", now: time.Now}
 }
 
 // CreateUser adds a user with a TOTP secret; returns the otpauth URL to enroll the authenticator.
@@ -189,7 +189,7 @@ func (a *Service) Authenticate(r *http.Request) (*Principal, error) {
 			return nil, ErrUnauthorized
 		}
 		if !t.ExpiresAt.IsZero() && a.now().After(t.ExpiresAt) {
-			return nil, errors.New("API token expired: create a new one with `serverkeeper tokens create`")
+			return nil, errors.New("API token expired: create a new one with `kurogane tokens create`")
 		}
 		_ = a.S.TouchToken(ctx, t.ID, a.now())
 		return &Principal{Actor: "token:" + t.Name, Scopes: t.Scopes}, nil

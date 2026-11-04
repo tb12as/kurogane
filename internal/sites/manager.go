@@ -32,7 +32,7 @@ type Deps struct {
 	Certs   func() []certs.Cert                // latest certificate scan, for days left per site
 	Publish func(event string, v any)
 	Now     func() time.Time
-	// SelfPort is the port ServerKeeper's own API listens on, to warn before disabling a site that proxies to it.
+	// SelfPort is the port Kurogane's own API listens on, to warn before disabling a site that proxies to it.
 	SelfPort string
 }
 

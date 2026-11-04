@@ -35,8 +35,8 @@ func init() {
 		Use:   "get <names>",
 		Short: "Print metric history, e.g. `metrics get cpu,mem --since 6h --step 1m`",
 		Args:  cobra.ExactArgs(1),
-		Example: "  serverkeeper metrics get cpu.total_pct,load --since 24h\n" +
-			"  serverkeeper metrics get net --since 1h --json",
+		Example: "  kurogane metrics get cpu.total_pct,load --since 24h\n" +
+			"  kurogane metrics get net --since 1h --json",
 		RunE: func(_ *cobra.Command, args []string) error {
 			c, err := newClient()
 			if err != nil {

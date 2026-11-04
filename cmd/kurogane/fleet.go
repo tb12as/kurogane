@@ -164,7 +164,7 @@ func init() {
 		}
 		body := map[string]string{"person": person, "group": group, "user": loginAs, "tag": tag}
 		return call(c, "POST", "/fleet/keys/push", body, &out), func(any) {
-			fmt.Printf("queued %d key operations for %d people on %d servers (see `serverkeeper fleet ops`)\n",
+			fmt.Printf("queued %d key operations for %d people on %d servers (see `kurogane fleet ops`)\n",
 				len(out.Ops), out.People, out.Servers)
 		}
 	})

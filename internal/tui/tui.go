@@ -1,4 +1,4 @@
-// Package tui is the `serverkeeper top` live dashboard (PM-3): a thin client over GET /metrics/current.
+// Package tui is the `kurogane top` live dashboard (PM-3): a thin client over GET /metrics/current.
 package tui
 
 import (

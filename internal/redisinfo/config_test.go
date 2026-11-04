@@ -24,7 +24,7 @@ unixsocket /run/redis/redis-server.sock
 requirepass "s3cr et"
 rename-command FLUSHALL ""
 rename-command CONFIG cfg-x9
-user serverkeeper on >readpw -@all +ping +info
+user kurogane on >readpw -@all +ping +info
 include local.conf
 `), 0o640)
 	os.WriteFile(filepath.Join(dir, "etc/redis/local.conf"), []byte("port 6381\n"), 0o640)
@@ -39,7 +39,7 @@ include local.conf
 	if !reflect.DeepEqual(c.Renamed, map[string]string{"FLUSHALL": "", "CONFIG": "cfg-x9"}) {
 		t.Fatalf("renamed = %v", c.Renamed)
 	}
-	if len(c.Users) != 1 || c.Users[0] != "serverkeeper on >*** -@all +ping +info" {
+	if len(c.Users) != 1 || c.Users[0] != "kurogane on >*** -@all +ping +info" {
 		t.Fatalf("users = %v", c.Users)
 	}
 	if tg := c.Target(); tg.Addr != "127.0.0.1:6381" || tg.TLS {

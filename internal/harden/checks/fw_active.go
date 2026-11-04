@@ -8,7 +8,7 @@ func init() {
 			CIS: "3.5.1.3", AutoFix: FixConfirm,
 			Rationale: "Without a host firewall every service that binds a public address is reachable.",
 			Remediation: "Enable ufw (Debian/Ubuntu) or firewalld (RHEL) after allowing the ports you need; " +
-				"`serverkeeper harden fix FW-ACTIVE` keeps every listening port and SSH open."}, e,
+				"`kurogane harden fix FW-ACTIVE` keeps every listening port and SSH open."}, e,
 			func(ctx context.Context, c *fnCheck) Result {
 				st, err := firewall(ctx, c.e)
 				if err != nil {

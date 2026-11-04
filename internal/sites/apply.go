@@ -22,7 +22,7 @@ import (
 
 // Errors the API maps to status codes.
 var (
-	ErrNotFound = errors.New("site not found: run `serverkeeper sites list` for ids and names")
+	ErrNotFound = errors.New("site not found: run `kurogane sites list` for ids and names")
 	ErrRefused  = errors.New("refused")
 	ErrBusy     = errors.New("another site change is in progress: retry in a few seconds")
 )
@@ -167,7 +167,7 @@ func (m *Manager) impact(p *Plan, inv Inventory) {
 			}
 			for _, u := range a.Upstreams {
 				if m.d.SelfPort != "" && strings.Contains(u, ":"+m.d.SelfPort) {
-					p.Warnings = append(p.Warnings, fmt.Sprintf("%s proxies to ServerKeeper itself (%s): disabling it "+
+					p.Warnings = append(p.Warnings, fmt.Sprintf("%s proxies to Kurogane itself (%s): disabling it "+
 						"cuts access to this dashboard through it. Keep an SSH tunnel open.", a.Name, u))
 				}
 			}

@@ -61,7 +61,7 @@ func init() {
 	rs := &cobra.Command{
 		Use:   "restore <backup-dir>",
 		Args:  cobra.ExactArgs(1),
-		Short: "Restore a backup; stop serverkeeper, serverkeeper-server and serverkeeper-vm first",
+		Short: "Restore a backup; stop kurogane, kurogane-server and kurogane-vm first",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := loadConfig()
 			if err != nil {
@@ -70,11 +70,11 @@ func init() {
 			for _, a := range []string{cfg.Listen, cfg.Server.HTTPListen} {
 				if conn, err := net.DialTimeout("tcp", a, time.Second); err == nil {
 					conn.Close()
-					return fmt.Errorf("something is listening on %s: stop serverkeeper / serverkeeper-server first", a)
+					return fmt.Errorf("something is listening on %s: stop kurogane / kurogane-server first", a)
 				}
 			}
 			if metricsdb.New(cfg.Server.VM.URL).Healthy(context.Background()) {
-				return fmt.Errorf("VictoriaMetrics is running: `systemctl stop serverkeeper-vm` first")
+				return fmt.Errorf("VictoriaMetrics is running: `systemctl stop kurogane-vm` first")
 			}
 			if !yes {
 				return fmt.Errorf("this replaces %s, %s and %s (old copies are kept as *.pre-restore-*): "+
@@ -88,7 +88,7 @@ func init() {
 			if err != nil {
 				return err
 			}
-			fmt.Println("done: start the services again; data files must be owned by the serverkeeper user")
+			fmt.Println("done: start the services again; data files must be owned by the kurogane user")
 			return nil
 		},
 	}

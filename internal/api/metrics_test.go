@@ -41,13 +41,13 @@ func TestWriteProm(t *testing.T) {
 		{Metric: "disk.used_pct", Labels: map[string]string{"mount": `/a "b"`}, Value: 50},
 		{Metric: "cpu.core_pct", Labels: map[string]string{"core": "0"}, Value: 2},
 	})
-	want := "# TYPE serverkeeper_cpu_core_pct gauge\n" +
-		"serverkeeper_cpu_core_pct{core=\"1\"} 3\n" +
-		"serverkeeper_cpu_core_pct{core=\"0\"} 2\n" +
-		"# TYPE serverkeeper_cpu_total_pct gauge\n" +
-		"serverkeeper_cpu_total_pct 12.5\n" +
-		"# TYPE serverkeeper_disk_used_pct gauge\n" +
-		"serverkeeper_disk_used_pct{mount=\"/a \\\"b\\\"\"} 50\n"
+	want := "# TYPE kurogane_cpu_core_pct gauge\n" +
+		"kurogane_cpu_core_pct{core=\"1\"} 3\n" +
+		"kurogane_cpu_core_pct{core=\"0\"} 2\n" +
+		"# TYPE kurogane_cpu_total_pct gauge\n" +
+		"kurogane_cpu_total_pct 12.5\n" +
+		"# TYPE kurogane_disk_used_pct gauge\n" +
+		"kurogane_disk_used_pct{mount=\"/a \\\"b\\\"\"} 50\n"
 	if got := w.Body.String(); got != want {
 		t.Errorf("got\n%s\nwant\n%s", got, want)
 	}

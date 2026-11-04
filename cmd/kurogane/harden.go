@@ -41,7 +41,7 @@ func printFixes(rs []harden.FixResult, applied bool) {
 			if r.Verify != nil {
 				v = r.Verify.Status + " (" + r.Verify.Evidence + ")"
 			}
-			fmt.Printf("applied as fix %s; verification: %s\nundo with: serverkeeper harden revert %s\n", r.Fix.ID, v, r.Fix.ID)
+			fmt.Printf("applied as fix %s; verification: %s\nundo with: kurogane harden revert %s\n", r.Fix.ID, v, r.Fix.ID)
 			if r.Diff.Note != "" {
 				fmt.Println("note:", r.Diff.Note)
 			}
@@ -104,7 +104,7 @@ func init() {
 			fmt.Printf("\nScore %.1f / 100, grade %s (%d pass, %d fail, %d n/a, %d ignored, %d error)\n", sc.Score,
 				sc.Grade, n["pass"], n["fail"], n["na"], n["ignored"], n["error"])
 			if n["fail"] > 0 {
-				fmt.Println("Review a fix with `serverkeeper harden fix <check-id> --dry-run`.")
+				fmt.Println("Review a fix with `kurogane harden fix <check-id> --dry-run`.")
 			}
 			return nil
 		}}
@@ -117,7 +117,7 @@ func init() {
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if (len(args) == 0) == !all {
-				return fmt.Errorf("give one check id or --all (see `serverkeeper harden checks`)")
+				return fmt.Errorf("give one check id or --all (see `kurogane harden checks`)")
 			}
 			c, err := newClient()
 			if err != nil {
@@ -184,7 +184,7 @@ func init() {
 				printJSON(f)
 				return nil
 			}
-			fmt.Printf("Reverted fix %s (%s). Run `serverkeeper harden scan` to see the current state.\n", f.ID, f.CheckID)
+			fmt.Printf("Reverted fix %s (%s). Run `kurogane harden scan` to see the current state.\n", f.ID, f.CheckID)
 			return nil
 		}}
 

@@ -43,7 +43,7 @@ var ScanBudget = 30 * time.Second
 const defaultSchedule = "0 3 * * *"
 
 // ErrUnknownCheck is returned for check ids not in the catalog.
-var ErrUnknownCheck = errors.New("unknown check id: list them with `serverkeeper harden checks`")
+var ErrUnknownCheck = errors.New("unknown check id: list them with `kurogane harden checks`")
 
 type Service struct {
 	d    Deps
@@ -259,7 +259,7 @@ func (s *Service) GetScan(ctx context.Context, id string) (db.Scan, error) {
 		return db.Scan{}, err
 	}
 	if len(l) == 0 {
-		return db.Scan{}, fmt.Errorf("%w: no scan yet, run `serverkeeper harden scan`", db.ErrNotFound)
+		return db.Scan{}, fmt.Errorf("%w: no scan yet, run `kurogane harden scan`", db.ErrNotFound)
 	}
 	return s.d.DB.GetScan(ctx, l[0].ID)
 }

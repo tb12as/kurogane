@@ -1,4 +1,4 @@
-// Package server is the v1 central server (`serverkeeper server run`, PRD §9): SQLite metadata, its own CA,
+// Package server is the v1 central server (`kurogane server run`, PRD §9): SQLite metadata, its own CA,
 // gRPC with mutual TLS for agents, fleet metrics in VictoriaMetrics, alert routing and typed fleet operations.
 //
 // Ports: one gRPC port (server.grpc_listen, default :9444) serves both RPCs. TLS 1.3 with
@@ -85,7 +85,7 @@ var (
 // New opens the metadata store, CA and secret box under cfg.DataDir.
 func New(cfg *config.Config, version string) (*Central, error) {
 	if err := os.MkdirAll(cfg.DataDir, 0o700); err != nil {
-		return nil, fmt.Errorf("create data dir %s: %w (run as the serverkeeper user or set data_dir)", cfg.DataDir, err)
+		return nil, fmt.Errorf("create data dir %s: %w (run as the kurogane user or set data_dir)", cfg.DataDir, err)
 	}
 	c := &Central{Cfg: cfg, Version: version, NewNotifier: notify.New, sessions: map[string]*session{},
 		latest: map[string]map[string]float64{}, VM: metricsdb.New(cfg.Server.VM.URL)}

@@ -22,7 +22,7 @@ paths:
       summary: "Prometheus text exposition (opt-in: collector.prometheus: true). Served at the root path /metrics, not under /api/v1; Bearer token with read scope"
       servers: [{url: /}]
       responses:
-        "200": {description: "metrics such as serverkeeper_cpu_total_pct, serverkeeper_cpu_core_pct{core=\"0\"}", content: {text/plain: {schema: {type: string}}}}
+        "200": {description: "metrics such as kurogane_cpu_total_pct, kurogane_cpu_core_pct{core=\"0\"}", content: {text/plain: {schema: {type: string}}}}
         "503": {description: no sample collected yet, content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
 components:
   schemas:
@@ -111,7 +111,7 @@ components:
         name: {type: string}
         addr: {type: string}
         config_file: {type: string}
-        status: {type: string, enum: [up, down, auth_failed, needs_credentials], description: "needs_credentials: Redis wants a password ServerKeeper does not have; shown, never alerted"}
+        status: {type: string, enum: [up, down, auth_failed, needs_credentials], description: "needs_credentials: Redis wants a password Kurogane does not have; shown, never alerted"}
         error: {type: string}
         hint: {type: string}
         version: {type: string}

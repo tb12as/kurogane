@@ -19,7 +19,7 @@ import (
 	"github.com/tb12as/kurogane/internal/secret"
 )
 
-const configTmpl = `# /etc/serverkeeper/config.yaml (written by serverkeeper init)
+const configTmpl = `# /etc/kurogane/config.yaml (written by kurogane init)
 server_name: {{.Name}}
 tags: [{{join .Tags ", "}}]
 listen: {{.Listen}}
@@ -67,7 +67,7 @@ func init() {
 	var adminUser, adminPass, dataDir string
 	cmd := &cobra.Command{
 		Use:   "init",
-		Short: "Interactive setup: writes /etc/serverkeeper/config.yaml, creates the admin user and systemd unit",
+		Short: "Interactive setup: writes /etc/kurogane/config.yaml, creates the admin user and systemd unit",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			in := bufio.NewReader(os.Stdin)
 			ask := func(q, def string) string {
@@ -122,10 +122,10 @@ func init() {
 			if err := t.Execute(&b, d); err != nil {
 				return err
 			}
-			if err := os.MkdirAll(filepath.Dir(flagConfig), 0o755); err != nil { // #nosec G301 -- /etc/serverkeeper must be traversable
+			if err := os.MkdirAll(filepath.Dir(flagConfig), 0o755); err != nil { // #nosec G301 -- /etc/kurogane must be traversable
 				return err
 			}
-			if err := os.WriteFile(flagConfig, []byte(b.String()), 0o640); err != nil { // #nosec G306 -- config is 0640 root:serverkeeper; secrets are sealed
+			if err := os.WriteFile(flagConfig, []byte(b.String()), 0o640); err != nil { // #nosec G306 -- config is 0640 root:kurogane; secrets are sealed
 				return fmt.Errorf("write %s: %w (run as root)", flagConfig, err)
 			}
 			cfg, err := config.Load(flagConfig)
@@ -168,7 +168,7 @@ func init() {
 	cmd.Flags().BoolVar(&nonInteractive, "yes", false, "non-interactive, accept defaults")
 	cmd.Flags().StringVar(&adminUser, "admin-user", "admin", "admin username")
 	cmd.Flags().StringVar(&adminPass, "admin-password", "", "admin password (prompted if empty)")
-	cmd.Flags().StringVar(&dataDir, "data-dir", "/var/lib/serverkeeper", "data directory")
+	cmd.Flags().StringVar(&dataDir, "data-dir", "/var/lib/kurogane", "data directory")
 	rootCmd.AddCommand(cmd)
 }
 
@@ -204,12 +204,12 @@ func installUnit(ctx context.Context) error {
 		return fmt.Errorf("systemd not found")
 	}
 	ex := executor.Local{}
-	if err := ex.WriteFile("/etc/systemd/system/serverkeeper.service", deploy.AgentUnit, 0o644); err != nil {
+	if err := ex.WriteFile("/etc/systemd/system/kurogane.service", deploy.AgentUnit, 0o644); err != nil {
 		return err
 	}
 	if _, err := ex.Run(ctx, "systemctl", "daemon-reload"); err != nil {
 		return err
 	}
-	_, err := ex.Run(ctx, "systemctl", "enable", "--now", "serverkeeper")
+	_, err := ex.Run(ctx, "systemctl", "enable", "--now", "kurogane")
 	return err
 }

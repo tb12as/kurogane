@@ -30,8 +30,8 @@ func TestAllowlist(t *testing.T) {
 
 func TestUninstallAllowlist(t *testing.T) {
 	ok := [][]string{
-		append(append([]string{}, UninstallArgs...), "/usr/bin/serverkeeper", "uninstall", "--yes"),
-		append(append([]string{}, UninstallArgs...), "/usr/local/bin/serverkeeper", "uninstall", "--yes", "--purge"),
+		append(append([]string{}, UninstallArgs...), "/usr/bin/kurogane", "uninstall", "--yes"),
+		append(append([]string{}, UninstallArgs...), "/usr/local/bin/kurogane", "uninstall", "--yes", "--purge"),
 	}
 	for _, a := range ok {
 		if err := Allowed("systemd-run", a); err != nil {
@@ -39,11 +39,11 @@ func TestUninstallAllowlist(t *testing.T) {
 		}
 	}
 	bad := [][]string{
-		append(append([]string{}, UninstallArgs...), "/tmp/serverkeeper", "uninstall", "--yes"),
-		append(append([]string{}, UninstallArgs...), "/usr/bin/serverkeeper", "init", "--yes"),
-		append(append([]string{}, UninstallArgs...), "/usr/bin/serverkeeper", "uninstall", "--yes", "--x"),
-		append(append([]string{}, UninstallArgs...), "/usr/bin/serverkeeper", "uninstall", "--yes", "--purge", "x"),
-		{"--unit=evil", "--collect", "--on-active=3", "/usr/bin/serverkeeper", "uninstall", "--yes"},
+		append(append([]string{}, UninstallArgs...), "/tmp/kurogane", "uninstall", "--yes"),
+		append(append([]string{}, UninstallArgs...), "/usr/bin/kurogane", "init", "--yes"),
+		append(append([]string{}, UninstallArgs...), "/usr/bin/kurogane", "uninstall", "--yes", "--x"),
+		append(append([]string{}, UninstallArgs...), "/usr/bin/kurogane", "uninstall", "--yes", "--purge", "x"),
+		{"--unit=evil", "--collect", "--on-active=3", "/usr/bin/kurogane", "uninstall", "--yes"},
 		{"/bin/sh", "-c", "id"},
 		nil,
 	}
@@ -124,7 +124,7 @@ func TestLocalFileOps(t *testing.T) {
 	if err != nil || len(out) == 0 {
 		t.Fatalf("uname: %v", err)
 	}
-	_, err = l.Run(context.Background(), "systemctl", "is-active", "serverkeeper-no-such-unit")
+	_, err = l.Run(context.Background(), "systemctl", "is-active", "kurogane-no-such-unit")
 	if err == nil || ExitCode(err) <= 0 || !strings.Contains(err.Error(), "failed") {
 		t.Fatalf("want exit error, got %v", err)
 	}

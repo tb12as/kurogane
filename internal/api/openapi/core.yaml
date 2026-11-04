@@ -6,7 +6,7 @@ paths:
       responses: {"200": {description: ok, content: {application/json: {schema: {type: object, properties: {ok: {type: boolean}, version: {type: string}}}}}}}
   /auth/login:
     post:
-      summary: Log in with password and mandatory TOTP; sets sk_session and sk_csrf cookies
+      summary: Log in with password and mandatory TOTP; sets krgn_session and krgn_csrf cookies
       security: []
       requestBody:
         required: true

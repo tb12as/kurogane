@@ -87,7 +87,7 @@ func newEnv(t *testing.T, f fixture) *env {
 		latest = func() *collector.Snapshot { return &collector.Snapshot{Conns: collector.ConnInfo{Listening: f.listen}} }
 	}
 	e.s = New(Deps{Cfg: cfg, DB: st, Ex: fx, Latest: latest})
-	e.s.env.ConfigPath = "/etc/serverkeeper/config.yaml"
+	e.s.env.ConfigPath = "/etc/kurogane/config.yaml"
 	if f.ssh != nil {
 		e.s.env.Settings = func(context.Context) (map[string]string, error) { return f.ssh, nil }
 	}
@@ -112,7 +112,7 @@ func must(t *testing.T, err error) {
 func (e *env) tree() map[string]string {
 	m := map[string]string{}
 	_ = filepath.WalkDir(e.root, func(p string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() || strings.Contains(p, "/var/lib/serverkeeper/") {
+		if err != nil || d.IsDir() || strings.Contains(p, "/var/lib/kurogane/") {
 			return nil
 		}
 		b, _ := os.ReadFile(p)
@@ -193,10 +193,10 @@ func fixCases() []fixCase {
 			calls: []string{"ufw allow 22/tcp", "ufw allow 80/tcp", "ufw --force enable"}, undo: []string{"ufw disable"}},
 		{name: "nft", id: "FW-ACTIVE", f: fixture{files: map[string]string{"/usr/sbin/nft": "", "/etc/nftables.conf": "#!/usr/sbin/nft -f\n"},
 			listen: []collector.Listener{pub(443)}},
-			calls: []string{"nft -f /etc/serverkeeper/nftables-harden.nft", "systemctl enable nftables"},
-			undo:  []string{"nft delete table inet serverkeeper"},
-			files: map[string]string{"/etc/serverkeeper/nftables-harden.nft": "tcp dport { 22, 443 } accept",
-				"/etc/nftables.conf": `include "/etc/serverkeeper/nftables-harden.nft"`}},
+			calls: []string{"nft -f /etc/kurogane/nftables-harden.nft", "systemctl enable nftables"},
+			undo:  []string{"nft delete table inet kurogane"},
+			files: map[string]string{"/etc/kurogane/nftables-harden.nft": "tcp dport { 22, 443 } accept",
+				"/etc/nftables.conf": `include "/etc/kurogane/nftables-harden.nft"`}},
 		{name: "firewalld", id: "FW-ACTIVE", f: fixture{rocky: true, files: map[string]string{"/usr/bin/firewall-cmd": ""}},
 			calls: []string{"systemctl enable firewalld", "systemctl start firewalld", "firewall-cmd --permanent --add-port=22/tcp",
 				"firewall-cmd --reload"}, undo: []string{"systemctl stop firewalld", "systemctl disable firewalld"}},
@@ -226,14 +226,14 @@ func fixCases() []fixCase {
 			undo:  []string{"systemctl enable avahi-daemon", "systemctl start avahi-daemon.socket"}},
 		{id: "LOG-JOURNALD-PERSISTENT", f: fixture{files: map[string]string{"/etc/systemd/journald.conf": "[Journal]\n"}},
 			calls: []string{"systemctl restart systemd-journald"}, undo: []string{"systemctl restart systemd-journald"},
-			files: map[string]string{"/etc/systemd/journald.conf.d/99-serverkeeper.conf": "Storage=persistent"}, pass: true},
+			files: map[string]string{"/etc/systemd/journald.conf.d/99-kurogane.conf": "Storage=persistent"}, pass: true},
 		{name: "ubuntu", id: "LOG-AUDITD", f: fixture{}, calls: []string{"apt-get install -y auditd", "systemctl enable auditd",
 			"systemctl start auditd"}, undo: []string{"systemctl stop auditd", "systemctl disable auditd"}},
 		{name: "rocky", id: "LOG-AUDITD", f: fixture{rocky: true}, calls: []string{"dnf install -y audit"}},
 		{id: "LOG-LOGROTATE", f: fixture{files: map[string]string{"/etc/logrotate.conf": ""}},
 			calls: []string{"systemctl enable --now logrotate.timer"}, undo: []string{"systemctl disable --now logrotate.timer"}},
-		{id: "IPS-BRUTEFORCE", f: fixture{files: map[string]string{"/etc/serverkeeper/config.yaml": "# keep me\nserver_name: web-01\n"}},
-			files: map[string]string{"/etc/serverkeeper/config.yaml": "enabled: true"}},
+		{id: "IPS-BRUTEFORCE", f: fixture{files: map[string]string{"/etc/kurogane/config.yaml": "# keep me\nserver_name: web-01\n"}},
+			files: map[string]string{"/etc/kurogane/config.yaml": "enabled: true"}},
 		{id: "TIME-NTP-SYNC", f: fixture{out: map[string]string{"timedatectl show": "NTP=no\nNTPSynchronized=no\n"}},
 			calls: []string{"timedatectl set-ntp true"}, undo: []string{"timedatectl set-ntp false"}},
 	}
@@ -660,10 +660,10 @@ func TestRunStopsOnCancel(t *testing.T) {
 	}
 }
 
-// TestRealHostScan is a read-only smoke scan of this machine: SK_REAL_SCAN=1 go test -run RealHost -v.
+// TestRealHostScan is a read-only smoke scan of this machine: KRGN_REAL_SCAN=1 go test -run RealHost -v.
 func TestRealHostScan(t *testing.T) {
-	if os.Getenv("SK_REAL_SCAN") == "" {
-		t.Skip("set SK_REAL_SCAN=1")
+	if os.Getenv("KRGN_REAL_SCAN") == "" {
+		t.Skip("set KRGN_REAL_SCAN=1")
 	}
 	st, err := db.Open(":memory:")
 	must(t, err)

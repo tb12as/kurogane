@@ -446,7 +446,7 @@ func TestRedisRules(t *testing.T) {
 		t.Fatalf("replication = %v", sink.msgs)
 	}
 	if txt := redisText("redis_down", "x", &collector.Snapshot{Redis: []collector.RedisInstance{{Name: "x",
-		Status: collector.RedisAuthFailed}}}, 0); !strings.Contains(txt, "rejects ServerKeeper's credentials") {
+		Status: collector.RedisAuthFailed}}}, 0); !strings.Contains(txt, "rejects Kurogane's credentials") {
 		t.Fatal(txt)
 	}
 }

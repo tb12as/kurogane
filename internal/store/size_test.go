@@ -11,10 +11,10 @@ import (
 )
 
 // PRD §5 acceptance: a 7-day store (24 h raw + 7 d rollups at a 10 s interval) stays under 200 MB.
-// Slow (simulates 60480 ticks), so it runs only with SK_SIZE_TEST=1.
+// Slow (simulates 60480 ticks), so it runs only with KRGN_SIZE_TEST=1.
 func TestSevenDayStoreSize(t *testing.T) {
-	if os.Getenv("SK_SIZE_TEST") != "1" {
-		t.Skip("set SK_SIZE_TEST=1")
+	if os.Getenv("KRGN_SIZE_TEST") != "1" {
+		t.Skip("set KRGN_SIZE_TEST=1")
 	}
 	p := filepath.Join(t.TempDir(), "agent.db")
 	s, err := Open(p)

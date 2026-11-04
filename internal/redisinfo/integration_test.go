@@ -23,7 +23,7 @@ func TestRealRedis(t *testing.T) {
 	l.Close()
 	cmd := exec.Command(bin, "--port", strconv.Itoa(port), "--bind", "127.0.0.1", "--save", "", "--appendonly", "no",
 		"--requirepass", "adminpw", "--slowlog-log-slower-than", "0",
-		"--user", "serverkeeper", "on", ">readpw", "-@all", "+ping", "+info", "+slowlog|get", "--dir", t.TempDir())
+		"--user", "kurogane", "on", ">readpw", "-@all", "+ping", "+info", "+slowlog|get", "--dir", t.TempDir())
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -31,7 +31,7 @@ func TestRealRedis(t *testing.T) {
 	addr := net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
 	var c *Conn
 	for i := 0; i < 50; i++ {
-		if c, err = Dial(ctx, Target{Addr: addr, Username: "serverkeeper", Password: "readpw"}); err == nil {
+		if c, err = Dial(ctx, Target{Addr: addr, Username: "kurogane", Password: "readpw"}); err == nil {
 			break
 		}
 		time.Sleep(100 * time.Millisecond)

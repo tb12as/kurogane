@@ -1,5 +1,5 @@
 // Package redisinfo is a minimal, read-only Redis client: it speaks RESP2 and only ever sends AUTH, PING, INFO
-// and SLOWLOG GET. ServerKeeper never reads keys or changes Redis settings, so a full client library (cluster,
+// and SLOWLOG GET. Kurogane never reads keys or changes Redis settings, so a full client library (cluster,
 // pub/sub, pipelining) would only add code and binary size.
 package redisinfo
 

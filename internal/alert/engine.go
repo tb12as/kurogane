@@ -470,13 +470,13 @@ func (e *Engine) Test(ctx context.Context, channel string) error {
 	_, known := e.chans[channel]
 	e.mu.Unlock()
 	if !known {
-		return fmt.Errorf("unknown channel %q: list channels with `serverkeeper alert channels list`", channel)
+		return fmt.Errorf("unknown channel %q: list channels with `kurogane alert channels list`", channel)
 	}
 	if !ok {
 		return fmt.Errorf("channel %q is misconfigured (check its webhook URL or env var)", channel)
 	}
 	a := notify.Alert{ID: "test", Rule: "test", Server: e.d.Cfg.ServerName, Severity: "info", State: "test",
-		Title: "Test message", Text: "ServerKeeper can reach this channel.", StartedAt: e.now()}
+		Title: "Test message", Text: "Kurogane can reach this channel.", StartedAt: e.now()}
 	if err := n.Send(ctx, a); err != nil {
 		return fmt.Errorf("%s", secret.Redact(err.Error()))
 	}

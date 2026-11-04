@@ -60,8 +60,8 @@ func init() {
 		c := &cobra.Command{
 			Use:   verb + " <name|id>",
 			Short: strings.ToUpper(verb[:1]) + verb[1:] + " a site: config test, reload, probe; undone automatically on failure",
-			Example: "  serverkeeper sites " + verb + " shop.example.org --dry-run\n" +
-				"  serverkeeper sites " + verb + " 'nginx:/etc/nginx/sites-enabled/shop#0' --yes",
+			Example: "  kurogane sites " + verb + " shop.example.org --dry-run\n" +
+				"  kurogane sites " + verb + " 'nginx:/etc/nginx/sites-enabled/shop#0' --yes",
 			Args: cobra.ExactArgs(1),
 			RunE: func(_ *cobra.Command, args []string) error {
 				s, err := resolveSite(args[0])
@@ -204,7 +204,7 @@ func pickSite(inv api.SitesResponse, q string) (sites.Site, error) {
 	found := inv.Find(q)
 	switch len(found) {
 	case 0:
-		return sites.Site{}, fmt.Errorf("no site named %q: run `serverkeeper sites list`", q)
+		return sites.Site{}, fmt.Errorf("no site named %q: run `kurogane sites list`", q)
 	case 1:
 		return found[0], nil
 	}

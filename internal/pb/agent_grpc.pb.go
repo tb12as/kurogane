@@ -5,7 +5,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.1
 // - protoc             (unknown)
-// source: serverkeeper/v1/agent.proto
+// source: kurogane/v1/agent.proto
 
 package pb
 
@@ -22,8 +22,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Fleet_Enroll_FullMethodName  = "/serverkeeper.v1.Fleet/Enroll"
-	Fleet_Connect_FullMethodName = "/serverkeeper.v1.Fleet/Connect"
+	Fleet_Enroll_FullMethodName  = "/kurogane.v1.Fleet/Enroll"
+	Fleet_Connect_FullMethodName = "/kurogane.v1.Fleet/Connect"
 )
 
 // FleetClient is the client API for Fleet service.
@@ -141,7 +141,7 @@ type Fleet_ConnectServer = grpc.BidiStreamingServer[AgentMessage, CentralMessage
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Fleet_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "serverkeeper.v1.Fleet",
+	ServiceName: "kurogane.v1.Fleet",
 	HandlerType: (*FleetServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -157,5 +157,5 @@ var Fleet_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "serverkeeper/v1/agent.proto",
+	Metadata: "kurogane/v1/agent.proto",
 }

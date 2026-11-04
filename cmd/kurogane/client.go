@@ -34,7 +34,7 @@ func newClient() (*client, error) {
 
 func newClientFor(cfg *config.Config, base string) (*client, error) {
 	if base == "" {
-		base = os.Getenv("SK_API")
+		base = os.Getenv("KRGN_API")
 	}
 	if base == "" {
 		scheme := "http"
@@ -45,12 +45,12 @@ func newClientFor(cfg *config.Config, base string) (*client, error) {
 	}
 	tok := flagToken
 	if tok == "" {
-		tok = os.Getenv("SK_TOKEN")
+		tok = os.Getenv("KRGN_TOKEN")
 	}
 	if tok == "" {
 		b, err := os.ReadFile(agent.CLITokenPath(cfg))
 		if err != nil {
-			return nil, fmt.Errorf("no API token: run as root on the agent host (reads %s), or pass --token / SK_TOKEN",
+			return nil, fmt.Errorf("no API token: run as root on the agent host (reads %s), or pass --token / KRGN_TOKEN",
 				agent.CLITokenPath(cfg))
 		}
 		tok = strings.TrimSpace(string(b))
@@ -76,7 +76,7 @@ func (c *client) do(method, path string, body, out any) error {
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.hc.Do(req)
 	if err != nil {
-		return fmt.Errorf("cannot reach agent at %s: %w (is `serverkeeper agent run` / the systemd unit running?)", c.base, err)
+		return fmt.Errorf("cannot reach agent at %s: %w (is `kurogane agent run` / the systemd unit running?)", c.base, err)
 	}
 	defer resp.Body.Close()
 	raw, _ := io.ReadAll(resp.Body)

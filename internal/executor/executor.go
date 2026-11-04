@@ -1,4 +1,4 @@
-// Package executor is the only place ServerKeeper performs privileged actions. It exposes
+// Package executor is the only place Kurogane performs privileged actions. It exposes
 // typed operations with an allowlist of writable paths and commands; there is no shell.
 package executor
 
@@ -39,7 +39,7 @@ var ErrDenied = errors.New("executor: operation not allowlisted")
 
 // writable path prefixes (host paths).
 var writePrefixes = []string{
-	"/etc/ssh/", "/etc/serverkeeper/", "/var/lib/serverkeeper/", "/etc/sysctl.d/", "/etc/sysctl.conf",
+	"/etc/ssh/", "/etc/kurogane/", "/var/lib/kurogane/", "/etc/sysctl.d/", "/etc/sysctl.conf",
 	"/root/.ssh/", "/home/", "/etc/systemd/journald.conf", "/etc/systemd/system/", "/etc/apt/apt.conf.d/",
 	"/etc/security/limits.d/", "/etc/security/limits.conf", "/etc/login.defs", "/etc/shadow", "/etc/gshadow",
 	"/etc/passwd", "/etc/group", "/etc/sudoers.d/", "/etc/sudoers", "/etc/nftables.conf", "/etc/logrotate.d/",
@@ -120,15 +120,15 @@ var commands = map[string][]string{
 }
 
 // UninstallArgs is the only systemd-run the worker may ask for: a delayed transient unit outside
-// serverkeeper.service, so `serverkeeper uninstall` survives stopping the agent. The binary path follows.
-var UninstallArgs = []string{"--unit=serverkeeper-uninstall", "--collect", "--on-active=3"}
+// kurogane.service, so `kurogane uninstall` survives stopping the agent. The binary path follows.
+var UninstallArgs = []string{"--unit=kurogane-uninstall", "--collect", "--on-active=3"}
 
 func uninstallCmd(args []string) bool {
 	n := len(UninstallArgs)
 	if len(args) < n+3 || len(args) > n+4 || !slices.Equal(args[:n], UninstallArgs) {
 		return false
 	}
-	if bin := args[n]; bin != "/usr/bin/serverkeeper" && bin != "/usr/local/bin/serverkeeper" {
+	if bin := args[n]; bin != "/usr/bin/kurogane" && bin != "/usr/local/bin/kurogane" {
 		return false
 	}
 	if args[n+1] != "uninstall" || args[n+2] != "--yes" {
@@ -209,7 +209,7 @@ func (Local) WriteFile(p string, data []byte, mode os.FileMode) error {
 		return err
 	}
 	// atomic replace so a crash never leaves a half-written config
-	tmp := real + ".sk-tmp"
+	tmp := real + ".krgn-tmp"
 	if err := os.WriteFile(tmp, data, mode); err != nil {
 		return err
 	}

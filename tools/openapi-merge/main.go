@@ -44,7 +44,7 @@ func main() {
 	}
 	spec := map[string]any{
 		"openapi": "3.1.0",
-		"info": map[string]any{"title": "ServerKeeper API", "version": "1.0",
+		"info": map[string]any{"title": "Kurogane API", "version": "1.0",
 			"description": "REST API (/api/v1). Auth: Bearer API token (scopes read, ssh:write, harden:write, admin) " +
 				"or session cookie + X-CSRF-Token header."},
 		"servers": []any{map[string]any{"url": "/api/v1"}},
@@ -53,7 +53,7 @@ func main() {
 			"schemas": schemas,
 			"securitySchemes": map[string]any{
 				"bearer":  map[string]any{"type": "http", "scheme": "bearer"},
-				"session": map[string]any{"type": "apiKey", "in": "cookie", "name": "sk_session"},
+				"session": map[string]any{"type": "apiKey", "in": "cookie", "name": "krgn_session"},
 			},
 		},
 		"security": []any{map[string]any{"bearer": []any{}}, map[string]any{"session": []any{}}},

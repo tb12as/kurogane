@@ -252,7 +252,7 @@ func (m *Manager) backupFile(p string, b []byte) {
 	if b == nil {
 		return
 	}
-	dst := fmt.Sprintf("/var/lib/serverkeeper/backups/keys/%s.%s", strings.ReplaceAll(strings.TrimPrefix(p, "/"), "/", "_"),
+	dst := fmt.Sprintf("/var/lib/kurogane/backups/keys/%s.%s", strings.ReplaceAll(strings.TrimPrefix(p, "/"), "/", "_"),
 		m.now().Format("20060102T150405"))
 	_ = m.d.Ex.WriteFile(dst, b, 0o600)
 }
@@ -366,7 +366,7 @@ func (m *Manager) RemoveKey(ctx context.Context, fingerprint, user string) (int,
 		}
 	}
 	if n == 0 {
-		return 0, fmt.Errorf("key %s not found in any authorized_keys file: list keys with `serverkeeper ssh keys list`",
+		return 0, fmt.Errorf("key %s not found in any authorized_keys file: list keys with `kurogane ssh keys list`",
 			fingerprint)
 	}
 	return n, nil

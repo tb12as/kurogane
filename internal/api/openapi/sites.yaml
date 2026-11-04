@@ -84,7 +84,7 @@ components:
         line: {type: integer}
         enabled: {type: boolean}
         default: {type: boolean}
-        toggle: {type: string, enum: [link, rename], description: absent when ServerKeeper will not toggle the site}
+        toggle: {type: string, enum: [link, rename], description: absent when Kurogane will not toggle the site}
         no_toggle: {type: string}
         file_sites: {type: integer}
         available: {type: string}

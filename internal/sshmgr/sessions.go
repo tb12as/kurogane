@@ -132,7 +132,7 @@ func (m *Manager) KillSession(ctx context.Context, pid int) (Session, error) {
 		}
 		return s, err
 	}
-	return Session{}, fmt.Errorf("no active session with pid %d: list them with `serverkeeper ssh sessions`", pid)
+	return Session{}, fmt.Errorf("no active session with pid %d: list them with `kurogane ssh sessions`", pid)
 }
 
 // Login is one parsed auth-log event.

@@ -146,7 +146,7 @@ func writeProm(w http.ResponseWriter, samples []collector.Sample) {
 	var lk []string
 	for _, i := range idx {
 		x := samples[i]
-		name := "serverkeeper_" + promIdent(x.Metric)
+		name := "kurogane_" + promIdent(x.Metric)
 		if x.Metric != last {
 			last = x.Metric
 			bw.WriteString("# TYPE " + name + " gauge\n")

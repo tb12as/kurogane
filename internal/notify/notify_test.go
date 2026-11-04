@@ -108,8 +108,8 @@ func TestTelegramPagerDutyWebhook(t *testing.T) {
 	}
 
 	PagerDutyURL = srv.URL + "/v2/enqueue"
-	t.Setenv("SK_PD", "rk-1")
-	n, _ = New(config.Channel{Name: "pd", Type: "pagerduty", WebhookURLEnv: "SK_PD"}, nil)
+	t.Setenv("KRGN_PD", "rk-1")
+	n, _ = New(config.Channel{Name: "pd", Type: "pagerduty", WebhookURLEnv: "KRGN_PD"}, nil)
 	a := sample()
 	_ = n.Send(context.Background(), a)
 	if (*body)["routing_key"] != "rk-1" || (*body)["event_action"] != "trigger" || (*body)["dedup_key"] != "e1" {
@@ -143,7 +143,7 @@ func TestSecretsAndErrors(t *testing.T) {
 	if _, err := New(config.Channel{Name: "ops", Type: "slack", WebhookURL: sealed}, nil); err == nil {
 		t.Fatal("sealed without box must fail")
 	}
-	if _, err := New(config.Channel{Name: "ops", Type: "slack", WebhookURLEnv: "SK_NOPE_UNSET"}, nil); err == nil {
+	if _, err := New(config.Channel{Name: "ops", Type: "slack", WebhookURLEnv: "KRGN_NOPE_UNSET"}, nil); err == nil {
 		t.Fatal("empty env must fail")
 	}
 	// transport errors must not leak the token in the URL
