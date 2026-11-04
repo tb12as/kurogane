@@ -28,6 +28,10 @@ type Executor interface {
 	MkdirAll(path string, mode os.FileMode) error
 	Chown(path string, uid, gid int) error
 	Run(ctx context.Context, cmd string, args ...string) ([]byte, error)
+	// Site toggles (sites.go): move files only, never write contents.
+	LinkSite(target, link string) error
+	UnlinkSite(link string) error
+	RenameSite(from, to string) error
 }
 
 // ErrDenied is returned for operations outside the allowlist.

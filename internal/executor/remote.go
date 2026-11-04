@@ -20,6 +20,7 @@ type req struct {
 	Args []string    `json:"args,omitempty"`
 	UID  int         `json:"uid,omitempty"`
 	GID  int         `json:"gid,omitempty"`
+	To   string      `json:"to,omitempty"` // second path of link-site / rename-site
 }
 
 type resp struct {
@@ -58,6 +59,12 @@ func Serve(conn net.Conn, ex Executor) error {
 			err = ex.Chown(r.Path, r.UID, r.GID)
 		case "run":
 			out.Data, err = ex.Run(context.Background(), r.Cmd, r.Args...)
+		case "link-site":
+			err = ex.LinkSite(r.To, r.Path)
+		case "unlink-site":
+			err = ex.UnlinkSite(r.Path)
+		case "rename-site":
+			err = ex.RenameSite(r.Path, r.To)
 		default:
 			err = ErrDenied
 		}
