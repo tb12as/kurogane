@@ -9,6 +9,8 @@ import (
 	"net"
 	"os"
 	"sync"
+
+	"github.com/tb12as/serverman/internal/hostfs"
 )
 
 type req struct {
@@ -65,6 +67,8 @@ func Serve(conn net.Conn, ex Executor) error {
 			err = ex.UnlinkSite(r.Path)
 		case "rename-site":
 			err = ex.RenameSite(r.Path, r.To)
+		case "glob":
+			out.Data, err = globJSON(ex, r.Path)
 		default:
 			err = ErrDenied
 		}
@@ -152,4 +156,29 @@ func (r *Remote) Run(_ context.Context, cmd string, args ...string) ([]byte, err
 		return nil, err
 	}
 	return r.call(req{Op: "run", Cmd: cmd, Args: args})
+}
+
+// Glob lists files the way hostfs.Glob does, as root.
+func (Local) Glob(pat string) []string { return hostfs.Glob(pat) }
+
+// globJSON answers a worker's glob; listing names reveals no more than the read op already does.
+func globJSON(ex Executor, pat string) ([]byte, error) {
+	g, ok := ex.(interface{ Glob(string) []string })
+	if !ok {
+		return nil, ErrDenied
+	}
+	return json.Marshal(g.Glob(pat))
+}
+
+// Glob asks the privileged parent, which can enter directories the worker cannot; nil on any error.
+func (r *Remote) Glob(pat string) []string {
+	b, err := r.call(req{Op: "glob", Path: pat})
+	if err != nil {
+		return nil
+	}
+	var out []string
+	if json.Unmarshal(b, &out) != nil {
+		return nil
+	}
+	return out
 }

@@ -56,7 +56,7 @@ func printRedis(out io.Writer, rs []collector.RedisInstance) {
 	}
 	w := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(w, "INSTANCE\tSTATUS\tVERSION\tROLE\tMEMORY\tOPS/S\tHITS\tCLIENTS\tLAST SAVE")
-	var notes []string
+	var notes, totals []string
 	for _, r := range rs {
 		if r.Status != collector.RedisUp {
 			fmt.Fprintf(w, "%s\t%s\t-\t-\t-\t-\t-\t-\t-\n", r.Name, strings.ReplaceAll(r.Status, "_", " "))
@@ -92,10 +92,20 @@ func printRedis(out io.Writer, rs []collector.RedisInstance) {
 		if r.Role == "slave" {
 			role = "replica (link " + r.MasterLink + ")"
 		}
+		totals = append(totals, fmt.Sprintf("%s: up since %s · %.0f commands · %.0f connections (%.0f rejected) · "+
+			"in %s · out %s · %.0f hits / %.0f misses · %.0f expired · %.0f evicted", r.Name, ts(r.StartedAt),
+			r.TotalCommands, r.TotalConns, r.RejectedConns, bytesShort(r.NetInBytes), bytesShort(r.NetOutBytes),
+			r.KeyspaceHits, r.KeyspaceMiss, r.ExpiredKeys, r.EvictedKeys))
 		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%.0f\t%s\t%.0f\t%s\n", r.Name, r.Status, r.Version, role, mem, r.OpsPS, hits,
 			r.Clients, save)
 	}
 	w.Flush()
+	if len(totals) > 0 {
+		fmt.Fprintln(out, "\nTotals since start:")
+	}
+	for _, t := range totals {
+		fmt.Fprintln(out, "  "+t)
+	}
 	for _, n := range notes {
 		fmt.Fprintln(out, "! "+n)
 	}

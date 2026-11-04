@@ -326,3 +326,14 @@ func ExitCode(err error) int {
 	}
 	return -1
 }
+
+// CannotRun reports whether a Run failed for lack of the binary or of privileges (e.g. nginx -t as non-root
+// cannot open /run/nginx.pid) rather than because of what it checked; Remote errors arrive as text.
+func CannotRun(err error) bool {
+	if err == nil {
+		return false
+	}
+	s := err.Error()
+	return errors.Is(err, exec.ErrNotFound) || strings.Contains(s, exec.ErrNotFound.Error()) ||
+		strings.Contains(s, "(13: Permission denied)") || strings.Contains(s, "Permission denied: AH")
+}

@@ -22,7 +22,7 @@ type aline struct {
 
 // apacheLines reads file, joins backslash continuations, drops comments and splices Include/IncludeOptional.
 func apacheLines(r Reader, file string, root *string, depth int, seen map[string]bool, files *[]string) []aline {
-	if depth > 10 || seen[file] || len(seen) > 500 || !hostfs.Exists(file) {
+	if depth > 10 || seen[file] || len(seen) > 500 || (depth == 0 && !hostfs.Exists(file)) {
 		return nil
 	}
 	seen[file] = true
@@ -63,7 +63,7 @@ func apacheLines(r Reader, file string, root *string, depth int, seen map[string
 			}
 		case "include", "includeoptional":
 			for _, pat := range args[1:] {
-				for _, f := range glob(abs(*root, pat)) {
+				for _, f := range glob(r, abs(*root, pat)) {
 					out = append(out, apacheLines(r, f, root, depth+1, seen, files)...)
 				}
 			}

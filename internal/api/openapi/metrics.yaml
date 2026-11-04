@@ -43,6 +43,7 @@ components:
         arch: {type: string}
         boot_time: {type: string, format: date-time}
         uptime_s: {type: number}
+        started_at: {type: string, format: date-time, description: now minus uptime}
         reboot_required: {type: boolean}
         security_updates: {type: integer}
         pending_updates: {type: integer}
@@ -127,6 +128,14 @@ components:
         ops_ps: {type: number}
         hit_ratio: {type: number, description: percent; absent when there were no lookups}
         evicted_keys: {type: number}
+        total_connections: {type: number, description: connections accepted since start}
+        rejected_connections: {type: number, description: connections refused (maxclients) since start}
+        total_commands: {type: number, description: commands processed since start}
+        net_input_bytes: {type: number, description: bytes received since start}
+        net_output_bytes: {type: number, description: bytes sent since start}
+        expired_keys: {type: number, description: keys expired since start}
+        keyspace_hits: {type: number, description: successful key lookups since start}
+        keyspace_misses: {type: number, description: failed key lookups since start}
         rdb_status: {type: string}
         last_save: {type: string, format: date-time}
         changes_since_save: {type: number}

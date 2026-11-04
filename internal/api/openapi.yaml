@@ -852,6 +852,9 @@ components:
                     type: string
                 evicted_keys:
                     type: number
+                expired_keys:
+                    description: keys expired since start
+                    type: number
                 hint:
                     type: string
                 hit_ratio:
@@ -868,6 +871,12 @@ components:
                                 type: string
                         type: object
                     type: array
+                keyspace_hits:
+                    description: successful key lookups since start
+                    type: number
+                keyspace_misses:
+                    description: failed key lookups since start
+                    type: number
                 last_save:
                     format: date-time
                     type: string
@@ -887,12 +896,21 @@ components:
                     type: string
                 name:
                     type: string
+                net_input_bytes:
+                    description: bytes received since start
+                    type: number
+                net_output_bytes:
+                    description: bytes sent since start
+                    type: number
                 ops_ps:
                     type: number
                 ping_ms:
                     type: number
                 rdb_status:
                     type: string
+                rejected_connections:
+                    description: connections refused (maxclients) since start
+                    type: number
                 replicas:
                     type: integer
                 role:
@@ -920,6 +938,12 @@ components:
                         - auth_failed
                         - needs_credentials
                     type: string
+                total_commands:
+                    description: commands processed since start
+                    type: number
+                total_connections:
+                    description: connections accepted since start
+                    type: number
                 uptime_s:
                     type: number
                 version:
@@ -1476,6 +1500,10 @@ components:
                     type: boolean
                 security_updates:
                     type: integer
+                started_at:
+                    description: now minus uptime
+                    format: date-time
+                    type: string
                 uptime_s:
                     type: number
             type: object

@@ -24,7 +24,7 @@ type redisConf struct {
 func redisConfs(ctx context.Context, e *Env) []redisConf {
 	out, _ := memo(ctx, "redis", func() ([]redisConf, error) {
 		var out []redisConf
-		for _, f := range collector.RedisConfFiles() {
+		for _, f := range collector.RedisConfFiles(ctx, e.Ex) {
 			c, err := redisinfo.ParseConfig(e.Ex, f)
 			if err != nil {
 				continue
