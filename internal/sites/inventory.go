@@ -8,6 +8,7 @@ import (
 	"errors"
 	"os"
 	"path"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -354,6 +355,9 @@ func configTest(ctx context.Context, ex executor.Executor, kind string) (bool, s
 	return false, err.Error()
 }
 
+// logPrefix is nginx's error-log stamp ("2026/11/04 04:19:20 [emerg] 14193#14193: "), kept to "[emerg] ".
+var logPrefix = regexp.MustCompile(`^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} (\[\w+\]) \d+#\d+: `)
+
 // trimTest keeps the lines of a config test that explain the failure.
 func trimTest(s string) string {
 	var keep []string
@@ -362,7 +366,8 @@ func trimTest(s string) string {
 		if l == "" || strings.Contains(l, "test failed") || strings.Contains(l, "syntax is ok") {
 			continue
 		}
-		keep = append(keep, strings.TrimPrefix(l, "nginx: "))
+		l = strings.TrimPrefix(l, "nginx: ")
+		keep = append(keep, logPrefix.ReplaceAllString(l, "$1 "))
 	}
 	if len(keep) == 0 {
 		return strings.TrimSpace(s)

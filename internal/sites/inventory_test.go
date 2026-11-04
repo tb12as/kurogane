@@ -242,6 +242,10 @@ func TestVersionRPMAndTrim(t *testing.T) {
 	if v := version(ctx, ex, WebServer{Unit: "httpd"}); v != "2.4.62" {
 		t.Fatalf("version = %q", v)
 	}
+	if got := trimTest("2026/11/04 04:19:20 [emerg] 14193#14193: unknown directive \"x\" in /etc/nginx/a:4\n" +
+		"nginx: configuration file /etc/nginx/nginx.conf test failed\n"); got != `[emerg] unknown directive "x" in /etc/nginx/a:4` {
+		t.Fatalf("trimTest = %q", got)
+	}
 	if trimTest("AH00526: Syntax error on line 3\n") != "AH00526: Syntax error on line 3" || trimTest("\n") != "" {
 		t.Fatal("trimTest")
 	}
