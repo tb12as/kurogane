@@ -1,14 +1,14 @@
-# PRD — ServerKeeper: Go Server Management Agent
+# PRD — Kurogane: Go Server Management Agent
 
 Nov 2, 2026 · @Syafiq Afifuddin
 
 ## 1. Overview
 
-ServerKeeper (working name) is a single Go binary that monitors a Linux server's health, manages SSH access, audits and hardens the server, and pushes alerts to Slack or Discord. It targets small teams and solo operators who run 1–50 servers and find Prometheus + Grafana + Ansible + fail2ban too much to assemble and maintain.
+Kurogane (黒鉄, "black iron"; formerly the working name ServerKeeper) is a single Go binary that monitors a Linux server's health, manages SSH access, audits and hardens the server, and pushes alerts to Slack or Discord. It targets small teams and solo operators who run 1–50 servers and find Prometheus + Grafana + Ansible + fail2ban too much to assemble and maintain.
 
 **Problem.** Operators of small fleets juggle separate tools for metrics, SSH key hygiene, CIS-style hardening and alerting. Keys of ex-staff linger in `authorized_keys`, `sshd_config` drifts, and nobody notices RAM pressure or a traffic spike until users complain.
 
-**Vision.** Install one static binary, run `serverkeeper init`, and within five minutes get live metrics, a hardening score, a managed SSH key inventory and alerts in the team's chat channel.
+**Vision.** Install one static binary, run `kurogane init`, and within five minutes get live metrics, a hardening score, a managed SSH key inventory and alerts in the team's chat channel.
 
 **Document status:** Draft v0.1, open for review. Product name, licensing and pricing are open questions (section 13).
 
@@ -96,7 +96,7 @@ The agent samples system metrics every 10 seconds (configurable 1–60 s), store
 | --- | --- | --- |
 | PM-1 | Sample all metric groups at a configurable interval (default 10 s) | P0 |
 | PM-2 | Store raw samples for 24 h and 1-min rollups (avg/max) for 7 days in an embedded store | P0 |
-| PM-3 | `serverkeeper top` shows a live terminal dashboard (like htop, plus net and disk) | P0 |
+| PM-3 | `kurogane top` shows a live terminal dashboard (like htop, plus net and disk) | P0 |
 | PM-4 | Web UI shows time-series charts with 1h / 6h / 24h / 7d ranges | P0 |
 | PM-5 | REST endpoint returns current and historical metrics as JSON | P0 |
 | PM-6 | Watch list of systemd services; report state changes | P1 |
@@ -107,7 +107,7 @@ The agent samples system metrics every 10 seconds (configurable 1–60 s), store
 
 ## 6. Feature 2 — SSH management
 
-ServerKeeper owns the inventory of SSH keys and the `sshd_config` settings, and never applies an SSH change without a rollback path. Every change is logged with who, what, when and the previous value.
+Kurogane owns the inventory of SSH keys and the `sshd_config` settings, and never applies an SSH change without a rollback path. Every change is logged with who, what, when and the previous value.
 
 **6.1 Key management**
 
@@ -139,8 +139,8 @@ Managed settings, each with a recommended value shown beside the current one:
 
 1. Write the candidate config to a temp file and validate it with `sshd -t -f <file>`.
 2. Back up the current config with a timestamp.
-3. Apply via `sshd_config.d/99-serverkeeper.conf` drop-in where supported, otherwise in-place, then reload (not restart) sshd.
-4. Start a rollback timer (default 120 s). The operator confirms by opening a new SSH session and running `serverkeeper ssh confirm`, or clicking Confirm in the UI.
+3. Apply via `sshd_config.d/99-kurogane.conf` drop-in where supported, otherwise in-place, then reload (not restart) sshd.
+4. Start a rollback timer (default 120 s). The operator confirms by opening a new SSH session and running `kurogane ssh confirm`, or clicking Confirm in the UI.
 5. No confirmation before the timer ends → restore the backup and reload sshd automatically, and send an alert.
 
 **6.4 Sessions and login audit**
@@ -191,10 +191,10 @@ Score = 100 × (weighted passed checks / weighted applicable checks), weights Cr
 
 **7.3 Fix flow**
 
-1. `serverkeeper harden scan` → table of results plus score.
-2. `serverkeeper harden fix <check-id>` or `--all --severity high` → shows a dry-run diff first.
+1. `kurogane harden scan` → table of results plus score.
+2. `kurogane harden fix <check-id>` or `--all --severity high` → shows a dry-run diff first.
 3. Operator confirms → backup taken → fix applied → check re-run to verify.
-4. `serverkeeper harden revert <fix-id>` restores the backup.
+4. `kurogane harden revert <fix-id>` restores the backup.
 
 **Requirements**
 
@@ -249,7 +249,7 @@ All thresholds are editable per server. Baselines are learned from 7 days of his
 - Silences: by server, rule or tag, with start/end time, for maintenance windows.
 - Rate limit: max 20 messages/min per channel; overflow collapsed into a summary.
 - Retry with exponential backoff; alerts queued on disk if the network is down.
-- `serverkeeper alert test <channel>` sends a test message.
+- `kurogane alert test <channel>` sends a test message.
 
 **Example Slack/Discord message**
 
@@ -292,18 +292,18 @@ The agent runs as a systemd service as root (needed for sshd and sysctl changes)
 | Netlink / conntrack | `vishvananda/netlink`, `mdlayher/netlink` | Connection stats without shelling out |
 | Firewall | `google/nftables` (fallback: iptables exec) | Native nftables API |
 | Agent local storage | `go.etcd.io/bbolt` | Embedded, pure Go, bounded size |
-| Central metrics store | VictoriaMetrics single-node, separate binary managed by ServerKeeper | High compression, PromQL queries, \~1 KB RAM per active series |
+| Central metrics store | VictoriaMetrics single-node, separate binary managed by Kurogane | High compression, PromQL queries, \~1 KB RAM per active series |
 | Central metadata store | SQLite via `modernc.org/sqlite` | Embedded file, no CGO, nothing to install |
 | Agent ↔ central | gRPC with mutual TLS, token-based enrollment | Streaming, strongly typed |
 | Web UI | Nuxt (Vue 3, TypeScript) + Tailwind CSS + shadcn-vue, static build embedded via `embed.FS` | Modern component library; no Node.js on production servers |
 | Charts | ECharts via `vue-echarts` | Handles large time series smoothly |
-| Terminal UI | `charmbracelet/bubbletea` | For `serverkeeper top` |
+| Terminal UI | `charmbracelet/bubbletea` | For `kurogane top` |
 | Logging | `log/slog` JSON | Standard library |
 
 **Repository layout**
 
 ```
-cmd/serverkeeper/        main, cobra commands (agent, server, CLI)
+cmd/kurogane/        main, cobra commands (agent, server, CLI)
 internal/collector/      cpu, mem, disk, net, proc collectors
 internal/store/          agent bbolt store + rollups
 internal/metricsdb/      VictoriaMetrics client (import, PromQL) + process supervisor
@@ -323,20 +323,20 @@ Core interfaces keep features pluggable: `Collector{ Collect(ctx) ([]Sample, err
 
 **Storage design**
 
-Metrics go to VictoriaMetrics and everything else to an embedded SQLite file, so production needs no database server: only the `serverkeeper` binary plus the VictoriaMetrics binary it installs.
+Metrics go to VictoriaMetrics and everything else to an embedded SQLite file, so production needs no database server: only the `kurogane` binary plus the VictoriaMetrics binary it installs.
 
 | Data | Store | Location | Retention |
 | --- | --- | --- | --- |
-| Fleet metrics (central) | VictoriaMetrics single-node on `127.0.0.1:8428` | `/var/lib/serverkeeper/vm/` | 90 days default (`-retentionPeriod`) |
-| Metadata (central): servers, keys, scans, fixes, rules, alert events, silences, users, audit log | SQLite, WAL mode | `/var/lib/serverkeeper/serverkeeper.db` | Audit log 1 year, rest kept |
-| Agent local metrics | bbolt | `/var/lib/serverkeeper/agent.db` | 24 h raw + 7 d rollups |
-| Agent pending SSH changes, alert queue | bbolt | `/var/lib/serverkeeper/agent.db` | Until confirmed / delivered |
+| Fleet metrics (central) | VictoriaMetrics single-node on `127.0.0.1:8428` | `/var/lib/kurogane/vm/` | 90 days default (`-retentionPeriod`) |
+| Metadata (central): servers, keys, scans, fixes, rules, alert events, silences, users, audit log | SQLite, WAL mode | `/var/lib/kurogane/kurogane.db` | Audit log 1 year, rest kept |
+| Agent local metrics | bbolt | `/var/lib/kurogane/agent.db` | 24 h raw + 7 d rollups |
+| Agent pending SSH changes, alert queue | bbolt | `/var/lib/kurogane/agent.db` | Until confirmed / delivered |
 
 - **Writes and reads:** the central server writes to VictoriaMetrics over local HTTP (`/api/v1/import/prometheus`, batched every 5 s) and reads with PromQL (`/api/v1/query_range`). The UI and CLI never talk to VictoriaMetrics directly.
 - **SQLite settings:** one writer connection, `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=ON`, `busy_timeout=5000`; migrations embedded and run on startup (`pressly/goose`). All access goes through a `Store` interface so PostgreSQL can be added later if high availability is ever needed.
-- **Installing VictoriaMetrics:** `serverkeeper server init` downloads a pinned release, verifies its SHA256, and runs it under its own systemd unit. An offline bundle ships both binaries for air-gapped servers.
+- **Installing VictoriaMetrics:** `kurogane server init` downloads a pinned release, verifies its SHA256, and runs it under its own systemd unit. An offline bundle ships both binaries for air-gapped servers.
 - **Sizing (estimate):** 500 servers × \~300 series at 10 s ≈ 15,000 samples/s and \~150,000 active series → \~150 MB RAM for VictoriaMetrics, about 0.6–1.5 GB disk per day, so roughly 60–130 GB for 90 days. Central server spec: 2 vCPU, 4 GB RAM, SSD.
-- **Backups:** `serverkeeper backup` runs nightly: SQLite `VACUUM INTO` plus VictoriaMetrics `/snapshot/create`, copied off-host. `serverkeeper restore` reverses it.
+- **Backups:** `kurogane backup` runs nightly: SQLite `VACUUM INTO` plus VictoriaMetrics `/snapshot/create`, copied off-host. `kurogane restore` reverses it.
 - **Downsampling:** an Enterprise-only feature in VictoriaMetrics, so v1 relies on retention plus compression; hourly rollups via `vmalert` recording rules are optional.
 
 **Web UI**
@@ -344,7 +344,7 @@ Metrics go to VictoriaMetrics and everything else to an embedded SQLite file, so
 - Nuxt (Vue 3, TypeScript) with Tailwind CSS and shadcn-vue components for tables, forms, dialogs and toasts.
 - Built as a static single-page app (`ssr: false`, `nuxi generate`) and embedded in the Go binary with `embed.FS`, so production servers need no Node.js.
 - The same UI is served by the agent (MVP, one server) and by the central server (v1, fleet view).
-- Talks only to the ServerKeeper REST API (`/api/v1`) with session cookie + CSRF token; a typed TypeScript client is generated from the OpenAPI spec.
+- Talks only to the Kurogane REST API (`/api/v1`) with session cookie + CSRF token; a typed TypeScript client is generated from the OpenAPI spec.
 - Live metrics and alert state stream over Server-Sent Events (`GET /api/v1/stream`); historical charts use `query_range` results rendered with ECharts.
 - Key pages: Overview (all servers), Server detail (metrics, services, sessions), SSH (keys, config, pending changes), Hardening (score, checks, fix diff), Alerts (rules, events, silences, channels), Audit log, Settings.
 
@@ -355,30 +355,30 @@ Every feature is reachable three ways — CLI, REST API and web UI — and the C
 **10.1 CLI**
 
 ```
-serverkeeper init                         # interactive setup, writes /etc/serverkeeper/config.yaml
-serverkeeper agent run                    # run as service (used by systemd unit)
-serverkeeper status                       # health summary: metrics, score, active alerts
-serverkeeper top                          # live terminal dashboard
-serverkeeper metrics get cpu,mem --since 6h --json
+kurogane init                         # interactive setup, writes /etc/kurogane/config.yaml
+kurogane agent run                    # run as service (used by systemd unit)
+kurogane status                       # health summary: metrics, score, active alerts
+kurogane top                          # live terminal dashboard
+kurogane metrics get cpu,mem --since 6h --json
 
-serverkeeper ssh keys list [--user deploy]
-serverkeeper ssh keys add --user deploy --file id_ed25519.pub --label "budi laptop" --expires 2027-01-31
-serverkeeper ssh keys add --user deploy --github budi-dev
-serverkeeper ssh keys revoke <fingerprint> [--all-servers]
-serverkeeper ssh config show              # current vs recommended
-serverkeeper ssh config set PasswordAuthentication no --rollback 120s
-serverkeeper ssh confirm                  # confirm pending change
-serverkeeper ssh sessions [--kill <pid>]
+kurogane ssh keys list [--user deploy]
+kurogane ssh keys add --user deploy --file id_ed25519.pub --label "budi laptop" --expires 2027-01-31
+kurogane ssh keys add --user deploy --github budi-dev
+kurogane ssh keys revoke <fingerprint> [--all-servers]
+kurogane ssh config show              # current vs recommended
+kurogane ssh config set PasswordAuthentication no --rollback 120s
+kurogane ssh confirm                  # confirm pending change
+kurogane ssh sessions [--kill <pid>]
 
-serverkeeper harden scan [--json|--md]
-serverkeeper harden fix <check-id>|--all [--severity high] [--dry-run]
-serverkeeper harden revert <fix-id>
-serverkeeper harden ignore <check-id> --reason "..."
+kurogane harden scan [--json|--md]
+kurogane harden fix <check-id>|--all [--severity high] [--dry-run]
+kurogane harden revert <fix-id>
+kurogane harden ignore <check-id> --reason "..."
 
-serverkeeper alert rules list|add|edit|delete
-serverkeeper alert channels add slack --webhook <url> --name ops
-serverkeeper alert test ops
-serverkeeper alert silence --rule high_cpu --for 2h
+kurogane alert rules list|add|edit|delete
+kurogane alert channels add slack --webhook <url> --name ops
+kurogane alert test ops
+kurogane alert silence --rule high_cpu --for 2h
 ```
 
 **10.2 REST API (v1, JSON, `/api/v1`)**
@@ -401,7 +401,7 @@ Auth: API tokens (scoped: `read`, `ssh:write`, `harden:write`, `admin`). Web UI 
 **10.3 Config file example**
 
 ```yaml
-# /etc/serverkeeper/config.yaml
+# /etc/kurogane/config.yaml
 server_name: web-01
 tags: [prod, web]
 listen: 127.0.0.1:9443
@@ -431,10 +431,10 @@ alerts:
   channels:
     - name: ops
       type: slack
-      webhook_url_env: SK_SLACK_OPS      # secret read from env / encrypted store
+      webhook_url_env: KRGN_SLACK_OPS      # secret read from env / encrypted store
     - name: phone
       type: discord
-      webhook_url_env: SK_DISCORD_ME
+      webhook_url_env: KRGN_DISCORD_ME
   rules:
     - id: mem_available_low
       expr: mem.available_pct < 10
@@ -468,16 +468,16 @@ alerts:
 
 Because the agent runs as root and can change SSH and firewall settings, the tool's own security is the top non-functional requirement.
 
-**11.1 Security of ServerKeeper itself**
+**11.1 Security of Kurogane itself**
 
 - Web UI and API bind to `127.0.0.1` by default; remote access only via SSH tunnel or explicit opt-in with TLS.
 - TLS 1.3 only for remote access; agent ↔ central uses mutual TLS with per-agent certificates and one-time enrollment tokens (expire in 1 h).
 - Admin login: Argon2id password hashes, mandatory TOTP 2FA for the web UI, lockout after 5 failures.
-- Secrets (webhook URLs, tokens) encrypted at rest with a key in `/etc/serverkeeper/secret.key` (mode 0600) or read from env; never written to logs.
+- Secrets (webhook URLs, tokens) encrypted at rest with a key in `/etc/kurogane/secret.key` (mode 0600) or read from env; never written to logs.
 - Least privilege: the API process drops privileges where possible; root actions go through a small internal executor with an allowlist of operations (no arbitrary shell from the API).
 - Every mutating action is written to an append-only audit log (who, what, before/after, source IP).
 - Signed releases (cosign / minisign), SBOM published, reproducible builds; `govulncheck` and `gosec` in CI.
-- Central server can never push arbitrary commands, only typed operations defined in the gRPC API. VictoriaMetrics listens on 127.0.0.1 only and the SQLite file is mode 0600, so only the ServerKeeper process can reach either.
+- Central server can never push arbitrary commands, only typed operations defined in the gRPC API. VictoriaMetrics listens on 127.0.0.1 only and the SQLite file is mode 0600, so only the Kurogane process can reach either.
 
 **11.2 Performance budget**
 
@@ -495,7 +495,7 @@ Because the agent runs as root and can change SSH and firewall settings, the too
 - OS: Ubuntu 22.04/24.04, Debian 12, RHEL/Rocky/AlmaLinux 9. Best effort: Amazon Linux 2023, Fedora.
 - Arch: amd64 and arm64.
 - Init: systemd required. Firewall: nftables, iptables, ufw, firewalld detected automatically.
-- Packages: `.deb`, `.rpm`, install script, and a Docker image for the central server. No database server to install: SQLite is embedded and the VictoriaMetrics binary is fetched (checksum-verified) by the serverkeeper server init command or shipped in an offline bundle.
+- Packages: `.deb`, `.rpm`, install script, and a Docker image for the central server. No database server to install: SQLite is embedded and the VictoriaMetrics binary is fetched (checksum-verified) by the kurogane server init command or shipped in an offline bundle.
 
 **11.4 Reliability**
 
@@ -518,7 +518,7 @@ The proposed plan reaches a single-server MVP in about 18 weeks and fleet-capabl
 **What each milestone delivers**
 
 1. **Foundations** — repo, CI (lint, `govulncheck`, tests), config loader, bbolt store, API skeleton with auth + audit log, systemd unit, `.deb`/`.rpm` packaging.
-2. **Monitoring + alerts** — all collectors (PM-1–5), `serverkeeper top`, web UI charts, threshold rules, Slack + Discord delivery (AL-1–3).
+2. **Monitoring + alerts** — all collectors (PM-1–5), `kurogane top`, web UI charts, threshold rules, Slack + Discord delivery (AL-1–3).
 3. **SSH management** — key inventory, add/revoke/expire, sshd\_config parser, safe-apply with rollback, login history (SSH-1–5).
 4. **Hardening** — \~40 checks, score, dry-run fixes, revert, JSON/Markdown reports (HD-1–4, HD-7).
 5. **Beta and polish** — 10–20 beta servers, docs site, install script, bug fixes. Exit: zero lockouts, overhead within budget.
@@ -551,9 +551,9 @@ The biggest risk is a tool with root access locking users out or becoming an att
 
 **Open questions**
 
-- [ ] Final product name and license (open source AGPL/Apache-2.0, or open-core with paid fleet features)?
+- [x] Final product name: Kurogane (CLI `kurogane`, short `krgn`). Still open: license (open source AGPL/Apache-2.0, or open-core with paid fleet features)?
 - [ ] Is the central server self-hosted only, or also offered as SaaS?
-- [ ] Run VictoriaMetrics as its own systemd unit (simpler, visible to admins) or as a child process supervised by ServerKeeper (one service to manage)?
+- [ ] Run VictoriaMetrics as its own systemd unit (simpler, visible to admins) or as a child process supervised by Kurogane (one service to manage)?
 - [ ] Should auto-remediation of attacks (IP bans) ship in v1 or wait for more field data?
 - [ ] Which compliance mappings matter most to target users: CIS only, or also ISO 27001 / PCI DSS evidence?
 - [ ] Telegram and WhatsApp channels — needed early for users in Indonesia/SEA?

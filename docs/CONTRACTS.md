@@ -1,11 +1,11 @@
-# ServerKeeper internal contracts
+# Kurogane internal contracts
 
-Shared agreements between packages. Source of truth for requirements: `docs/PRD — ServerKeeper Go Server Management Agent.md`.
+Shared agreements between packages. Source of truth for requirements: `docs/PRD — Kurogane Go Server Management Agent.md`.
 
 ## Conventions
 
-- Module `github.com/tb12as/serverman`, `CGO_ENABLED=0`, Go stdlib `log/slog` for logs.
-- Every host path read goes through `hostfs.P()` / `hostfs.Read()` so tests can use fixture trees (`SK_ROOT`).
+- Module `github.com/tb12as/kurogane`, `CGO_ENABLED=0`, Go stdlib `log/slog` for logs.
+- Every host path read goes through `hostfs.P()` / `hostfs.Read()` so tests can use fixture trees (`KRGN_ROOT`).
 - Every privileged write or command goes through `executor.Executor` (allowlist in `internal/executor/executor.go`).
   Add a command to the allowlist only if strictly needed, with the narrowest first-argument list.
 - Every mutating action records `audit.Logger.Record(ctx, action, target, before, after)`.
@@ -16,8 +16,8 @@ Shared agreements between packages. Source of truth for requirements: `docs/PRD 
   Alert/fleet/user mutations need `admin`.
 - OpenAPI: each domain writes `internal/api/openapi/<domain>.yaml` (a `paths:` + `components.schemas:` fragment);
   they are merged into `internal/api/openapi.yaml`.
-- CLI: each domain adds cobra commands in `cmd/serverkeeper/<domain>.go` via `init(){ rootCmd.AddCommand(...) }`,
-  using the `client` in `cmd/serverkeeper/client.go` (thin client over the REST API). Honour `--json`.
+- CLI: each domain adds cobra commands in `cmd/kurogane/<domain>.go` via `init(){ rootCmd.AddCommand(...) }`,
+  using the `client` in `cmd/kurogane/client.go` (thin client over the REST API). Honour `--json`.
 
 ## Metric catalog (collector → store/alerts/UI)
 
