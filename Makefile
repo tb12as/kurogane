@@ -15,11 +15,11 @@ web: openapi
 	cd web && pnpm install --frozen-lockfile && pnpm gen:api && pnpm generate
 
 build: web
-	go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o bin/serverkeeper ./cmd/kurogane
+	go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o bin/kurogane ./cmd/kurogane
 
 # go-only build using the committed UI output
 build-go:
-	go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o bin/serverkeeper ./cmd/kurogane
+	go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o bin/kurogane ./cmd/kurogane
 
 proto:
 	cd proto && go run github.com/bufbuild/buf/cmd/buf@v1.74.0 generate
@@ -53,14 +53,14 @@ bench:
 
 # binary budget < 30 MB (PRD §11.2)
 size: build-go
-	@s=$$(stat -c %s bin/serverkeeper); echo "binary $$((s/1024/1024)) MB"; [ $$s -lt 31457280 ]
+	@s=$$(stat -c %s bin/kurogane); echo "binary $$((s/1024/1024)) MB"; [ $$s -lt 31457280 ]
 
 dist:
 	mkdir -p dist
 	for a in amd64 arm64; do \
-	  GOARCH=$$a go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o dist/serverkeeper-linux-$$a ./cmd/kurogane; \
+	  GOARCH=$$a go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o dist/kurogane-linux-$$a ./cmd/kurogane; \
 	done
-	cd dist && sha256sum serverkeeper-linux-* > checksums.txt
+	cd dist && sha256sum kurogane-linux-* > checksums.txt
 
 packages: dist
 	for a in amd64 arm64; do for p in deb rpm; do \

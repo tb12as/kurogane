@@ -1,27 +1,30 @@
 # nfpm package spec: nfpm pkg --packager deb|rpm --config deploy/nfpm.yaml --target dist/
-name: serverkeeper
+name: kurogane
 arch: ${ARCH}
 platform: linux
 version: ${VERSION}
 section: admin
 priority: optional
-maintainer: ServerKeeper <maintainers@serverkeeper.dev>
+maintainer: Kurogane <https://github.com/tb12as/kurogane/issues>
 description: |
   Single-binary Linux server monitoring, SSH key management, hardening and
   Slack/Discord alerts.
 homepage: https://github.com/tb12as/kurogane
 license: TBD
 contents:
-  - src: dist/serverkeeper-linux-${ARCH}
-    dst: /usr/bin/serverkeeper
+  - src: dist/kurogane-linux-${ARCH}
+    dst: /usr/bin/kurogane
     expand: true
     file_info: {mode: 0755}
-  - src: deploy/serverkeeper.service
-    dst: /lib/systemd/system/serverkeeper.service
-  - src: deploy/serverkeeper-server.service
-    dst: /lib/systemd/system/serverkeeper-server.service
+  - src: kurogane
+    dst: /usr/bin/krgn
+    type: symlink
+  - src: deploy/kurogane.service
+    dst: /lib/systemd/system/kurogane.service
+  - src: deploy/kurogane-server.service
+    dst: /lib/systemd/system/kurogane-server.service
   - src: deploy/config.example.yaml
-    dst: /usr/share/serverkeeper/config.example.yaml
+    dst: /usr/share/kurogane/config.example.yaml
 scripts:
   postinstall: deploy/postinstall.sh
   preremove: deploy/preremove.sh

@@ -63,8 +63,8 @@ jobs:
               DEBIAN_FRONTEND=noninteractive apt-get install -y -qq openssh-server procps iproute2 sudo) ||
             dnf install -y -q openssh-server openssh-clients procps-ng iproute sudo passwd
             mkdir -p /run/sshd && ssh-keygen -A
-            SK_INTEGRATION=1 /t/it-ssh -test.run Integration -test.v &&
-            SK_INTEGRATION=1 /t/it-harden -test.run Integration -test.v'
+            KRGN_INTEGRATION=1 /t/it-ssh -test.run Integration -test.v &&
+            KRGN_INTEGRATION=1 /t/it-harden -test.run Integration -test.v'
 
   # Redis client and collector against a real redis-server (password, read-only ACL user, slow log)
   redis:

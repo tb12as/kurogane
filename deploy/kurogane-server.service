@@ -1,0 +1,21 @@
+[Unit]
+Description=Kurogane central server
+After=network-online.target kurogane-vm.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/kurogane server run --config /etc/kurogane/config.yaml
+Restart=always
+RestartSec=5
+User=kurogane
+Group=kurogane
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/kurogane
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

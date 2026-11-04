@@ -20,16 +20,16 @@ jobs:
         run: make dist
       - name: verify reproducibility
         run: |
-          cp dist/serverkeeper-linux-amd64 /tmp/a && make dist && cmp /tmp/a dist/serverkeeper-linux-amd64
+          cp dist/kurogane-linux-amd64 /tmp/a && make dist && cmp /tmp/a dist/kurogane-linux-amd64
       - name: deb/rpm packages
         run: make packages
       - name: SBOM (SPDX)
         uses: anchore/sbom-action@v0
-        with: {path: ., format: spdx-json, output-file: dist/serverkeeper.spdx.json}
+        with: {path: ., format: spdx-json, output-file: dist/kurogane.spdx.json}
       - uses: sigstore/cosign-installer@v3
       - name: sign artifacts (cosign keyless)
         run: |
-          for f in dist/serverkeeper-linux-* dist/*.deb dist/*.rpm dist/checksums.txt; do
+          for f in dist/kurogane-linux-* dist/*.deb dist/*.rpm dist/checksums.txt; do
             cosign sign-blob --yes --output-signature "$f.sig" --output-certificate "$f.pem" "$f"
           done
       - name: minisign (optional)
@@ -38,14 +38,14 @@ jobs:
         run: |
           go install aead.dev/minisign/cmd/minisign@latest
           echo "$MINISIGN_KEY" > /tmp/minisign.key
-          for f in dist/serverkeeper-linux-*; do ~/go/bin/minisign -S -s /tmp/minisign.key -m "$f"; done
+          for f in dist/kurogane-linux-*; do ~/go/bin/minisign -S -s /tmp/minisign.key -m "$f"; done
       - name: offline bundles
         run: |
           for a in amd64 arm64; do deploy/bundle.sh $a v1.110.0; done
       - name: publish
         env: {GH_TOKEN: "${{ github.token }}"}
         run: |
-          cp deploy/serverkeeper.service deploy/serverkeeper-server.service deploy/install.sh dist/
+          cp deploy/kurogane.service deploy/kurogane-server.service deploy/install.sh dist/
           gh release create "$GITHUB_REF_NAME" dist/* --generate-notes
 
   docker:
@@ -63,4 +63,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           build-args: VERSION=${{ github.ref_name }}
           push: true
-          tags: ghcr.io/tb12as/serverkeeper-server:${{ github.ref_name }}
+          tags: ghcr.io/tb12as/kurogane-server:${{ github.ref_name }}

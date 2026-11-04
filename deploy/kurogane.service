@@ -1,16 +1,16 @@
 [Unit]
-Description=ServerKeeper agent
-Documentation=https://github.com/tb12as/serverman
+Description=Kurogane agent
+Documentation=https://github.com/tb12as/kurogane
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/serverkeeper agent run --config /etc/serverkeeper/config.yaml
+ExecStart=/usr/bin/kurogane agent run --config /etc/kurogane/config.yaml
 Restart=always
 RestartSec=5
 # root is required for sshd/sysctl/firewall changes; the agent drops to the
-# `serverkeeper` user for everything else (privilege separation)
+# `kurogane` user for everything else (privilege separation)
 User=root
 LimitNOFILE=65536
 MemoryMax=200M

@@ -1,7 +1,7 @@
 /bin/
 /dist/
 /cover.out
-/serverkeeper
+/kurogane
 *.test
 /.codegraph/
 /.local-run/
