@@ -56,6 +56,37 @@ type Collector struct {
 	NginxLog        string        `mapstructure:"nginx_log" json:"nginx_log"`
 	Prometheus      bool          `mapstructure:"prometheus" json:"prometheus"`
 	Certs           Certs         `mapstructure:"certs" json:"certs"`
+	Redis           Redis         `mapstructure:"redis" json:"redis"`
+}
+
+// Redis configures Redis monitoring.
+type Redis struct {
+	// Enabled is "auto" (monitor when a Redis config exists and its unit is enabled or its port answers),
+	// "true" or "false". YAML booleans are accepted too.
+	Enabled   string          `mapstructure:"enabled" json:"enabled"`
+	Instances []RedisInstance `mapstructure:"instances" json:"instances"` // empty = autodetect
+}
+
+// RedisInstance is one explicitly configured Redis.
+type RedisInstance struct {
+	Name         string `mapstructure:"name" json:"name"`
+	Addr         string `mapstructure:"addr" json:"addr"` // host:port or unix:/path
+	Username     string `mapstructure:"username" json:"username"`
+	PasswordFile string `mapstructure:"password_file" json:"password_file"`
+	TLS          bool   `mapstructure:"tls" json:"tls"`
+}
+
+// Mode normalizes Enabled to "auto", "on" or "off".
+func (r Redis) Mode() string {
+	switch strings.ToLower(strings.TrimSpace(r.Enabled)) {
+	case "", "auto":
+		return "auto"
+	case "true", "1", "yes", "on":
+		return "on"
+	case "false", "0", "no", "off":
+		return "off"
+	}
+	return ""
 }
 
 // Certs configures TLS certificate expiry monitoring.
@@ -205,6 +236,7 @@ func defaults(v *viper.Viper) {
 	v.SetDefault("web.enabled", true)
 	v.SetDefault("collector.certs.probe_ports", []int{443})
 	v.SetDefault("collector.certs.interval", "1h")
+	v.SetDefault("collector.redis.enabled", "auto")
 	v.SetDefault("ssh.config_path", "/etc/ssh/sshd_config")
 	v.SetDefault("ssh.rollback_timeout", "120s")
 	v.SetDefault("ssh.bruteforce.max_failures", 5)
@@ -292,6 +324,14 @@ func (c *Config) Validate() error {
 	}
 	if c.Collector.Certs.Enabled && c.Collector.Certs.Interval < time.Minute {
 		return fmt.Errorf("collector.certs.interval %s too short: use at least 1m", c.Collector.Certs.Interval)
+	}
+	if c.Collector.Redis.Mode() == "" {
+		return fmt.Errorf("collector.redis.enabled %q: use auto, true or false", c.Collector.Redis.Enabled)
+	}
+	for i, in := range c.Collector.Redis.Instances {
+		if in.Addr == "" {
+			return fmt.Errorf("collector.redis.instances[%d]: addr is required (host:port or unix:/path)", i)
+		}
 	}
 	for _, p := range c.Collector.Certs.ProbePorts {
 		if p < 1 || p > 65535 {

@@ -78,14 +78,16 @@ func TestValidateAndDurations(t *testing.T) {
 	}
 	dir := t.TempDir()
 	for name, y := range map[string]string{
-		"interval": "collector: {interval: 120s}\n",
-		"rollback": "ssh: {rollback_timeout: 1s}\n",
-		"certint":  "collector: {certs: {interval: 10s}}\n",
-		"certport": "collector: {certs: {probe_ports: [0]}}\n",
-		"dupchan":  "alerts: {channels: [{name: a, type: slack}, {name: a, type: slack}]}\n",
-		"badtype":  "alerts: {channels: [{name: a, type: sms}]}\n",
-		"noreason": "harden: {ignore: [{id: X}]}\n",
-		"yaml":     "listen: [\n",
+		"interval":  "collector: {interval: 120s}\n",
+		"rollback":  "ssh: {rollback_timeout: 1s}\n",
+		"certint":   "collector: {certs: {interval: 10s}}\n",
+		"certport":  "collector: {certs: {probe_ports: [0]}}\n",
+		"redismode": "collector: {redis: {enabled: maybe}}\n",
+		"redisaddr": "collector: {redis: {instances: [{name: x}]}}\n",
+		"dupchan":   "alerts: {channels: [{name: a, type: slack}, {name: a, type: slack}]}\n",
+		"badtype":   "alerts: {channels: [{name: a, type: sms}]}\n",
+		"noreason":  "harden: {ignore: [{id: X}]}\n",
+		"yaml":      "listen: [\n",
 	} {
 		p := filepath.Join(dir, name+".yaml")
 		os.WriteFile(p, []byte(y), 0o600)
@@ -97,6 +99,18 @@ func TestValidateAndDurations(t *testing.T) {
 	if err != nil || !c.Web.Enabled || !c.Collector.Certs.Enabled || c.Collector.Certs.Interval != time.Hour ||
 		len(c.Collector.Certs.ProbePorts) != 1 || c.Collector.Certs.ProbePorts[0] != 443 {
 		t.Fatalf("cert defaults: %v %+v", err, c.Collector.Certs)
+	}
+	if c.Collector.Redis.Mode() != "auto" {
+		t.Fatalf("redis default = %q", c.Collector.Redis.Enabled)
+	}
+	for in, want := range map[string]string{"redis: {enabled: true}": "on", "redis: {enabled: false}": "off",
+		"redis: {enabled: auto, instances: [{name: cache, addr: 127.0.0.1:6380, tls: true}]}": "auto"} {
+		p := filepath.Join(dir, "redis.yaml")
+		os.WriteFile(p, []byte("collector: {"+in+"}\n"), 0o600)
+		rc, err := Load(p)
+		if err != nil || rc.Collector.Redis.Mode() != want {
+			t.Fatalf("%s: %v %+v", in, err, rc)
+		}
 	}
 	p := filepath.Join(dir, "certs.yaml")
 	os.WriteFile(p, []byte("collector: {certs: {paths: [/srv/a.pem], probe_ports: []}}\n"), 0o600)

@@ -30,7 +30,8 @@ type Manager struct {
 	proc     *procCollector
 	sys      *sysCollector
 	svc      *svcCollector
-	certs    *certCollector // nil when collector.certs.enabled is off
+	certs    *certCollector  // nil when collector.certs.enabled is off
+	redis    *redisCollector // nil when collector.redis.enabled is false
 	cols     []named
 
 	latest atomic.Pointer[Snapshot]
@@ -49,11 +50,27 @@ func NewManager(cfg config.Collector, ex executor.Executor) *Manager {
 	if cfg.NginxLog != "" {
 		m.cols = append(m.cols, named{"nginx", &nginxCollector{path: cfg.NginxLog}})
 	}
+	if cfg.Redis.Mode() != "off" {
+		m.redis = newRedis(cfg.Redis, ex, m.interval)
+		m.cols = append(m.cols, named{"redis", m.redis})
+		m.Watch(m.redis.units()...) // service_down covers redis-server without editing watch_services
+	}
 	if cfg.Certs.Enabled {
 		m.certs = newCerts(cfg.Certs, ex)
 		m.cols = append(m.cols, named{"certs", m.certs})
 	}
 	return m
+}
+
+// Redis returns the latest per-instance Redis detail (empty when none is monitored).
+func (m *Manager) Redis() []RedisInstance {
+	if m.redis == nil {
+		return []RedisInstance{}
+	}
+	if st := m.redis.current(); st != nil {
+		return st
+	}
+	return []RedisInstance{}
 }
 
 // AddCollector registers an extra collector (e.g. the web site inventory); call before Run.
@@ -79,6 +96,9 @@ func (m *Manager) Run(ctx context.Context, sink func(*Snapshot)) {
 	go m.sys.loop(ctx)
 	if m.certs != nil {
 		go m.certs.loop(ctx)
+	}
+	if m.redis != nil {
+		go m.redis.loop(ctx)
 	}
 	m.collect(ctx, 0)
 	sched := time.Now().Add(time.Second)
@@ -131,7 +151,7 @@ func (m *Manager) collect(ctx context.Context, delay time.Duration) *Snapshot {
 		cs = []certs.Cert{}
 	}
 	return &Snapshot{TS: start, Samples: all, System: sys, TopCPU: m.proc.topCPU, TopMem: m.proc.topMem,
-		Conns: m.conn.info, Services: m.svc.state, Mounts: m.disk.mounts, Certs: cs, Lag: lag}
+		Conns: m.conn.info, Services: m.svc.state, Mounts: m.disk.mounts, Certs: cs, Redis: m.Redis(), Lag: lag}
 }
 
 // logErr logs a failing collector at most once a minute so one broken source cannot flood logs.
