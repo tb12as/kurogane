@@ -328,7 +328,7 @@ func (m *Manager) pick(ctx context.Context) string {
 	return "none"
 }
 
-const chain = "SERVERKEEPER"
+const chain = "KUROGANE"
 
 func (m *Manager) ensureChain(ctx context.Context, bin string) {
 	_, _ = m.ex.Run(ctx, bin, "-N", chain)
