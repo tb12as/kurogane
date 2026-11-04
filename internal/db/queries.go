@@ -369,6 +369,42 @@ func (s *SQLite) ListSSHChanges(ctx context.Context, limit int) ([]SSHChange, er
 	return out, rows.Err()
 }
 
+// ---- site changes ----
+
+func (s *SQLite) SaveSiteChange(ctx context.Context, c SiteChange) error {
+	if c.ServerID == "" {
+		c.ServerID = "local"
+	}
+	_, err := s.w.ExecContext(ctx, `INSERT INTO site_changes(id,server_id,actor,site_id,site_name,kind,action,ops,status,error,ts)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET status=excluded.status, error=excluded.error`,
+		c.ID, c.ServerID, c.Actor, c.SiteID, c.SiteName, c.Kind, c.Action, c.Ops, c.Status, c.Error, unix(c.TS))
+	return err
+}
+
+func (s *SQLite) ListSiteChanges(ctx context.Context, limit int) ([]SiteChange, error) {
+	if limit <= 0 {
+		limit = 100
+	}
+	rows, err := s.r.QueryContext(ctx, `SELECT id,server_id,actor,site_id,site_name,kind,action,ops,status,error,ts
+		FROM site_changes ORDER BY ts DESC LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []SiteChange{}
+	for rows.Next() {
+		var c SiteChange
+		var ts int64
+		if err := rows.Scan(&c.ID, &c.ServerID, &c.Actor, &c.SiteID, &c.SiteName, &c.Kind, &c.Action, &c.Ops, &c.Status,
+			&c.Error, &ts); err != nil {
+			return nil, err
+		}
+		c.TS = fromUnix(ts)
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
 // ---- scans & fixes & ignores ----
 
 func (s *SQLite) SaveScan(ctx context.Context, x Scan) error {

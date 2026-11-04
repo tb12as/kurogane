@@ -38,6 +38,8 @@ type Store interface {
 
 	SaveSSHChange(ctx context.Context, c SSHChange) error
 	ListSSHChanges(ctx context.Context, limit int) ([]SSHChange, error)
+	SaveSiteChange(ctx context.Context, c SiteChange) error
+	ListSiteChanges(ctx context.Context, limit int) ([]SiteChange, error)
 
 	SaveScan(ctx context.Context, s Scan) error
 	GetScan(ctx context.Context, id string) (Scan, error)

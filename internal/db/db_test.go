@@ -60,6 +60,24 @@ func TestStore(t *testing.T) {
 	if err := s.VacuumInto(ctx, filepath.Join(t.TempDir(), "b.db")); err != nil {
 		t.Fatal(err)
 	}
+	if err := s.SaveSiteChange(ctx, SiteChange{ID: "c1", Actor: "admin", SiteID: "nginx:/x#0", SiteName: "x", Kind: "nginx",
+		Action: "disable", Ops: "unlink /x", Status: "applying", TS: now}); err != nil {
+		t.Fatal(err)
+	}
+	s.SaveSiteChange(ctx, SiteChange{ID: "c1", Status: "applied", Actor: "admin", SiteID: "nginx:/x#0", SiteName: "x",
+		Kind: "nginx", Action: "disable", TS: now})
+	if cs, err := s.ListSiteChanges(ctx, 0); err != nil || len(cs) != 1 || cs[0].Status != "applied" || cs[0].Ops != "unlink /x" {
+		t.Fatalf("site changes = %+v %v", cs, err)
+	}
+	// later migrations roll back one at a time; the initial schema never does
+	for {
+		if err := s.MigrateDown(); err != nil {
+			break
+		}
+	}
+	if _, err := s.ListSiteChanges(ctx, 0); err == nil {
+		t.Fatal("site_changes survived its migration rollback")
+	}
 	if err := s.MigrateDown(); err == nil {
 		t.Fatal("initial schema must not be rolled back")
 	}

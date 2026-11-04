@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net"
 	"os"
 	"runtime/debug"
 	"strings"
@@ -91,7 +92,8 @@ func New(cfg *config.Config, ex executor.Executor, version string) (*Agent, erro
 	a.Metrics.StoreSize = a.Store.Size
 	if cfg.Web.Enabled {
 		a.Sites = sites.New(sites.Deps{Ex: ex, DB: a.DB, Store: a.Store, Audit: a.Audit, Fire: a.Alerts.Fire,
-			Publish: a.Hub.Publish, Certs: func() []certs.Cert { l, _ := a.Metrics.Certs(); return l }})
+			Publish: a.Hub.Publish, Certs: func() []certs.Cert { l, _ := a.Metrics.Certs(); return l },
+			SelfPort: listenPort(cfg.Listen)})
 		a.Metrics.AddCollector("web", a.Sites)
 		a.Metrics.Watch(sites.Units()...) // service_down covers the web servers without editing watch_services
 	}
@@ -106,6 +108,14 @@ func New(cfg *config.Config, ex executor.Executor, version string) (*Agent, erro
 		}
 	}
 	return a, nil
+}
+
+func listenPort(addr string) string {
+	_, p, err := net.SplitHostPort(addr)
+	if err != nil {
+		return ""
+	}
+	return p
 }
 
 // CLITokenPath is where the local admin token for the CLI is kept (0600).

@@ -32,6 +32,8 @@ type Deps struct {
 	Certs   func() []certs.Cert                // latest certificate scan, for days left per site
 	Publish func(event string, v any)
 	Now     func() time.Time
+	// SelfPort is the port ServerKeeper's own API listens on, to warn before disabling a site that proxies to it.
+	SelfPort string
 }
 
 // Manager keeps the site inventory and applies toggles.
@@ -42,17 +44,21 @@ type Manager struct {
 	inv      Inventory
 	tested   map[string]WebServer // last config test per kind
 	failures map[string]int       // consecutive failing config tests per kind
+
+	applyMu sync.Mutex // one change at a time
+	probe   prober
 }
 
 func New(d Deps) *Manager {
 	if d.Now == nil {
 		d.Now = time.Now
 	}
-	return &Manager{d: d, tested: map[string]WebServer{}, failures: map[string]int{}}
+	return &Manager{d: d, tested: map[string]WebServer{}, failures: map[string]int{}, probe: httpProbe}
 }
 
-// Run rescans until ctx is done.
+// Run rescans until ctx is done, after undoing any change interrupted by a restart.
 func (m *Manager) Run(ctx context.Context) {
+	m.resume(ctx)
 	m.Scan(ctx, true)
 	t := time.NewTicker(ScanEvery)
 	defer t.Stop()
@@ -143,6 +149,7 @@ func (m *Manager) certDays() map[string]float64 {
 // progress) and resolves it on the next passing test.
 func (m *Manager) alertConfig(ctx context.Context, w WebServer) {
 	m.mu.Lock()
+	prev := m.failures[w.Kind]
 	if w.ConfigOK {
 		m.failures[w.Kind] = 0
 	} else {
@@ -155,8 +162,10 @@ func (m *Manager) alertConfig(ctx context.Context, w WebServer) {
 	}
 	ev := alert.Event{Rule: "web_config_invalid", Severity: "warning", Labels: map[string]string{"server": w.Kind}}
 	switch {
-	case w.ConfigOK:
+	case w.ConfigOK && prev >= 2:
 		ev.Resolve = true
+	case w.ConfigOK:
+		return
 	case n >= 2:
 		ev.Title = w.Kind + " configuration test fails"
 		ev.Text = "`" + testCmd(w.Kind) + "` fails: " + w.ConfigError + ". The running server is unaffected, but " +
