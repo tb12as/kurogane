@@ -59,6 +59,7 @@ export interface RedisInstance {
   mode?: string
   role?: string
   uptime_s?: number
+  started_at?: string
   ping_ms?: number
   memory_used: number
   memory_rss: number
@@ -69,6 +70,14 @@ export interface RedisInstance {
   ops_ps: number
   hit_ratio?: number
   evicted_keys: number
+  total_connections: number
+  rejected_connections: number
+  total_commands: number
+  net_input_bytes: number
+  net_output_bytes: number
+  expired_keys: number
+  keyspace_hits: number
+  keyspace_misses: number
   rdb_status?: string
   last_save?: string
   changes_since_save: number

@@ -4140,6 +4140,8 @@ export interface components {
             config_file?: string;
             error?: string;
             evicted_keys?: number;
+            /** @description keys expired since start */
+            expired_keys?: number;
             hint?: string;
             /** @description percent; absent when there were no lookups */
             hit_ratio?: number;
@@ -4148,6 +4150,10 @@ export interface components {
                 keys?: number;
                 name?: string;
             }[];
+            /** @description successful key lookups since start */
+            keyspace_hits?: number;
+            /** @description failed key lookups since start */
+            keyspace_misses?: number;
             /** Format: date-time */
             last_save?: string;
             master_link?: string;
@@ -4158,9 +4164,15 @@ export interface components {
             memory_used?: number;
             mode?: string;
             name: string;
+            /** @description bytes received since start */
+            net_input_bytes?: number;
+            /** @description bytes sent since start */
+            net_output_bytes?: number;
             ops_ps?: number;
             ping_ms?: number;
             rdb_status?: string;
+            /** @description connections refused (maxclients) since start */
+            rejected_connections?: number;
             replicas?: number;
             role?: string;
             slowlog?: {
@@ -4176,6 +4188,10 @@ export interface components {
              * @enum {string}
              */
             status: "up" | "down" | "auth_failed" | "needs_credentials";
+            /** @description commands processed since start */
+            total_commands?: number;
+            /** @description connections accepted since start */
+            total_connections?: number;
             uptime_s?: number;
             version?: string;
         };
@@ -4440,6 +4456,11 @@ export interface components {
             pending_updates?: number;
             reboot_required?: boolean;
             security_updates?: number;
+            /**
+             * Format: date-time
+             * @description now minus uptime
+             */
+            started_at?: string;
             uptime_s?: number;
         };
         User: {

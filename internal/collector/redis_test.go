@@ -169,6 +169,10 @@ func TestRedisMetricsAndRates(t *testing.T) {
 		len(st.SlowLog) != 1 || st.SlowLog[0].Command != "GET" || st.HitRatio != nil {
 		t.Fatalf("state = %+v", st)
 	}
+	if st.TotalCommands != 1000 || st.KeyspaceHits != 90 || st.KeyspaceMiss != 10 ||
+		!st.StartedAt.Equal(now().Add(-100*time.Second).UTC().Truncate(time.Second)) {
+		t.Fatalf("totals = %+v", st)
+	}
 
 	adv(10 * time.Second)
 	f.set("total_commands_processed", "2000", "keyspace_hits", "170", "keyspace_misses", "30", "evicted_keys", "50",
@@ -275,10 +279,18 @@ func TestRedisDetection(t *testing.T) {
 		t.Fatalf("on = %+v", on.targets)
 	}
 	// auto with nothing installed: no targets, no samples, nothing logged as down
+	old := RedisDefaultAddr
+	t.Cleanup(func() { RedisDefaultAddr = old })
+	RedisDefaultAddr = "127.0.0.1:" + deadPort
 	auto := newRedis(config.Redis{}, executor.NewFake(), time.Second)
 	auto.poll(ctx)
 	if len(auto.targets) != 0 || len(auto.samples) != 0 || len(auto.current()) != 0 {
 		t.Fatalf("auto = %+v", auto)
+	}
+	// auto with no readable config but Redis answering on the default port (non-root agent)
+	RedisDefaultAddr = f.addr
+	if a := newRedis(config.Redis{}, executor.NewFake(), time.Second); len(a.targets) != 1 || a.targets[0].name != "redis" {
+		t.Fatalf("auto default = %+v", a.targets)
 	}
 	// RHEL names its unit redis
 	redisRoot(t, map[string]string{"etc/os-release": "ID=\"rocky\"\nID_LIKE=\"rhel\"\n", "etc/redis/redis.conf": "port 1\n"})
@@ -302,5 +314,36 @@ func TestManagerRedis(t *testing.T) {
 	off := NewManager(config.Collector{Interval: time.Second, Redis: config.Redis{Enabled: "false"}}, executor.NewFake())
 	if off.redis != nil || len(off.Redis()) != 0 {
 		t.Fatal("redis monitored while disabled")
+	}
+}
+
+// rootEx reads like the privsep root parent: files the worker cannot open.
+type rootEx struct {
+	*executor.Fake
+	files map[string]string
+}
+
+func (r rootEx) ReadFile(p string) ([]byte, error) {
+	if s, ok := r.files[p]; ok {
+		return []byte(s), nil
+	}
+	return nil, os.ErrNotExist
+}
+
+func TestRedisConfFilesUnreadableDir(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root ignores directory permissions")
+	}
+	dir := redisRoot(t, map[string]string{"etc/redis/redis.conf": "", "etc/redis/redis-cache.conf": ""})
+	os.Chmod(filepath.Join(dir, "etc/redis"), 0)
+	t.Cleanup(func() { os.Chmod(filepath.Join(dir, "etc/redis"), 0o755) })
+
+	ex := rootEx{executor.NewFake(), map[string]string{"/etc/redis/redis.conf": "", "/etc/redis/redis-cache.conf": ""}}
+	ex.Outputs["systemctl list-units --all --plain --no-legend redis-server@*"] =
+		"redis-server@cache.service loaded active running Advanced key-value store\n" +
+			"redis-server@gone.service not-found inactive dead redis-server@gone.service\n"
+	got := strings.Join(RedisConfFiles(t.Context(), ex), ",")
+	if got != "/etc/redis/redis.conf,/etc/redis/redis-cache.conf" {
+		t.Fatalf("files = %s", got)
 	}
 }

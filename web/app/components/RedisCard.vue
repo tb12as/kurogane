@@ -29,6 +29,19 @@ const persistence = computed(() => {
   return parts.join(' · ')
 })
 const saveFailed = computed(() => (props.r.rdb_status && props.r.rdb_status !== 'ok') || (props.r.aof_enabled && props.r.aof_status !== 'ok'))
+const totals = computed(() => {
+  const r = props.r
+  return [
+    { label: 'Commands', value: num(r.total_commands) },
+    { label: 'Connections', value: num(r.total_connections) },
+    { label: 'Rejected connections', value: num(r.rejected_connections) },
+    { label: 'Network in', value: bytes(r.net_input_bytes) },
+    { label: 'Network out', value: bytes(r.net_output_bytes) },
+    { label: 'Key hits / misses', value: `${num(r.keyspace_hits)} / ${num(r.keyspace_misses)}` },
+    { label: 'Expired keys', value: num(r.expired_keys) },
+    { label: 'Evicted keys', value: num(r.evicted_keys) },
+  ]
+})
 function ms(ns: number) {
   if (ns < 1e6) return `${Math.round(ns / 1e3)} µs`
   return `${(ns / 1e6).toFixed(ns < 1e7 ? 1 : 0)} ms`
@@ -43,6 +56,7 @@ function ms(ns: number) {
         <p class="truncate text-xs text-muted-foreground">
           {{ r.addr }}<template v-if="r.version"> · {{ r.version }}</template><template v-if="role"> · {{ role }}</template>
           <template v-if="r.uptime_s"> · up {{ uptime(r.uptime_s) }}</template>
+          <template v-if="when(r.started_at)"> (since {{ fmtDate(r.started_at) }})</template>
         </p>
       </div>
       <StateBadge :value="state" />
@@ -105,9 +119,18 @@ function ms(ns: number) {
           </div>
         </dl>
 
+        <div>
+          <p class="mb-1 text-xs text-muted-foreground">Totals since start</p>
+          <dl class="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
+            <div v-for="t in totals" :key="t.label">
+              <dt class="text-xs text-muted-foreground">{{ t.label }}</dt>
+              <dd class="tabular-nums">{{ t.value }}</dd>
+            </div>
+          </dl>
+        </div>
+
         <p :class="['text-xs', saveFailed ? 'text-crit' : 'text-muted-foreground']">
           <template v-if="saveFailed">Saving to disk is failing: </template>{{ persistence }}
-          <template v-if="r.evicted_keys"> · {{ num(r.evicted_keys) }} keys evicted since start</template>
         </p>
 
         <div v-if="r.keyspace.length" class="flex flex-wrap gap-1">

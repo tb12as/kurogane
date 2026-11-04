@@ -3,9 +3,10 @@ package collector
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"log/slog"
+	"os"
 	"path"
-	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -28,26 +29,36 @@ const (
 
 // RedisInstance is the per-instance detail kept in the snapshot.
 type RedisInstance struct {
-	Name             string                `json:"name"`
-	Addr             string                `json:"addr"`
-	ConfigFile       string                `json:"config_file,omitempty"`
-	Status           string                `json:"status"`
-	Error            string                `json:"error,omitempty"`
-	Hint             string                `json:"hint,omitempty"`
-	Version          string                `json:"version,omitempty"`
-	Mode             string                `json:"mode,omitempty"`
-	Role             string                `json:"role,omitempty"`
-	UptimeS          float64               `json:"uptime_s,omitempty"`
-	PingMs           float64               `json:"ping_ms,omitempty"`
-	MemoryUsed       float64               `json:"memory_used"`
-	MemoryRSS        float64               `json:"memory_rss"`
-	MaxMemory        float64               `json:"maxmemory"`
-	MaxMemoryPolicy  string                `json:"maxmemory_policy,omitempty"`
-	Clients          float64               `json:"clients"`
-	MaxClients       float64               `json:"maxclients"`
-	OpsPS            float64               `json:"ops_ps"`
-	HitRatio         *float64              `json:"hit_ratio,omitempty"` // nil when there were no lookups
-	EvictedKeys      float64               `json:"evicted_keys"`
+	Name            string    `json:"name"`
+	Addr            string    `json:"addr"`
+	ConfigFile      string    `json:"config_file,omitempty"`
+	Status          string    `json:"status"`
+	Error           string    `json:"error,omitempty"`
+	Hint            string    `json:"hint,omitempty"`
+	Version         string    `json:"version,omitempty"`
+	Mode            string    `json:"mode,omitempty"`
+	Role            string    `json:"role,omitempty"`
+	UptimeS         float64   `json:"uptime_s,omitempty"`
+	StartedAt       time.Time `json:"started_at,omitzero"`
+	PingMs          float64   `json:"ping_ms,omitempty"`
+	MemoryUsed      float64   `json:"memory_used"`
+	MemoryRSS       float64   `json:"memory_rss"`
+	MaxMemory       float64   `json:"maxmemory"`
+	MaxMemoryPolicy string    `json:"maxmemory_policy,omitempty"`
+	Clients         float64   `json:"clients"`
+	MaxClients      float64   `json:"maxclients"`
+	OpsPS           float64   `json:"ops_ps"`
+	HitRatio        *float64  `json:"hit_ratio,omitempty"` // nil when there were no lookups
+	EvictedKeys     float64   `json:"evicted_keys"`
+	// totals since start
+	TotalConns       float64               `json:"total_connections"`
+	RejectedConns    float64               `json:"rejected_connections"`
+	TotalCommands    float64               `json:"total_commands"`
+	NetInBytes       float64               `json:"net_input_bytes"`
+	NetOutBytes      float64               `json:"net_output_bytes"`
+	ExpiredKeys      float64               `json:"expired_keys"`
+	KeyspaceHits     float64               `json:"keyspace_hits"`
+	KeyspaceMiss     float64               `json:"keyspace_misses"`
 	RDBStatus        string                `json:"rdb_status,omitempty"`
 	LastSave         time.Time             `json:"last_save,omitzero"`
 	ChangesSinceSave float64               `json:"changes_since_save"`
@@ -97,6 +108,9 @@ type redisCollector struct {
 // Redis config files: Debian (/etc/redis/redis.conf, plus redis-<name>.conf for redis-server@<name>) and RHEL.
 var redisConfs = []string{"/etc/redis/redis.conf", "/etc/redis.conf"}
 
+// RedisDefaultAddr is polled when no config is usable (a var so tests can point it at a fake).
+var RedisDefaultAddr = "127.0.0.1:6379"
+
 func newRedis(cfg config.Redis, ex executor.Executor, interval time.Duration) *redisCollector {
 	c := &redisCollector{ex: ex, cfg: cfg, interval: interval, conns: map[string]*redisinfo.Conn{},
 		prev: map[string]redisPrev{}, slowAt: map[string]time.Time{}}
@@ -118,7 +132,7 @@ func (c *redisCollector) units() []string {
 }
 
 // detect resolves the instances to poll: configured ones, else every redis.conf whose unit is enabled or whose
-// port answers (auto), else the default port (enabled: true).
+// port answers (auto), else the default port (always with enabled: true, when it answers with auto).
 func (c *redisCollector) detect(ctx context.Context) {
 	var ts []redisTarget
 	if len(c.cfg.Instances) > 0 {
@@ -141,7 +155,7 @@ func (c *redisCollector) detect(ctx context.Context) {
 			ts = append(ts, redisTarget{name: name, target: t, hasPass: t.Password != "", explicit: true})
 		}
 	} else {
-		for _, f := range RedisConfFiles() {
+		for _, f := range RedisConfFiles(ctx, c.ex) {
 			rc, err := redisinfo.ParseConfig(c.ex, f)
 			if err != nil {
 				continue
@@ -157,8 +171,10 @@ func (c *redisCollector) detect(ctx context.Context) {
 				ts = append(ts, rt)
 			}
 		}
-		if len(ts) == 0 && c.cfg.Mode() == "on" {
-			ts = append(ts, redisTarget{name: "redis", target: redisinfo.Target{Addr: "127.0.0.1:6379"}})
+		// no usable config (none, or unreadable to a non-root agent): the default port, if auto finds it answering
+		def := redisinfo.Target{Addr: RedisDefaultAddr}
+		if len(ts) == 0 && (c.cfg.Mode() == "on" || c.answers(ctx, def)) {
+			ts = append(ts, redisTarget{name: "redis", target: def})
 		}
 	}
 	c.mu.Lock()
@@ -167,18 +183,55 @@ func (c *redisCollector) detect(ctx context.Context) {
 }
 
 // RedisConfFiles lists the Redis config files on this host (also used by the REDIS-* hardening checks).
-func RedisConfFiles() []string {
+// /etc/redis is usually 0750 redis:redis, so the privsep worker falls back to the root executor.
+func RedisConfFiles(ctx context.Context, ex executor.Executor) []string {
 	out := []string{}
 	for _, f := range redisConfs {
-		if hostfs.Exists(f) {
+		if confExists(ex, f) {
 			out = append(out, f)
 		}
 	}
-	ms, _ := filepath.Glob(hostfs.P("/etc/redis/redis-*.conf")) // sorted
-	for _, m := range ms {
-		out = append(out, "/etc/redis/"+filepath.Base(m))
+
+	es, err := os.ReadDir(hostfs.P("/etc/redis")) // sorted
+	for _, e := range es {
+		if n := e.Name(); strings.HasPrefix(n, "redis-") && strings.HasSuffix(n, ".conf") {
+			out = append(out, "/etc/redis/"+n)
+		}
+	}
+	if !errors.Is(err, fs.ErrPermission) {
+		return out
+	}
+
+	// unlistable dir: find instance configs through their redis-server@<name> units instead
+	b, _ := ex.Run(ctx, "systemctl", "list-units", "--all", "--plain", "--no-legend", "redis-server@*")
+	for _, l := range strings.Split(string(b), "\n") {
+		f := strings.Fields(l)
+		if len(f) == 0 {
+			continue
+		}
+		inst, ok := strings.CutPrefix(strings.TrimSuffix(f[0], ".service"), "redis-server@")
+		if !ok || inst == "" {
+			continue
+		}
+		if p := "/etc/redis/redis-" + inst + ".conf"; !slices.Contains(out, p) && confExists(ex, p) {
+			out = append(out, p)
+		}
 	}
 	return out
+}
+
+// confExists stats f directly and asks the executor only when access is denied (a plain miss is not
+// sent over, so the root side does not log a failed read for every absent path).
+func confExists(ex executor.Executor, f string) bool {
+	_, err := os.Stat(hostfs.P(f))
+	if err == nil {
+		return true
+	}
+	if !errors.Is(err, fs.ErrPermission) {
+		return false
+	}
+	_, err = ex.ReadFile(f)
+	return err == nil
 }
 
 // redisNames maps a config file to an instance name and its systemd unit.
@@ -371,6 +424,13 @@ func (c *redisCollector) metrics(name string, l map[string]string, in redisinfo.
 	t := now()
 	st.Version, st.Mode, st.Role = in["redis_version"], in["redis_mode"], in["role"]
 	st.UptimeS = in.Num("uptime_in_seconds")
+	if st.UptimeS > 0 {
+		st.StartedAt = t.Add(-time.Duration(st.UptimeS) * time.Second).UTC().Truncate(time.Second)
+	}
+	st.TotalConns, st.RejectedConns = in.Num("total_connections_received"), in.Num("rejected_connections")
+	st.TotalCommands, st.ExpiredKeys = in.Num("total_commands_processed"), in.Num("expired_keys")
+	st.NetInBytes, st.NetOutBytes = in.Num("total_net_input_bytes"), in.Num("total_net_output_bytes")
+	st.KeyspaceHits, st.KeyspaceMiss = in.Num("keyspace_hits"), in.Num("keyspace_misses")
 	st.MemoryUsed, st.MemoryRSS, st.MaxMemory = in.Num("used_memory"), in.Num("used_memory_rss"), in.Num("maxmemory")
 	st.MaxMemoryPolicy = in["maxmemory_policy"]
 	st.Clients, st.MaxClients = in.Num("connected_clients"), in.Num("maxclients")
