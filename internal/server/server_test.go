@@ -227,6 +227,8 @@ func TestAgentRoundTrip(t *testing.T) {
 	l.OnSnapshot(&collector.Snapshot{TS: time.UnixMilli(1700000000000), Samples: []collector.Sample{
 		{Metric: "cpu.total_pct", Value: 42.5},
 		{Metric: "disk.used_pct", Labels: map[string]string{"mount": "/"}, Value: 70},
+		{Metric: "cert.days_left", Labels: map[string]string{"name": "a.example"}, Value: 40},
+		{Metric: "cert.days_left", Labels: map[string]string{"name": "b.example"}, Value: 12.5},
 	}})
 	eventually(t, "samples in VM", func() bool {
 		e.c.Flush(ctx)
@@ -236,6 +238,12 @@ func TestAgentRoundTrip(t *testing.T) {
 		return strings.Contains(b, `cpu.total_pct{server="web-01"} 42.5 1700000000000`) &&
 			strings.Contains(b, `disk.used_pct{mount="/",server="web-01"} 70 1700000000000`)
 	})
+	e.c.mu.Lock()
+	ov := e.c.latest[srv.ID]
+	e.c.mu.Unlock()
+	if ov["cert_days"] != 12.5 || ov["disk"] != 70 {
+		t.Fatalf("overview latest = %v", ov)
+	}
 
 	o := addKeyOp{User: "deploy", PublicKey: "ssh-ed25519 AAAA", Label: "budi"}
 	op, err := e.c.Enqueue(ctx, srv.ID, "add_key", o)

@@ -137,7 +137,7 @@ components:
           properties:
             connected: {type: boolean}
             active_alerts: {type: integer}
-            latest: {type: object, description: "cpu, mem, disk (max over mounts) percent", additionalProperties: {type: number}}
+            latest: {type: object, description: "cpu, mem, disk (max over mounts) percent; cert_days: days until the soonest TLS certificate expiry", additionalProperties: {type: number}}
     Person:
       type: object
       properties:

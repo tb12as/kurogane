@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useIntervalFn } from '@vueuse/core'
-import type { Line, Proc, Series, Snapshot } from '~/types/models'
+import type { Cert, Line, Proc, Series, Snapshot } from '~/types/models'
 
 const route = useRoute()
 const id = computed(() => String(route.params.id))
@@ -131,6 +131,28 @@ const charts = computed(
 const procTab = ref('cpu')
 const procs = computed<Proc[]>(() => (procTab.value === 'cpu' ? snap.value?.top_cpu : snap.value?.top_mem) || [])
 
+// soonest expiry first; unreadable files last
+const certs = computed<Cert[]>(() =>
+  [...(snap.value?.certs || [])].sort(
+    (a, b) => Number(!!a.error) - Number(!!b.error) || a.days_left - b.days_left || a.name.localeCompare(b.name),
+  ),
+)
+const rescanning = ref(false)
+async function rescan() {
+  rescanning.value = true
+  // the next live snapshot (within one collection interval) carries the new scan
+  await run(() => api.post('/certs/rescan'), 'Certificates rescanned')
+  rescanning.value = false
+}
+function certNote(c: Cert) {
+  if (c.error) return c.error
+  const n: string[] = []
+  if (c.stale) n.push(`port ${c.served_port} serves an older copy (until ${when(c.served_not_after)?.toLocaleDateString() ?? '-'}): reload the web server`)
+  if (c.key_type === 'RSA' && (c.key_bits || 0) < 2048) n.push(`RSA ${c.key_bits} bits`)
+  if (/sha1|md5/i.test(c.sig_alg || '')) n.push(`signed with ${c.sig_alg}`)
+  return n.join(' · ')
+}
+
 async function kill(pid: number) {
   await run(() => api.del(`/ssh/sessions/${pid}`), `Session ${pid} killed`)
   refreshNuxtData(`sessions.${id.value}`)
@@ -226,6 +248,48 @@ async function kill(pid: number) {
       </CardContent>
     </Card>
   </div>
+
+  <Card v-if="local">
+    <CardHeader class="flex flex-row items-center justify-between">
+      <CardTitle>TLS certificates</CardTitle>
+      <Button variant="outline" size="sm" :disabled="rescanning" @click="rescan">
+        {{ rescanning ? 'Scanning…' : 'Rescan' }}
+      </Button>
+    </CardHeader>
+    <CardContent>
+      <p v-if="!certs.length" class="text-sm text-muted-foreground">
+        No certificates found. Let's Encrypt and nginx ssl_certificate files are found automatically; add other PEM
+        files to collector.certs.paths.
+      </p>
+      <Table v-else>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Expires</TableHead>
+            <TableHead>Issuer</TableHead>
+            <TableHead>Served</TableHead>
+            <TableHead class="text-right">State</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-for="c in certs" :key="c.name">
+            <TableCell class="max-w-72">
+              <div class="truncate font-mono" :title="c.dns_names?.join(', ')">{{ c.name }}</div>
+              <div class="truncate text-xs text-muted-foreground" :title="c.path">{{ c.origin }} · {{ c.path || 'no file found' }}</div>
+              <div v-if="certNote(c)" class="text-xs whitespace-normal break-words text-warn">{{ certNote(c) }}</div>
+            </TableCell>
+            <TableCell class="whitespace-nowrap tabular-nums">
+              <div>{{ c.error ? '-' : daysLeft(c.days_left) }}</div>
+              <div class="text-xs text-muted-foreground">{{ c.error ? '' : fmtDate(c.not_after) }}</div>
+            </TableCell>
+            <TableCell class="max-w-48 truncate" :title="c.issuer">{{ c.issuer || '-' }}</TableCell>
+            <TableCell class="tabular-nums">{{ c.served_port ? `:${c.served_port}` : '-' }}</TableCell>
+            <TableCell class="text-right"><StateBadge :value="certState(c)" /></TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </CardContent>
+  </Card>
 
   <Card v-if="local">
     <CardHeader><CardTitle>SSH sessions</CardTitle></CardHeader>

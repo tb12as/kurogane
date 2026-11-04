@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/tb12as/serverman/internal/certs"
 	"github.com/tb12as/serverman/internal/config"
 	"github.com/tb12as/serverman/internal/executor"
 )
@@ -28,6 +29,7 @@ type Manager struct {
 	proc     *procCollector
 	sys      *sysCollector
 	svc      *svcCollector
+	certs    *certCollector // nil when collector.certs.enabled is off
 	cols     []named
 
 	latest atomic.Pointer[Snapshot]
@@ -46,6 +48,10 @@ func NewManager(cfg config.Collector, ex executor.Executor) *Manager {
 	if cfg.NginxLog != "" {
 		m.cols = append(m.cols, named{"nginx", &nginxCollector{path: cfg.NginxLog}})
 	}
+	if cfg.Certs.Enabled {
+		m.certs = newCerts(cfg.Certs, ex)
+		m.cols = append(m.cols, named{"certs", m.certs})
+	}
 	return m
 }
 
@@ -56,6 +62,9 @@ func (m *Manager) Latest() *Snapshot { return m.latest.Load() }
 // so rates are available on the first published snapshot one second later.
 func (m *Manager) Run(ctx context.Context, sink func(*Snapshot)) {
 	go m.sys.loop(ctx)
+	if m.certs != nil {
+		go m.certs.loop(ctx)
+	}
 	m.collect(ctx, 0)
 	sched := time.Now().Add(time.Second)
 	t := time.NewTimer(time.Second)
@@ -102,8 +111,12 @@ func (m *Manager) collect(ctx context.Context, delay time.Duration) *Snapshot {
 	}
 	sys := m.sys.snapshot()
 	sys.CPUs, sys.MemTotal = m.cpu.cores, m.mem.total
+	cs, _ := m.Certs()
+	if cs == nil {
+		cs = []certs.Cert{}
+	}
 	return &Snapshot{TS: start, Samples: all, System: sys, TopCPU: m.proc.topCPU, TopMem: m.proc.topMem,
-		Conns: m.conn.info, Services: m.svc.state, Mounts: m.disk.mounts, Lag: lag}
+		Conns: m.conn.info, Services: m.svc.state, Mounts: m.disk.mounts, Certs: cs, Lag: lag}
 }
 
 // logErr logs a failing collector at most once a minute so one broken source cannot flood logs.

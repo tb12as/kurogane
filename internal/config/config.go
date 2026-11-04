@@ -49,6 +49,15 @@ type Collector struct {
 	WatchServices   []string      `mapstructure:"watch_services" json:"watch_services"`
 	NginxLog        string        `mapstructure:"nginx_log" json:"nginx_log"`
 	Prometheus      bool          `mapstructure:"prometheus" json:"prometheus"`
+	Certs           Certs         `mapstructure:"certs" json:"certs"`
+}
+
+// Certs configures TLS certificate expiry monitoring.
+type Certs struct {
+	Enabled    bool          `mapstructure:"enabled" json:"enabled"`
+	Paths      []string      `mapstructure:"paths" json:"paths"`             // extra PEM files
+	ProbePorts []int         `mapstructure:"probe_ports" json:"probe_ports"` // local TLS handshakes; empty disables
+	Interval   time.Duration `mapstructure:"interval" json:"interval"`
 }
 
 type SSH struct {
@@ -186,6 +195,9 @@ func defaults(v *viper.Viper) {
 	v.SetDefault("collector.interval", "10s")
 	v.SetDefault("collector.retention_raw", "24h")
 	v.SetDefault("collector.retention_rollup", "7d")
+	v.SetDefault("collector.certs.enabled", true)
+	v.SetDefault("collector.certs.probe_ports", []int{443})
+	v.SetDefault("collector.certs.interval", "1h")
 	v.SetDefault("ssh.config_path", "/etc/ssh/sshd_config")
 	v.SetDefault("ssh.rollback_timeout", "120s")
 	v.SetDefault("ssh.bruteforce.max_failures", 5)
@@ -270,6 +282,14 @@ func Load(path string) (*Config, error) {
 func (c *Config) Validate() error {
 	if c.Collector.Interval < time.Second || c.Collector.Interval > 60*time.Second {
 		return fmt.Errorf("collector.interval %s out of range: use 1s to 60s", c.Collector.Interval)
+	}
+	if c.Collector.Certs.Enabled && c.Collector.Certs.Interval < time.Minute {
+		return fmt.Errorf("collector.certs.interval %s too short: use at least 1m", c.Collector.Certs.Interval)
+	}
+	for _, p := range c.Collector.Certs.ProbePorts {
+		if p < 1 || p > 65535 {
+			return fmt.Errorf("collector.certs.probe_ports: %d is not a port", p)
+		}
 	}
 	if c.SSH.RollbackTimeout < 10*time.Second {
 		return fmt.Errorf("ssh.rollback_timeout %s too short: use at least 10s", c.SSH.RollbackTimeout)

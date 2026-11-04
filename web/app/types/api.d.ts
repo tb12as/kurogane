@@ -835,6 +835,99 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/certs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** TLS certificates found on this host with expiry and served state (latest scan) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CertList"];
+                    };
+                };
+                /** @description no local collector (central server) */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/certs/rescan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Scan certificates now (returns the last scan if one ran in the past 10 seconds) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CertList"];
+                    };
+                };
+                /** @description certificate monitoring disabled */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description no local collector (central server) */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/fleet/enrollment-tokens": {
         parameters: {
             query?: never;
@@ -3295,6 +3388,46 @@ export interface components {
             ip?: string;
             reason?: string;
         };
+        Cert: {
+            chain?: number;
+            /** @description negative once expired */
+            days_left: number;
+            dns_names?: string[];
+            error?: string;
+            /** @description SHA-256 of the DER leaf */
+            fingerprint?: string;
+            issuer?: string;
+            key_bits?: number;
+            key_type?: string;
+            /** @description Let's Encrypt lineage, else the first DNS name; the cert.days_left label */
+            name: string;
+            /** Format: date-time */
+            not_after?: string;
+            /** Format: date-time */
+            not_before?: string;
+            /** @enum {string} */
+            origin: "letsencrypt" | "nginx" | "config" | "live";
+            path?: string;
+            /** Format: date-time */
+            served_not_after?: string;
+            /** @description local port that serves this certificate (or an older one) */
+            served_port?: number;
+            /** @description nginx server_name values using this file */
+            server_names?: string[];
+            sig_alg?: string;
+            /** @description the port serves an older certificate than the file */
+            stale: boolean;
+            subject?: string;
+        };
+        CertList: {
+            certs: components["schemas"]["Cert"][];
+            enabled: boolean;
+            /**
+             * Format: date-time
+             * @description absent before the first scan
+             */
+            scanned_at?: string;
+        };
         ChannelInfo: {
             has_secret?: boolean;
             name?: string;
@@ -3409,7 +3542,7 @@ export interface components {
         FleetOverviewRow: components["schemas"]["FleetServer"] & {
             active_alerts?: number;
             connected?: boolean;
-            /** @description cpu, mem, disk (max over mounts) percent */
+            /** @description cpu, mem, disk (max over mounts) percent; cert_days: days until the soonest TLS certificate expiry */
             latest?: {
                 [key: string]: number;
             };
@@ -3667,6 +3800,8 @@ export interface components {
             starts_at?: string;
         };
         Snapshot: {
+            /** @description TLS certificates from the latest scan */
+            certs?: components["schemas"]["Cert"][];
             conns?: components["schemas"]["ConnInfo"];
             /** @description collection lag in nanoseconds */
             lag_ns?: number;

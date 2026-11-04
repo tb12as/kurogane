@@ -46,6 +46,9 @@ var builtins = []builtin{
 	{"service_down", "Service down", "service.active < 1", "critical", 0, 0},
 	{"updates_pending", "Reboot required / security updates pending", "sys.security_updates > 0 or sys.reboot_required > 0",
 		"info", 0, 0},
+	{"cert_expiring", "TLS certificate expiring", "cert.days_left < %g", "warning", 14, 0},
+	// renew-then-reload can take a few minutes; an hour means the reload was really missed
+	{"cert_stale_served", "Renewed TLS certificate not served", "cert.stale_served > %g", "warning", 0, time.Hour},
 	// fired by other packages through Engine.Fire
 	{"ssh_bruteforce", "SSH brute force", "", "warning", 0, 0},
 	{"ssh_login", "New SSH login", "", "info", 0, 0},
@@ -59,12 +62,14 @@ var builtins = []builtin{
 var critExpr = map[string]string{
 	"mem_available_low": "mem.available_pct < 5",
 	"disk_full":         "disk.used_pct > 95",
+	"cert_expiring":     "cert.days_left < 3",
 }
 
 // onceRules send a firing message only; the next sample resolves them silently.
 var onceRules = map[string]bool{"oom_kill": true}
 
-var repeatOverride = map[string]time.Duration{"updates_pending": 24 * time.Hour}
+var repeatOverride = map[string]time.Duration{"updates_pending": 24 * time.Hour, "cert_expiring": 24 * time.Hour,
+	"cert_stale_served": 24 * time.Hour}
 
 var titles = map[string]string{}
 
@@ -193,6 +198,8 @@ func describe(r *rule, in inst, s *collector.Snapshot, held time.Duration) (stri
 		text = fmt.Sprintf("Watched unit %s is not active (%s)", l["unit"], sub)
 	case "updates_pending":
 		text = fmt.Sprintf("%d security updates pending, reboot required: %v", s.System.SecurityUpdates, s.System.RebootRequired)
+	case "cert_expiring", "cert_stale_served":
+		text, fields = certText(r.ID, l["name"], s)
 	default:
 		text = fmt.Sprintf("%s (value %.4g) for %s", r.Expr, in.v, durH(held))
 		if len(l) > 0 {
@@ -200,6 +207,38 @@ func describe(r *rule, in inst, s *collector.Snapshot, held time.Duration) (stri
 		}
 	}
 	return title, text, fields
+}
+
+// certText names the certificate, its expiry and what to do about it.
+func certText(id, name string, s *collector.Snapshot) (string, []notify.Field) {
+	for _, c := range s.Certs {
+		if c.Name != name {
+			continue
+		}
+		var fields []notify.Field
+		if c.Path != "" {
+			fields = append(fields, notify.Field{Name: "File", Value: c.Path})
+		}
+		if c.ServedPort != 0 {
+			fields = append(fields, notify.Field{Name: "Served on", Value: fmt.Sprintf("127.0.0.1:%d", c.ServedPort)})
+		}
+		if id == "cert_stale_served" {
+			return fmt.Sprintf("%s was renewed on disk (valid until %s) but the server still sends the old "+
+				"certificate, valid until %s. Reload the web server (for nginx: systemctl reload nginx).", name,
+				c.NotAfter.Format(time.DateOnly), c.ServedNotAfter.Format(time.DateOnly)), fields
+		}
+		when := fmt.Sprintf("expires in %.1f days", c.DaysLeft)
+		if c.DaysLeft < 0 {
+			when = fmt.Sprintf("expired %.1f days ago", -c.DaysLeft)
+		}
+		hint := "Renew it and reload the server using it."
+		if c.Origin == "letsencrypt" {
+			hint = "Automatic renewal is failing: run `certbot renew --dry-run` to see why."
+		}
+		return fmt.Sprintf("Certificate %s %s (%s, issuer %s). %s", name, when,
+			c.NotAfter.Format(time.DateOnly), c.Issuer, hint), fields
+	}
+	return "Certificate " + name + " is expiring", nil
 }
 
 // ddosText lists top sources/subnets/ports and SYN cookie status (§8.2).

@@ -11,6 +11,11 @@ collector:
   watch_services: [nginx, mysql, docker]
   # nginx_log: /var/log/nginx/access.log          # optional HTTP 4xx/5xx rate
   # prometheus: false                             # opt-in /metrics endpoint
+  certs:                                          # TLS certificate expiry monitoring
+    enabled: true                                 # Let's Encrypt + nginx ssl_certificate are found automatically
+    # paths: [/etc/haproxy/certs/site.pem]        # extra PEM files (private key files are never read)
+    probe_ports: [443]                            # local TLS handshakes; [] disables
+    interval: 1h
 
 ssh:
   rollback_timeout: 120s

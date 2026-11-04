@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/tb12as/serverman/internal/certs"
 )
 
 // Sample is one metric value at a point in time (data model §10.4).
@@ -75,6 +77,7 @@ type Snapshot struct {
 	Conns    ConnInfo       `json:"conns"`
 	Services []ServiceState `json:"services"`
 	Mounts   []Mount        `json:"mounts"`
+	Certs    []certs.Cert   `json:"certs"`
 	Lag      time.Duration  `json:"lag_ns"`
 }
 

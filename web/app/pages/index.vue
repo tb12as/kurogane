@@ -171,6 +171,7 @@ const hard = computed(() => status.value?.hardening)
               <TableHead>CPU</TableHead>
               <TableHead>Memory</TableHead>
               <TableHead>Disk (max)</TableHead>
+              <TableHead>Next cert expiry</TableHead>
               <TableHead>Alerts</TableHead>
               <TableHead>Score</TableHead>
               <TableHead>Last seen</TableHead>
@@ -188,6 +189,12 @@ const hard = computed(() => status.value?.hardening)
               <TableCell class="tabular-nums">{{ pct(x.latest?.cpu) }}</TableCell>
               <TableCell class="tabular-nums">{{ pct(x.latest?.mem) }}</TableCell>
               <TableCell class="tabular-nums">{{ pct(x.latest?.disk) }}</TableCell>
+              <TableCell class="whitespace-nowrap tabular-nums">
+                <span v-if="x.latest?.cert_days === undefined" class="text-muted-foreground">-</span>
+                <span v-else :class="x.latest.cert_days < 3 ? 'text-crit' : x.latest.cert_days < 14 ? 'text-warn' : ''">
+                  {{ daysLeft(x.latest.cert_days) }}
+                </span>
+              </TableCell>
               <TableCell class="tabular-nums">{{ x.active_alerts || 0 }}</TableCell>
               <TableCell class="tabular-nums">{{ x.grade ? `${x.grade} · ${Math.round(x.score)}` : '-' }}</TableCell>
               <TableCell>{{ ago(x.last_seen) }}</TableCell>
