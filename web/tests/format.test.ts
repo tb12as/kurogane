@@ -41,3 +41,29 @@ test('certificate expiry', () => {
   assert.equal(certState({ days_left: -1 }), 'critical')
   assert.equal(certState({ error: 'file not found' }), 'error')
 })
+
+import { buildExpr, describe, forLabel, formatValue, matches, numText, slug } from '../app/composables/rules.ts'
+
+test('rule expressions and wording', () => {
+  const disk = { unit: 'pct', title: 'Disk space used' } as never
+  assert.equal(buildExpr('and', [{ metric: 'disk.used_pct', labels: { mount: '/' }, op: '>', value: 85 }]), 'disk.used_pct{mount="/"} > 85')
+  assert.equal(
+    buildExpr('or', [
+      { metric: 'mem.available_pct', op: '<', value: 10 },
+      { metric: 'swap.used_pct', labels: { mount: '' }, op: '>=', value: 50.5 },
+    ]),
+    'mem.available_pct < 10 or swap.used_pct >= 50.5',
+  )
+  assert.equal(describe({ metric: 'disk.used_pct', labels: { mount: '/data' }, op: '>=', value: 85 }, disk), 'Disk space used (mount /data) at or above 85 %')
+  const up = { unit: 'bool', title: 'Redis', states: { '1': 'up', '0': 'down' } } as never
+  assert.equal(describe({ metric: 'redis.up', op: '<', value: 1 }, up), 'Redis is down')
+  assert.equal(describe({ metric: 'x.y', op: '>', value: 3 }), 'x.y above 3')
+  assert.equal(formatValue({ unit: 'bytes_ps' }, 10485760), '10 MB/s')
+  assert.equal(formatValue({ unit: 'days' }, 1), '1 day')
+  assert.equal(numText(0.1 + 0.2), '0.3')
+  assert.equal(slug('Root disk almost full!'), 'root_disk_almost_full')
+  assert.equal(forLabel(300e9), '5 minutes')
+  assert.equal(forLabel(420e9), '7 minutes')
+  assert.equal(matches({ metric: 'm', labels: { mount: '/' }, op: '>', value: 80 }, { labels: { mount: '/' }, value: 90 }), true)
+  assert.equal(matches({ metric: 'm', labels: { mount: '/' }, op: '>', value: 80 }, { labels: { mount: '/data' }, value: 90 }), false)
+})

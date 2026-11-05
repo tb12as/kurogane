@@ -172,6 +172,13 @@ export interface Ignore {
   created_at: string
   id?: string
 }
+export type Op = '>' | '>=' | '<' | '<=' | '==' | '!='
+export interface RuleCondition {
+  metric: string
+  labels?: Record<string, string>
+  op: Op
+  value: number
+}
 export interface AlertRule {
   id: string
   name: string
@@ -182,6 +189,24 @@ export interface AlertRule {
   enabled: boolean
   tags: string[]
   builtin: boolean
+  conditions?: { join: 'and' | 'or'; items: RuleCondition[] } | null // null: mixes and/or, edit in config
+  summary?: string
+}
+export type MetricUnit = 'pct' | 'bytes' | 'bytes_ps' | 'count' | 'per_s' | 'ms' | 's' | 'h' | 'days' | 'ratio' | 'bool'
+export interface MetricDef {
+  name: string
+  group: string
+  title: string
+  description: string
+  unit: MetricUnit
+  labels?: string[]
+  presets: number[]
+  min?: number
+  max?: number
+  states?: Record<string, string>
+  default_op: Op
+  computed?: boolean
+  live: { labels?: Record<string, string>; value: number }[]
 }
 export interface AlertEvent {
   id: string

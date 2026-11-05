@@ -317,6 +317,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/alerts/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Metrics a rule can use, with description, source, unit, labels, preset thresholds and current values */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MetricDef"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/alerts/rules": {
         parameters: {
             query?: never;
@@ -3753,6 +3789,12 @@ export interface components {
         AlertRule: {
             builtin?: boolean;
             channels?: string[];
+            /** @description expr as comparisons joined by one operator; null when it mixes and/or (read-only) */
+            conditions?: {
+                items?: components["schemas"]["RuleCondition"][];
+                /** @enum {string} */
+                join?: "and" | "or";
+            } | null;
             enabled?: boolean;
             expr?: string;
             /** @description nanoseconds */
@@ -3760,6 +3802,8 @@ export interface components {
             id?: string;
             name?: string;
             severity?: string;
+            /** @description expr in words, e.g. CPU usage, all cores above 90 % (read-only) */
+            summary?: string;
             tags?: string[];
         };
         AlertRuleInput: {
@@ -4090,6 +4134,33 @@ export interface components {
             role?: string;
             scopes?: string[];
         };
+        MetricDef: {
+            /** @description derived by the alert engine; no history */
+            computed?: boolean;
+            default_op: string;
+            /** @description what it measures and where it comes from */
+            description: string;
+            group: string;
+            labels?: string[];
+            /** @description current values on this agent (empty on the central server) */
+            live: {
+                labels?: {
+                    [key: string]: string;
+                };
+                value?: number;
+            }[];
+            max?: number;
+            min?: number;
+            name: string;
+            presets: number[];
+            /** @description bool metrics: words for "1" and "0" */
+            states?: {
+                [key: string]: string;
+            };
+            title: string;
+            /** @enum {string} */
+            unit: "pct" | "bytes" | "bytes_ps" | "count" | "per_s" | "ms" | "s" | "h" | "days" | "ratio" | "bool";
+        };
         MetricHistory: {
             /** Format: date-time */
             from?: string;
@@ -4194,6 +4265,15 @@ export interface components {
             total_connections?: number;
             uptime_s?: number;
             version?: string;
+        };
+        RuleCondition: {
+            labels?: {
+                [key: string]: string;
+            };
+            metric: string;
+            /** @enum {string} */
+            op: ">" | ">=" | "<" | "<=" | "==" | "!=";
+            value: number;
         };
         SSHChange: {
             actor?: string;
