@@ -154,7 +154,7 @@ var catalog = []MetricDef{
 	def("net.conns_per_ip_max", "Connections", "Most connections from one IP", "count", "Connections from the busiest single remote address. "+srcConns).p(50, 100, 200, 500),
 	def("net.conns_per_subnet_max", "Connections", "Most connections from one /24", "count", "Connections from the busiest /24 subnet. "+srcConns).p(100, 200, 500, 1000),
 	def("net.listening_ports", "Connections", "Listening ports", "count", "Distinct listening TCP/UDP ports. "+srcConns),
-	def("net.anomaly", "Connections", "Traffic anomaly detected", "bool", "1 when traffic or new connections are far above the learned baseline for this hour. "+srcEngine).states("anomaly", "normal").computed(),
+	def("net.anomaly", "Connections", "Traffic pattern", "bool", "1 when traffic or new connections are far above the learned baseline for this hour. "+srcEngine).states("anomalous", "normal").computed(),
 
 	// Processes
 	def("proc.total", "Processes", "Processes", "count", "Running processes. "+srcProc).p(200, 500, 1000, 2000),
@@ -164,26 +164,26 @@ var catalog = []MetricDef{
 
 	// System
 	def("sys.uptime_s", "System", "Uptime", "s", "Seconds since boot, from /proc/uptime. Below a few minutes means a reboot.").below().p(300, 600, 3600),
-	def("sys.reboot_required", "System", "Reboot required", "bool", "1 when installed updates need a reboot (/run/reboot-required or needs-restarting).").states("required", "not required"),
+	def("sys.reboot_required", "System", "Reboot", "bool", "1 when installed updates need a reboot (/run/reboot-required or needs-restarting).").states("required", "not required"),
 	def("sys.security_updates", "System", "Pending security updates", "count", "Security updates not installed yet, from apt or dnf, checked every few hours.").p(0, 1, 5, 10),
 	def("sys.pending_updates", "System", "Pending updates", "count", "All updates not installed yet, from apt or dnf.").p(0, 10, 50, 100),
 
 	// Services
-	def("service.active", "Services", "Service running", "bool", "1 when the systemd unit is active. "+srcSystemd).l("unit").states("running", "not running"),
+	def("service.active", "Services", "Service", "bool", "1 when the systemd unit is active. "+srcSystemd).l("unit").states("running", "not running"),
 	def("http.rps", "Services", "HTTP requests per second", "per_s", "Requests per second from the nginx access log tail (collector.nginx_log).").p(10, 100, 500, 1000),
 	def("http.4xx_ps", "Services", "HTTP 4xx per second", "per_s", "Client error responses per second from the nginx access log tail.").p(1, 10, 50, 100),
 	def("http.5xx_ps", "Services", "HTTP 5xx per second", "per_s", "Server error responses per second from the nginx access log tail.").p(0, 1, 5, 10),
 
 	// Web servers
-	def("web.config_ok", "Web servers", "Web server config test passes", "bool", "1 when nginx -t / apachectl configtest passes, tested every 15 minutes and after each site change.").l("server").states("passes", "fails"),
+	def("web.config_ok", "Web servers", "Web server config test", "bool", "1 when nginx -t / apachectl configtest passes, tested every 15 minutes and after each site change.").l("server").states("passes", "fails"),
 	def("web.sites", "Web servers", "Web sites", "count", "Sites per web server and state (enabled or disabled), from the parsed nginx/Apache configuration.").l("server", "state"),
 
 	// TLS certificates
 	def("cert.days_left", "TLS certificates", "Days until certificate expiry", "days", "Days until each certificate expires, negative once expired. "+srcCerts).l("name").below(),
-	def("cert.stale_served", "TLS certificates", "Renewed certificate not served", "bool", "1 when a local port still serves an older certificate than the file on disk (renewed but not reloaded). "+srcCerts).l("name").states("stale", "current"),
+	def("cert.stale_served", "TLS certificates", "Served certificate", "bool", "1 when a local port still serves an older certificate than the file on disk (renewed but not reloaded). "+srcCerts).l("name").states("stale", "current"),
 
 	// Redis
-	def("redis.up", "Redis", "Redis answering", "bool", "1 when the instance answers PING with Kurogane's credentials, 0 when it is down or rejects them. "+srcRedis).l("instance"),
+	def("redis.up", "Redis", "Redis", "bool", "1 when the instance answers PING with Kurogane's credentials, 0 when it is down or rejects them. "+srcRedis).l("instance"),
 	def("redis.ping_ms", "Redis", "Redis PING time", "ms", "Round trip of a PING measured by the agent. "+srcRedis).l("instance").p(5, 10, 50, 100, 250),
 	def("redis.memory_used_pct", "Redis", "Redis memory used (of maxmemory)", "pct", "used_memory as a share of maxmemory; only reported when maxmemory is set. "+srcRedis).l("instance"),
 	def("redis.memory_used_bytes", "Redis", "Redis memory used", "bytes", "used_memory. "+srcRedis).l("instance"),
@@ -202,8 +202,8 @@ var catalog = []MetricDef{
 	def("redis.net_out_bps", "Redis", "Redis network out", "bytes_ps", "Bytes sent per second. "+srcRedis).l("instance"),
 	def("redis.keys", "Redis", "Redis keys per database", "count", "Keys in each database. "+srcRedis).l("instance", "db").p(1000, 100000, 1000000, 10000000),
 	def("redis.keys_total", "Redis", "Redis keys", "count", "Keys over all databases. "+srcRedis).l("instance").p(1000, 100000, 1000000, 10000000),
-	def("redis.rdb_ok", "Redis", "Redis last save succeeded", "bool", "0 when the last RDB snapshot failed: changes would be lost on a restart. "+srcRedis).l("instance").states("ok", "failing"),
-	def("redis.aof_ok", "Redis", "Redis AOF writes succeed", "bool", "0 when AOF writes or rewrites fail; only reported with appendonly on. "+srcRedis).l("instance").states("ok", "failing"),
+	def("redis.rdb_ok", "Redis", "Redis last save", "bool", "0 when the last RDB snapshot failed: changes would be lost on a restart. "+srcRedis).l("instance").states("ok", "failing"),
+	def("redis.aof_ok", "Redis", "Redis AOF writes", "bool", "0 when AOF writes or rewrites fail; only reported with appendonly on. "+srcRedis).l("instance").states("ok", "failing"),
 	def("redis.rdb_changes_since_save", "Redis", "Redis unsaved changes", "count", "Writes since the last successful RDB save. "+srcRedis).l("instance").p(1000, 10000, 100000, 1000000),
 	def("redis.rdb_last_save_age_s", "Redis", "Seconds since Redis last saved", "s", "Time since the last successful RDB save. "+srcRedis).l("instance").p(3600, 21600, 86400, 172800),
 	def("redis.uptime_s", "Redis", "Redis uptime", "s", "Seconds since the instance started. "+srcRedis).l("instance").below(),
