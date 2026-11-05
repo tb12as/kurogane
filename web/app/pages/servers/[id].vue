@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useIntervalFn } from '@vueuse/core'
+import { useIntervalFn, useLocalStorage } from '@vueuse/core'
 import type { Cert, Line, Proc, Series, Snapshot } from '~/types/models'
 
 const route = useRoute()
@@ -137,6 +137,22 @@ const charts = computed(
     ] as const).filter(c => !c.title.startsWith('Redis') || c.lines.length),
 )
 
+// charts shown at full width, remembered per browser; the change animates where View Transitions are supported
+const wideCharts = useLocalStorage<string[]>('krgn.wide-charts', [])
+function isWide(title: string) {
+  return wideCharts.value.includes(title)
+}
+function setWide(title: string, on: boolean) {
+  const apply = async () => {
+    wideCharts.value = on ? [...wideCharts.value.filter(t => t !== title), title] : wideCharts.value.filter(t => t !== title)
+    await nextTick()
+  }
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  const vt = (document as Document & { startViewTransition?: (cb: () => Promise<void>) => unknown }).startViewTransition
+  if (vt && !reduced) vt.call(document, apply)
+  else void apply()
+}
+
 const procTab = ref('cpu')
 const procs = computed<Proc[]>(() => (procTab.value === 'cpu' ? snap.value?.top_cpu : snap.value?.top_mem) || [])
 
@@ -191,7 +207,7 @@ async function kill(pid: number) {
     <AlertDescription>{{ errMsg(error) }}</AlertDescription>
   </Alert>
 
-  <section aria-label="Charts" class="grid gap-4 lg:grid-cols-2">
+  <section aria-label="Charts" class="grid gap-4 lg:grid-flow-dense lg:grid-cols-2">
     <MetricChart
       v-for="c in charts"
       :key="c.title"
@@ -199,6 +215,10 @@ async function kill(pid: number) {
       :unit="c.unit"
       :lines="c.lines"
       :loading="pending"
+      expandable
+      :wide="isWide(c.title)"
+      :class="{ 'lg:col-span-2': isWide(c.title) }"
+      @update:wide="v => setWide(c.title, v)"
     />
   </section>
 

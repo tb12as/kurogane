@@ -14,6 +14,26 @@ html[data-density="compact"] {
   --spacing: 0.2rem;
 }
 
+/* Wide charts (pages/servers/[id].vue): the toggled card morphs between half and full width and its neighbours
+   slide into place. Snapshots keep their size and anchor top-left instead of stretching the old canvas. */
+::view-transition-group(*) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+::view-transition-old(*),
+::view-transition-new(*) {
+  height: 100%;
+  object-fit: none;
+  object-position: left top;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
 :root {
   --radius: 0.5rem;
   --background: #f3f4f4;

@@ -5,13 +5,17 @@ import { AriaComponent, GridComponent, LegendComponent, TooltipComponent } from 
 import { CanvasRenderer } from 'echarts/renderers'
 import VChart from 'vue-echarts'
 import { useDark } from '@vueuse/core'
+import { Maximize2, Minimize2 } from '@lucide/vue'
 import type { Line } from '~/types/models'
 
 use([LineChart, GridComponent, TooltipComponent, LegendComponent, AriaComponent, CanvasRenderer])
 
 type Unit = 'pct' | 'bytes' | 'bps' | 'num'
 
-const props = defineProps<{ title: string; lines: Line[]; unit: Unit; loading?: boolean }>()
+const props = defineProps<{ title: string; lines: Line[]; unit: Unit; loading?: boolean; wide?: boolean; expandable?: boolean }>()
+const emit = defineEmits<{ 'update:wide': [boolean] }>()
+// a stable name lets the page animate this card between half and full width (View Transitions API)
+const vtName = computed(() => `chart-${slug(props.title) || 'x'}`)
 const dark = useDark()
 
 // categorical palette in fixed order (validated light/dark steps); color follows series position in its chart
@@ -89,9 +93,22 @@ const empty = computed(() => !props.lines.some(l => l.data.length))
 </script>
 
 <template>
-  <Card class="gap-2 py-4">
-    <CardHeader class="px-4">
+  <Card class="gap-2 py-4" :style="{ viewTransitionName: vtName }">
+    <CardHeader class="flex flex-row items-center justify-between gap-2 px-4">
       <CardTitle class="text-sm">{{ title }}</CardTitle>
+      <Button
+        v-if="expandable"
+        variant="ghost"
+        size="icon"
+        class="-my-2 hidden size-7 text-muted-foreground lg:inline-flex"
+        :aria-pressed="wide"
+        :aria-label="wide ? `Show ${title} at half width` : `Show ${title} at full width`"
+        :title="wide ? 'Show half width' : 'Show full width'"
+        @click="emit('update:wide', !wide)"
+      >
+        <Minimize2 v-if="wide" class="size-4" />
+        <Maximize2 v-else class="size-4" />
+      </Button>
     </CardHeader>
     <CardContent class="px-2">
       <Skeleton v-if="loading && empty" class="h-56 w-full" />
