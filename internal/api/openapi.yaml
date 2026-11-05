@@ -70,6 +70,20 @@ components:
                     items:
                         type: string
                     type: array
+                conditions:
+                    description: expr as comparisons joined by one operator; null when it mixes and/or (read-only)
+                    nullable: true
+                    properties:
+                        items:
+                            items:
+                                $ref: '#/components/schemas/RuleCondition'
+                            type: array
+                        join:
+                            enum:
+                                - and
+                                - or
+                            type: string
+                    type: object
                 enabled:
                     type: boolean
                 expr:
@@ -82,6 +96,9 @@ components:
                 name:
                     type: string
                 severity:
+                    type: string
+                summary:
+                    description: expr in words, e.g. CPU usage, all cores above 90 % (read-only)
                     type: string
                 tags:
                     items:
@@ -755,6 +772,75 @@ components:
                         type: string
                     type: array
             type: object
+        MetricDef:
+            properties:
+                computed:
+                    description: derived by the alert engine; no history
+                    type: boolean
+                default_op:
+                    type: string
+                description:
+                    description: what it measures and where it comes from
+                    type: string
+                group:
+                    type: string
+                labels:
+                    items:
+                        type: string
+                    type: array
+                live:
+                    description: current values on this agent (empty on the central server)
+                    items:
+                        properties:
+                            labels:
+                                additionalProperties:
+                                    type: string
+                                type: object
+                            value:
+                                type: number
+                        type: object
+                    type: array
+                max:
+                    type: number
+                min:
+                    type: number
+                name:
+                    type: string
+                presets:
+                    items:
+                        type: number
+                    type: array
+                states:
+                    additionalProperties:
+                        type: string
+                    description: 'bool metrics: words for "1" and "0"'
+                    type: object
+                title:
+                    type: string
+                unit:
+                    enum:
+                        - pct
+                        - bytes
+                        - bytes_ps
+                        - count
+                        - per_s
+                        - ms
+                        - s
+                        - h
+                        - days
+                        - ratio
+                        - bool
+                    type: string
+            required:
+                - name
+                - group
+                - title
+                - description
+                - unit
+                - presets
+                - default_op
+                - live
+            type: object
         MetricHistory:
             properties:
                 from:
@@ -952,6 +1038,30 @@ components:
                 - name
                 - addr
                 - status
+            type: object
+        RuleCondition:
+            properties:
+                labels:
+                    additionalProperties:
+                        type: string
+                    type: object
+                metric:
+                    type: string
+                op:
+                    enum:
+                        - '>'
+                        - '>='
+                        - <
+                        - <=
+                        - ==
+                        - '!='
+                    type: string
+                value:
+                    type: number
+            required:
+                - metric
+                - op
+                - value
             type: object
         SSHChange:
             properties:
@@ -1769,6 +1879,18 @@ paths:
                                 type: string
                     description: file
             summary: Export alert history (AL-7)
+    /alerts/metrics:
+        get:
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: '#/components/schemas/MetricDef'
+                                type: array
+                    description: ok
+            summary: Metrics a rule can use, with description, source, unit, labels, preset thresholds and current values
     /alerts/rules:
         get:
             responses:

@@ -122,6 +122,7 @@ async function uninstall() {
       <TabsTrigger value="users">Users</TabsTrigger>
       <TabsTrigger value="tokens">API tokens</TabsTrigger>
       <TabsTrigger value="storage">Storage</TabsTrigger>
+      <TabsTrigger value="appearance">Appearance</TabsTrigger>
       <TabsTrigger value="about">About</TabsTrigger>
     </TabsList>
 
@@ -381,6 +382,7 @@ async function uninstall() {
         </CardContent>
       </Card>
     </TabsContent>
+    <TabsContent value="appearance" class="space-y-4"><SettingsAppearance /></TabsContent>
   </Tabs>
 
   <Dialog v-model:open="uOpen">

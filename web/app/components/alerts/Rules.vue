@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { AlertRule, Channel } from '~/types/models'
+import { BookOpen, Info } from '@lucide/vue'
+import type { AlertRule, Channel, MetricDef } from '~/types/models'
 
 const { data, pending, error, refresh } = useAsyncData('alerts.rules', async () =>
   list<AlertRule>(await api.get('/alerts/rules'), 'rules'),
@@ -7,51 +8,18 @@ const { data, pending, error, refresh } = useAsyncData('alerts.rules', async () 
 const { data: channels } = useAsyncData('alerts.channels', async () =>
   list<Channel>(await api.get('/alerts/channels'), 'channels'),
 )
+const { data: metrics, refresh: refreshMetrics } = useAsyncData('alerts.metrics', async () =>
+  list<MetricDef>(await api.get('/alerts/metrics')),
+)
 const admin = computed(() => can('admin'))
+const byName = computed(() => Object.fromEntries((metrics.value || []).map(m => [m.name, m])))
 
 const open = ref(false)
-const editing = ref<string | null>(null)
-const blank = () => ({
-  id: '',
-  name: '',
-  expr: '',
-  for: '5m',
-  severity: 'warning',
-  channels: [] as string[],
-  tags: '',
-  enabled: true,
-})
-const f = reactive(blank())
+const editing = ref<AlertRule | null>(null)
 function openRule(r?: AlertRule) {
-  editing.value = r?.id ?? null
-  const b = blank()
-  if (r) {
-    Object.assign(b, { id: r.id, name: r.name, expr: r.expr, for: dur(r.for), severity: r.severity, enabled: r.enabled })
-    b.channels = [...(r.channels || [])]
-    b.tags = (r.tags || []).join(', ')
-  }
-  Object.assign(f, b)
+  editing.value = r ?? null
+  refreshMetrics() // fresh "Now:" values in the builder
   open.value = true
-}
-function toggleCh(n: string, on: boolean | 'indeterminate') {
-  f.channels = on === true ? [...f.channels, n] : f.channels.filter(c => c !== n)
-}
-async function save() {
-  if (parseDur(f.for) === null) return toastErr('Duration must look like 30s, 5m or 1h.')
-  // the body is decoded strictly: send exactly the ruleReq fields; "for" goes out as a duration string
-  const body = {
-    ...f,
-    tags: f.tags
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean),
-  }
-  const ok = editing.value
-    ? await run(() => api.put(`/alerts/rules/${encodeURIComponent(editing.value!)}`, body), 'Rule saved')
-    : await run(() => api.post('/alerts/rules', body), 'Rule created')
-  if (ok === undefined) return
-  open.value = false
-  refresh()
 }
 async function toggle(r: AlertRule) {
   const msg = r.enabled ? 'Rule disabled' : 'Rule enabled'
@@ -62,15 +30,87 @@ async function del(r: AlertRule) {
   await run(() => api.del(`/alerts/rules/${encodeURIComponent(r.id)}`), 'Rule deleted')
   refresh()
 }
-</script>
+function ruleMetrics(r: AlertRule): MetricDef[] {
+  const seen = new Set<string>()
+  const out: MetricDef[] = []
+  for (const c of r.conditions?.items || []) {
+    const d = byName.value[c.metric]
+    if (d && !seen.has(d.name)) {
+      seen.add(d.name)
+      out.push(d)
+    }
+  }
+  return out
+}
 
-<script lang="ts">
-import { toast } from 'vue-sonner'
-const toastErr = (m: string) => void toast.error(m)
+// metrics reference
+const showRef = ref(false)
+const q = ref('')
+const refGroups = computed(() => {
+  const s = q.value.trim().toLowerCase()
+  const out: { name: string; items: MetricDef[] }[] = []
+  for (const m of metrics.value || []) {
+    if (s && ![m.title, m.name, m.group, m.description].some(x => x.toLowerCase().includes(s))) continue
+    let g = out.find(x => x.name === m.group)
+    if (!g) out.push((g = { name: m.group, items: [] }))
+    g.items.push(m)
+  }
+  return out
+})
+function liveSummary(m: MetricDef) {
+  if (!m.live.length) return m.computed ? 'computed when rules run' : '-'
+  const key = m.labels?.[0]
+  const parts = m.live.slice(0, 3).map(s => {
+    const v = m.unit === 'bool' ? (m.states?.[String(s.value)] ?? numText(s.value)) : formatValue(m, Math.round(s.value * 10) / 10)
+    return key && s.labels?.[key] ? `${s.labels[key]} ${v}` : v
+  })
+  return parts.join(' · ') + (m.live.length > 3 ? ` · +${m.live.length - 3}` : '')
+}
 </script>
 
 <template>
-  <div class="flex"><Button v-if="admin" class="ml-auto" @click="openRule()">New rule</Button></div>
+  <div class="flex flex-wrap items-center gap-2">
+    <p class="text-sm text-muted-foreground">
+      Rules turn metrics into alerts. Each condition compares a metric the agent collects with a threshold.
+    </p>
+    <div class="ml-auto flex gap-2">
+      <Button variant="outline" :aria-expanded="showRef" aria-controls="metric-ref" @click="showRef = !showRef">
+        <BookOpen /> Metrics reference
+      </Button>
+      <Button v-if="admin" @click="openRule()">New rule</Button>
+    </div>
+  </div>
+
+  <Card v-if="showRef" id="metric-ref">
+    <CardHeader class="flex flex-row flex-wrap items-center justify-between gap-2">
+      <div>
+        <CardTitle>Metrics reference</CardTitle>
+        <CardDescription>What each metric measures, where it comes from and its current value on this server.</CardDescription>
+      </div>
+      <Input v-model="q" class="max-w-xs" placeholder="Search (disk, redis, cpu.total_pct…)" aria-label="Search metrics" />
+    </CardHeader>
+    <CardContent class="max-h-[32rem] space-y-4 overflow-y-auto">
+      <p v-if="!refGroups.length" class="text-sm text-muted-foreground">No metric matches “{{ q }}”.</p>
+      <section v-for="g in refGroups" :key="g.name" :aria-label="g.name">
+        <h3 class="mb-1 text-sm font-medium">{{ g.name }}</h3>
+        <Table>
+          <TableBody>
+            <TableRow v-for="m in g.items" :key="m.name">
+              <TableCell class="w-64 align-top">
+                <div class="font-medium">{{ m.title }}</div>
+                <div class="font-mono text-xs text-muted-foreground">
+                  {{ m.name }}<template v-if="m.labels?.length">{{ '{' + m.labels.join(', ') + '}' }}</template>
+                </div>
+              </TableCell>
+              <TableCell class="text-xs whitespace-normal text-muted-foreground">{{ m.description }}</TableCell>
+              <TableCell class="w-48 text-right align-top text-xs tabular-nums">{{ liveSummary(m) }}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </section>
+    </CardContent>
+  </Card>
+
   <Card>
     <CardContent>
       <LoadState
@@ -83,7 +123,7 @@ const toastErr = (m: string) => void toast.error(m)
           <TableHeader>
             <TableRow>
               <TableHead>Rule</TableHead>
-              <TableHead>Condition</TableHead>
+              <TableHead>Alerts when</TableHead>
               <TableHead>For</TableHead>
               <TableHead>Severity</TableHead>
               <TableHead>Channels</TableHead>
@@ -93,18 +133,37 @@ const toastErr = (m: string) => void toast.error(m)
           </TableHeader>
           <TableBody>
             <TableRow v-for="r in data" :key="r.id">
-              <TableCell>
+              <TableCell class="align-top">
                 <div class="font-medium">{{ r.name || r.id }}</div>
                 <div class="font-mono text-xs text-muted-foreground">
                   {{ r.id }}
                   <span v-if="r.builtin">· built-in</span>
                 </div>
               </TableCell>
-              <TableCell class="font-mono text-xs">{{ r.expr }}</TableCell>
-              <TableCell>{{ dur(r.for) }}</TableCell>
-              <TableCell><StateBadge :value="r.severity" /></TableCell>
-              <TableCell>{{ (r.channels || []).join(', ') || '-' }}</TableCell>
-              <TableCell>
+              <TableCell class="max-w-md align-top whitespace-normal">
+                <div v-if="r.expr" class="flex items-start gap-1">
+                  <span>{{ r.summary || r.expr }}</span>
+                  <Tooltip v-if="ruleMetrics(r).length">
+                    <TooltipTrigger as-child>
+                      <button type="button" class="mt-0.5 shrink-0 text-muted-foreground" :aria-label="`About the metrics of ${r.id}`">
+                        <Info class="size-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent class="max-w-sm space-y-2">
+                      <p v-for="m in ruleMetrics(r)" :key="m.name">
+                        <span class="font-medium">{{ m.title }}</span>
+                        <span class="font-mono"> ({{ m.name }})</span>: {{ m.description }}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <span v-else class="text-muted-foreground">Raised by the agent itself (no metric condition)</span>
+                <code v-if="r.expr" class="mt-0.5 block text-xs break-all text-muted-foreground">{{ r.expr }}</code>
+              </TableCell>
+              <TableCell class="align-top whitespace-nowrap">{{ r.expr ? (Number(r.for) ? forLabel(Number(r.for)) : 'immediately') : '-' }}</TableCell>
+              <TableCell class="align-top"><StateBadge :value="r.severity" /></TableCell>
+              <TableCell class="align-top">{{ (r.channels || []).join(', ') || '-' }}</TableCell>
+              <TableCell class="align-top">
                 <Switch
                   :model-value="r.enabled"
                   :disabled="!admin"
@@ -112,7 +171,7 @@ const toastErr = (m: string) => void toast.error(m)
                   @update:model-value="toggle(r)"
                 />
               </TableCell>
-              <TableCell class="whitespace-nowrap text-right">
+              <TableCell class="text-right align-top whitespace-nowrap">
                 <template v-if="admin">
                   <Button variant="ghost" size="sm" @click="openRule(r)">Edit</Button>
                   <ConfirmButton
@@ -133,67 +192,5 @@ const toastErr = (m: string) => void toast.error(m)
     </CardContent>
   </Card>
 
-  <Dialog v-model:open="open">
-    <DialogScrollContent>
-      <DialogHeader>
-        <DialogTitle>{{ editing ? 'Edit rule' : 'New rule' }}</DialogTitle>
-        <DialogDescription>Fires when the condition holds for the whole duration.</DialogDescription>
-      </DialogHeader>
-      <form class="space-y-3" @submit.prevent="save">
-        <div class="grid gap-3 sm:grid-cols-2">
-          <div class="space-y-1">
-            <Label for="r-id">ID</Label>
-            <Input
-              id="r-id"
-              v-model="f.id"
-              :disabled="!!editing"
-              required
-              pattern="[a-z0-9_]+"
-              placeholder="mem_available_low"
-            />
-          </div>
-          <div class="space-y-1">
-            <Label for="r-name">Name</Label>
-            <Input id="r-name" v-model="f.name" placeholder="RAM almost full" />
-          </div>
-        </div>
-        <div class="space-y-1">
-          <Label for="r-expr">Condition</Label>
-          <Input id="r-expr" v-model="f.expr" class="font-mono" required placeholder="mem.available_pct < 10" />
-          <p class="text-xs text-muted-foreground">
-            Metric names from the catalog, e.g. cpu.total_pct &gt; 90, disk.used_pct{mount="/"} &gt; 85
-          </p>
-        </div>
-        <div class="grid gap-3 sm:grid-cols-2">
-          <div class="space-y-1">
-            <Label for="r-for">For</Label>
-            <Input id="r-for" v-model="f.for" required placeholder="5m" />
-          </div>
-          <div class="space-y-1">
-            <Label for="r-sev">Severity</Label>
-            <FormSelect id="r-sev" v-model="f.severity" :options="['info', 'warning', 'critical']" />
-          </div>
-        </div>
-        <fieldset class="space-y-1">
-          <legend class="text-sm font-medium">Channels</legend>
-          <p v-if="!channels?.length" class="text-xs text-muted-foreground">No channels yet. Add one under Channels.</p>
-          <div class="flex flex-wrap gap-3">
-            <label v-for="c in channels" :key="c.name" class="flex items-center gap-2 text-sm">
-              <Checkbox :model-value="f.channels.includes(c.name)" @update:model-value="v => toggleCh(c.name, v)" />
-              {{ c.name }}
-            </label>
-          </div>
-        </fieldset>
-        <div class="space-y-1">
-          <Label for="r-tags">Tags (comma separated)</Label>
-          <Input id="r-tags" v-model="f.tags" />
-        </div>
-        <label class="flex items-center gap-2 text-sm">
-          <Switch v-model="f.enabled" />
-          Enabled
-        </label>
-        <DialogFooter><Button type="submit">Save rule</Button></DialogFooter>
-      </form>
-    </DialogScrollContent>
-  </Dialog>
+  <AlertsRuleBuilder v-model:open="open" :rule="editing" :metrics="metrics || []" :channels="channels || []" @saved="refresh" />
 </template>

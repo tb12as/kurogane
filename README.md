@@ -87,6 +87,10 @@ krgn redis status                         # per Redis instance: up, memory, ops/
 sudo krgn uninstall [--purge] [--yes]           # --purge also deletes data, config and the system user
 ```
 
+Settings → Appearance sets the layout density (Default, Comfortable or Compact) and the theme for this browser. On a
+server's page, each chart can be widened to the full width. Alert rules are built from dropdowns (metric, filter,
+comparison, threshold), and Alerts → Rules → Metrics reference explains every metric.
+
 Settings → Storage shows the disk usage of `data_dir` and of each agent store bucket, and deletes metric history
 older than a chosen cutoff. The store file is compacted afterwards, so the freed space returns to the filesystem.
 Settings → About offers the same uninstall as the CLI; it runs as a transient systemd unit three seconds after the
