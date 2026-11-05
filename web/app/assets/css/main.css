@@ -3,6 +3,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* UI density (composables/density.ts). Text sizes are rem and every Tailwind spacing utility is a multiple of
+   --spacing, so these two values scale the whole UI evenly. Default (Wide) keeps the browser's 16px and 0.25rem. */
+html[data-density="comfortable"] {
+  font-size: 15px;
+  --spacing: 0.225rem;
+}
+html[data-density="compact"] {
+  font-size: 14px;
+  --spacing: 0.2rem;
+}
+
 :root {
   --radius: 0.5rem;
   --background: #f3f4f4;

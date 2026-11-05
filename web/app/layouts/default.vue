@@ -11,6 +11,7 @@ import {
   Menu,
   Moon,
   Network,
+  Rows3,
   Settings,
   ShieldCheck,
   Sun,
@@ -22,6 +23,7 @@ const fleet = useFleet()
 const live = useLive()
 const dark = useDark()
 const toggleDark = useToggle(dark)
+const density = useDensity()
 const navOpen = ref(false)
 const route = useRoute()
 watch(
@@ -124,6 +126,22 @@ onMounted(startStream)
               <Sun v-if="dark" />
               <Moon v-else />
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button variant="ghost" size="sm" aria-label="Layout density">
+                  <Rows3 />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" side="top" class="w-52">
+                <DropdownMenuLabel>Layout density</DropdownMenuLabel>
+                <DropdownMenuRadioGroup v-model="density">
+                  <DropdownMenuRadioItem v-for="d in DENSITIES" :key="d.value" :value="d.value">
+                    {{ d.label }}
+                    <span class="ml-auto pl-3 text-xs text-muted-foreground">{{ d.hint }}</span>
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="ghost" size="sm" @click="logout">
               <LogOut />
               Sign out
