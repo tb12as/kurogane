@@ -4,6 +4,8 @@ Kurogane (黒鉄, "black iron") is one static Go binary that monitors a Linux se
 alerts to Slack or Discord. Built for small teams running 1 to 50 servers. The command is `kurogane`;
 packages and the install script also add the short alias `krgn`, used in the examples below. Spec: `docs/PRD.md`.
 
+![Kurogane overview of one server in the dark theme: active alerts, hardening grade and live CPU, memory, disk, load, network and TCP figures](docs/screenshots/overview.png)
+
 ## Install
 
 ```sh
@@ -25,6 +27,25 @@ Every option of `/etc/kurogane/config.yaml`, with its default, is documented in
 
 Supported: Ubuntu 22.04/24.04, Debian 12, RHEL/Rocky/AlmaLinux 9 (amd64, arm64; systemd required). Best effort:
 Amazon Linux 2023, Fedora.
+
+## Screenshots
+
+From a demo server, in the dark theme. Click an image for the full size.
+
+<table>
+  <tr>
+    <td width="50%"><a href="docs/screenshots/metrics.png"><img src="docs/screenshots/metrics.png" alt="Metric charts for CPU, load, memory, disk and TCP, with the network chart widened to full width"></a><br>Metric charts. Any chart can be widened to the full width.</td>
+    <td width="50%"><a href="docs/screenshots/alert-rule-builder.png"><img src="docs/screenshots/alert-rule-builder.png" alt="Alert rule dialog: disk space used on mount /data above 85 % for 5 minutes, with the current value and a plain-language preview"></a><br>Alert rules are built from menus, with the current value and a preview.</td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="docs/screenshots/hardening.png"><img src="docs/screenshots/hardening.png" alt="Hardening page with the grade, passed and failed counts and the list of checks"></a><br>Hardening: a graded scan. Many checks have a fix you preview before applying it.</td>
+    <td width="50%"><a href="docs/screenshots/sites.png"><img src="docs/screenshots/sites.png" alt="Sites page listing nginx sites with ports, upstreams, certificate days left and enable switches"></a><br>nginx and Apache sites, switched on or off with a config test and automatic rollback.</td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="docs/screenshots/redis-certs.png"><img src="docs/screenshots/redis-certs.png" alt="Two Redis instance cards with memory, operations and hit ratio, above the TLS certificates table"></a><br>Redis instances and TLS certificate expiry.</td>
+    <td width="50%"><a href="docs/screenshots/ssh-keys.png"><img src="docs/screenshots/ssh-keys.png" alt="SSH keys inventory with users, owner labels, key types, fingerprints and expiry"></a><br>SSH keys across users, with owner labels and expiry.</td>
+  </tr>
+</table>
 
 ## Moving from ServerKeeper
 
@@ -244,3 +265,5 @@ make dist packages
 Tests never touch the host: parsers run against fixtures (`KRGN_ROOT`), and privileged operations go through a fake
 executor. Distro integration tests (real sshd lockout rollback, every hardening fix and revert) run in disposable
 containers in CI (`-tags integration`). `go run ./tools/totpcode <secret>` prints a TOTP code for manual UI testing.
+`node tools/screenshots/capture.mjs` retakes the README screenshots from a running demo agent; its header lists the
+environment variables it needs.
