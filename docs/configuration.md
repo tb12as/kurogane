@@ -234,7 +234,7 @@ Each entry of `alerts.rules` defines a custom rule, or replaces a built-in rule 
 |-----|------|----------|-------------|
 | `id` | string | yes | Unique rule ID. |
 | `name` | string | no | Title used in messages. Defaults to the ID. |
-| `expr` | string | yes | Condition over metrics, for example `mem.available_pct < 10` or `net.tcp.syn_recv > 500`. Conditions can be combined with `or`. |
+| `expr` | string | yes | Condition over metrics, for example `mem.available_pct < 10` or `disk.used_pct{mount="/"} > 85`. Conditions can be combined with `and`, `or` and brackets. |
 | `for` | duration | no | How long the condition must hold before the alert fires. |
 | `severity` | string | yes | `info`, `warning` or `critical`. |
 | `channels` | list | no | Channel names. |
@@ -250,6 +250,12 @@ disabled with `alerts.disable_builtin`: `oom_kill`, `service_down`, `updates_pen
 `ssh_rolled_back`, `hardening_drift`, `agent_offline`, `web_config_invalid` and `site_change_rolled_back`.
 
 Threshold edits made in the UI are kept across restarts unless `alerts.thresholds` sets the same rule.
+
+The metrics a rule can use, with what each measures, where it comes from, its unit and labels, are listed under
+Alerts → Rules → Metrics reference, and by `GET /api/v1/alerts/metrics`. The rule builder in the UI picks the metric,
+label filter, comparison and threshold from that list, and writes the same `expr`. Rules created or edited through the
+UI or API must use metrics and labels from it. Rules in `config.yaml` are only checked for syntax, and a rule that
+mixes `and` with `or` is shown read-only in the builder.
 
 ### Routing (central server)
 
