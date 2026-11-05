@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 
 	"github.com/tb12as/kurogane/internal/alert"
 	"github.com/tb12as/kurogane/internal/auth"
+	"github.com/tb12as/kurogane/internal/collector"
 	"github.com/tb12as/kurogane/internal/config"
 	"github.com/tb12as/kurogane/internal/db"
 )
@@ -33,6 +35,10 @@ func (q ruleReq) apply(r *db.AlertRule) error {
 		r.Name = q.Name
 	}
 	if q.Expr != "" {
+		// rules edited here must use known metrics; config.yaml rules are only parsed (see alert.CheckMetrics)
+		if err := alert.CheckMetrics(q.Expr); err != nil {
+			return Errf(http.StatusBadRequest, "%s", err.Error())
+		}
 		r.Expr = q.Expr
 	}
 	if q.For != "" {
@@ -64,7 +70,18 @@ func (s *Server) alertRoutes() {
 	if s.Alerts == nil {
 		return
 	}
-	s.Route("GET /alerts/rules", auth.ScopeRead, func(r *http.Request) (any, error) { return s.DB.ListRules(r.Context()) })
+	s.Route("GET /alerts/rules", auth.ScopeRead, func(r *http.Request) (any, error) {
+		rs, err := s.DB.ListRules(r.Context())
+		if err != nil {
+			return nil, err
+		}
+		out := make([]RuleView, len(rs))
+		for i, x := range rs {
+			out[i] = ruleView(x)
+		}
+		return out, nil
+	})
+	s.Route("GET /alerts/metrics", auth.ScopeRead, s.alertMetrics)
 	s.Route("POST /alerts/rules", auth.ScopeAdmin, func(r *http.Request) (any, error) {
 		var q ruleReq
 		if err := Decode(r, &q); err != nil {
@@ -206,6 +223,60 @@ func (s *Server) alertRoutes() {
 	})
 }
 
+// RuleView is a rule as GET /alerts/rules returns it: the stored rule plus its expression as structured conditions
+// (nil when it mixes and/or) and as a sentence.
+type RuleView struct {
+	db.AlertRule
+	Conditions *alert.Conditions `json:"conditions"`
+	Summary    string            `json:"summary"`
+}
+
+func ruleView(r db.AlertRule) RuleView {
+	v := RuleView{AlertRule: r}
+	if r.Expr != "" {
+		v.Conditions, _ = alert.FlatConditions(r.Expr)
+		v.Summary = alert.Summary(r.Expr)
+	}
+	return v
+}
+
+// LiveSeries is one current value of a metric with its labels.
+type LiveSeries struct {
+	Labels map[string]string `json:"labels,omitempty"`
+	Value  float64           `json:"value"`
+}
+
+// MetricInfo is a catalog entry with the values the agent sees right now (none on the central server).
+type MetricInfo struct {
+	alert.MetricDef
+	Live []LiveSeries `json:"live"`
+}
+
+// alertMetrics serves the metric catalog for the rule builder, with live values from the latest snapshot.
+func (s *Server) alertMetrics(*http.Request) (any, error) {
+	live := map[string][]LiveSeries{}
+	if s.Metrics != nil {
+		if snap := s.Metrics.Latest(); snap != nil {
+			for _, x := range snap.Samples {
+				live[x.Metric] = append(live[x.Metric], LiveSeries{Labels: x.Labels, Value: x.Value})
+			}
+		}
+	}
+	cat := alert.Catalog()
+	out := make([]MetricInfo, len(cat))
+	for i, d := range cat {
+		ls := live[d.Name]
+		sort.SliceStable(ls, func(a, b int) bool {
+			return collector.SeriesKey("", ls[a].Labels) < collector.SeriesKey("", ls[b].Labels)
+		})
+		if ls == nil {
+			ls = []LiveSeries{}
+		}
+		out[i] = MetricInfo{MetricDef: d, Live: ls}
+	}
+	return out, nil
+}
+
 func (s *Server) saveRule(r *http.Request, old *db.AlertRule, rule db.AlertRule) (any, error) {
 	if err := s.DB.UpsertRule(r.Context(), rule); err != nil {
 		return nil, err
@@ -215,7 +286,7 @@ func (s *Server) saveRule(r *http.Request, old *db.AlertRule, rule db.AlertRule)
 		action = "alert.rule.update"
 	}
 	s.Audit.Record(r.Context(), action, rule.ID, old, rule)
-	return rule, s.Alerts.Reload(r.Context())
+	return ruleView(rule), s.Alerts.Reload(r.Context())
 }
 
 func eventFilter(r *http.Request) db.EventFilter {

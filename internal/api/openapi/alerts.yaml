@@ -1,4 +1,8 @@
 paths:
+  /alerts/metrics:
+    get:
+      summary: Metrics a rule can use, with description, source, unit, labels, preset thresholds and current values
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/MetricDef"}}}}}}
   /alerts/rules:
     get:
       summary: List alert rules (built-in and custom)
@@ -82,7 +86,49 @@ components:
   schemas:
     AlertRule:
       type: object
-      properties: {id: {type: string}, name: {type: string}, expr: {type: string}, for: {type: integer, description: nanoseconds}, severity: {type: string}, channels: {type: array, items: {type: string}}, enabled: {type: boolean}, tags: {type: array, items: {type: string}}, builtin: {type: boolean}}
+      properties:
+        id: {type: string}
+        name: {type: string}
+        expr: {type: string}
+        for: {type: integer, description: nanoseconds}
+        severity: {type: string}
+        channels: {type: array, items: {type: string}}
+        enabled: {type: boolean}
+        tags: {type: array, items: {type: string}}
+        builtin: {type: boolean}
+        conditions:
+          description: "expr as comparisons joined by one operator; null when it mixes and/or (read-only)"
+          nullable: true
+          type: object
+          properties:
+            join: {type: string, enum: [and, or]}
+            items: {type: array, items: {$ref: "#/components/schemas/RuleCondition"}}
+        summary: {type: string, description: "expr in words, e.g. CPU usage, all cores above 90 % (read-only)"}
+    RuleCondition:
+      type: object
+      required: [metric, op, value]
+      properties:
+        metric: {type: string}
+        labels: {type: object, additionalProperties: {type: string}}
+        op: {type: string, enum: [">", ">=", "<", "<=", "==", "!="]}
+        value: {type: number}
+    MetricDef:
+      type: object
+      required: [name, group, title, description, unit, presets, default_op, live]
+      properties:
+        name: {type: string}
+        group: {type: string}
+        title: {type: string}
+        description: {type: string, description: what it measures and where it comes from}
+        unit: {type: string, enum: [pct, bytes, bytes_ps, count, per_s, ms, s, h, days, ratio, bool]}
+        labels: {type: array, items: {type: string}}
+        presets: {type: array, items: {type: number}}
+        min: {type: number}
+        max: {type: number}
+        states: {type: object, additionalProperties: {type: string}, description: 'bool metrics: words for "1" and "0"'}
+        default_op: {type: string}
+        computed: {type: boolean, description: derived by the alert engine; no history}
+        live: {type: array, items: {type: object, properties: {labels: {type: object, additionalProperties: {type: string}}, value: {type: number}}}, description: current values on this agent (empty on the central server)}
     AlertRuleInput:
       type: object
       properties: {id: {type: string}, name: {type: string}, expr: {type: string}, for: {type: string, description: "duration, e.g. 5m"}, severity: {type: string, enum: [info, warning, critical]}, channels: {type: array, items: {type: string}}, enabled: {type: boolean}, tags: {type: array, items: {type: string}}}
