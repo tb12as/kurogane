@@ -1,9 +1,8 @@
 # Kurogane
 
 Kurogane (黒鉄, "black iron") is one static Go binary that monitors a Linux server, manages SSH access, audits and hardens the server, and sends
-alerts to Slack or Discord. Built for small teams running 1–50 servers. The command is `kurogane`;
-packages and the install script also add the short alias `krgn`, used in the examples below. Spec: `docs/PRD — Kurogane Go Server
-Management Agent.md`.
+alerts to Slack or Discord. Built for small teams running 1 to 50 servers. The command is `kurogane`;
+packages and the install script also add the short alias `krgn`, used in the examples below. Spec: `docs/PRD.md`.
 
 ## Install
 
@@ -20,6 +19,9 @@ ssh -L 9443:127.0.0.1:9443 web-01   # then open http://127.0.0.1:9443
 ```
 
 Remote access without a tunnel needs `tls.cert`, `tls.key` and `tls.allow_remote: true` (TLS 1.3 only).
+
+Every option of `/etc/kurogane/config.yaml`, with its default, is documented in
+[docs/configuration.md](docs/configuration.md).
 
 Supported: Ubuntu 22.04/24.04, Debian 12, RHEL/Rocky/AlmaLinux 9 (amd64, arm64; systemd required). Best effort:
 Amazon Linux 2023, Fedora.
@@ -93,7 +95,7 @@ request. Uninstall leaves the sshd drop-in and applied hardening fixes in place.
 The CLI is a thin client over the REST API (`/api/v1`, spec at `/api/v1/openapi.yaml`). As root on the agent host it
 uses the local admin token in `/var/lib/kurogane/cli.token`; elsewhere pass `--api` and `--token`.
 
-## SSH changes never lock you out
+## SSH changes roll back unless you confirm them
 
 `ssh config set` validates the candidate with `sshd -t`, backs up the current config, applies it as a
 `sshd_config.d/99-kurogane.conf` drop-in (or in place), reloads sshd and starts a rollback timer (default 120 s).

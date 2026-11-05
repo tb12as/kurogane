@@ -1,16 +1,18 @@
-# PRD — Kurogane: Go Server Management Agent
+# Kurogane PRD: Go Server Management Agent
 
 Nov 2, 2026 · @Syafiq Afifuddin
 
 ## 1. Overview
 
-Kurogane (黒鉄, "black iron"; formerly the working name ServerKeeper) is a single Go binary that monitors a Linux server's health, manages SSH access, audits and hardens the server, and pushes alerts to Slack or Discord. It targets small teams and solo operators who run 1–50 servers and find Prometheus + Grafana + Ansible + fail2ban too much to assemble and maintain.
+Kurogane (黒鉄, "black iron"; formerly the working name ServerKeeper) is a single Go binary that monitors a Linux server's health, manages SSH access, audits and hardens the server, and pushes alerts to Slack or Discord. It targets small teams and solo operators who run 1 to 50 servers and find Prometheus + Grafana + Ansible + fail2ban too much to assemble and maintain.
 
 **Problem.** Operators of small fleets juggle separate tools for metrics, SSH key hygiene, CIS-style hardening and alerting. Keys of ex-staff linger in `authorized_keys`, `sshd_config` drifts, and nobody notices RAM pressure or a traffic spike until users complain.
 
 **Vision.** Install one static binary, run `kurogane init`, and within five minutes get live metrics, a hardening score, a managed SSH key inventory and alerts in the team's chat channel.
 
-**Document status:** Draft v0.1, open for review. Product name, licensing and pricing are open questions (section 13).
+**Document status:** Draft v0.1, open for review. Licensing and pricing are open questions (section 13). Sections 4 to 12
+describe the original plan. Where shipped behavior differs (53 hardening checks, Telegram, email, PagerDuty and webhook
+channels), the README and `docs/configuration.md` are authoritative.
 
 ## 2. Goals, non-goals and success metrics
 
@@ -45,8 +47,8 @@ Kurogane (黒鉄, "black iron"; formerly the working name ServerKeeper) is a sin
 
 | Persona | Context | Primary need |
 | --- | --- | --- |
-| Solo DevOps / freelancer | Runs 1–10 VPS for clients | One tool, minimal setup, phone alerts via Discord |
-| Small-team SRE | 10–50 servers, 3–8 engineers with SSH access | Key inventory, onboarding/offboarding, audit trail |
+| Solo DevOps / freelancer | Runs 1 to 10 VPS for clients | One tool, minimal setup, phone alerts via Discord |
+| Small-team SRE | 10 to 50 servers, 3 to 8 engineers with SSH access | Key inventory, onboarding/offboarding, audit trail |
 | Security/compliance lead | Must show hardening evidence | Scores, reports, drift detection over time |
 | Hosting reseller / MSP | Many customer servers | Multi-server view, per-server alert routing |
 
@@ -72,9 +74,9 @@ The MVP is single-server and CLI + local web UI; multi-server management arrives
 | Alerts | P1: threshold rules, Slack + Discord webhooks | P0: anomaly/DDoS detection, routing, silences | Telegram, email, PagerDuty, generic webhook |
 | Access to the tool | P0: local CLI, web UI bound to localhost | P0: auth, RBAC, audit log | SSO (OIDC) |
 
-## 5. Feature 1 — Performance monitoring
+## 5. Feature 1: Performance monitoring
 
-The agent samples system metrics every 10 seconds (configurable 1–60 s), stores them locally, and serves them to the CLI, the web UI and the alert engine. Collection uses `/proc` and `/sys` directly (via `gopsutil` where convenient), with no external daemons.
+The agent samples system metrics every 10 seconds (configurable from 1 to 60 s), stores them locally, and serves them to the CLI, the web UI and the alert engine. Collection uses `/proc` and `/sys` directly (via `gopsutil` where convenient), with no external daemons.
 
 **Metrics collected**
 
@@ -105,7 +107,7 @@ The agent samples system metrics every 10 seconds (configurable 1–60 s), store
 
 **Acceptance:** On a 2 vCPU / 2 GB VPS the agent stays under 1% average CPU and 50 MB RSS at a 10 s interval, and a 7-day store stays under 200 MB.
 
-## 6. Feature 2 — SSH management
+## 6. Feature 2: SSH management
 
 Kurogane owns the inventory of SSH keys and the `sshd_config` settings, and never applies an SSH change without a rollback path. Every change is logged with who, what, when and the previous value.
 
@@ -162,7 +164,7 @@ Managed settings, each with a recommended value shown beside the current one:
 | SSH-7 | Fleet-wide key push/revoke by person or group | P0 (v1) |
 | SSH-8 | SSH certificate authority with short-lived certs | P2 |
 
-## 7. Feature 3 — Server hardening scan and remediation
+## 7. Feature 3: Server hardening scan and remediation
 
 Hardening ships as a library of checks written in Go (not shell scripts), each with an ID, severity, rationale, a read-only `Check()` and an optional `Fix()`. Scans are read-only by default; fixes need an explicit flag or UI confirmation, and each fix records a backup so it can be reverted.
 
@@ -180,7 +182,7 @@ Hardening ships as a library of checks written in Go (not shell scripts), each w
 | Logging & audit | journald persistent, auditd installed, log rotation configured | Yes |
 | Intrusion protection | fail2ban or built-in SSH ban active | Yes |
 | Filesystem | `/tmp` mounted `noexec,nosuid` (if separate), core dumps restricted | Report only |
-| Time | NTP / chrony synchronised | Yes |
+| Time | NTP / chrony synchronized | Yes |
 | Malware basics (P2) | rkhunter/chkrootkit present, known-bad crontab entries | Report only |
 
 Checks map to CIS Benchmark IDs where one exists, so reports can reference them.
@@ -209,7 +211,7 @@ Score = 100 × (weighted passed checks / weighted applicable checks), weights Cr
 | HD-7 | Distro support: Ubuntu 22.04/24.04, Debian 12, RHEL/Rocky/Alma 9 | P0 |
 | HD-8 | Custom check packs (YAML or Go plugin) | P2 |
 
-## 8. Feature 4 — Alerts and notifications (Slack / Discord)
+## 8. Feature 4: Alerts and notifications (Slack / Discord)
 
 An in-agent rule engine evaluates every sample against rules and sends alerts through Slack and Discord incoming webhooks. Each alert has a lifecycle (firing → acknowledged → resolved) so channels get one message per incident plus a resolve message, not a stream.
 
@@ -243,7 +245,7 @@ All thresholds are editable per server. Baselines are learned from 7 days of his
 
 **8.3 Delivery and noise control**
 
-- Channels: Slack incoming webhook (Block Kit message with colour by severity), Discord webhook (embed). Later: Telegram, email, generic webhook, PagerDuty.
+- Channels: Slack incoming webhook (Block Kit message with color by severity), Discord webhook (embed). Also shipped: Telegram, email, generic webhook, PagerDuty.
 - Routing: rule → channel mapping, e.g. Critical to `#ops-alerts`, Info to `#ops-log`.
 - Dedup and grouping: one alert per (server, rule) while firing; repeat reminder every 30 min (configurable); a resolved message when it clears.
 - Silences: by server, rule or tag, with start/end time, for maintenance windows.
@@ -278,15 +280,13 @@ Firing since 23:41 WIB · Rule: mem_available_low
 
 In the MVP the agent runs alone and sends alerts itself; in v1 agents stream to a central server that stores fleet history and routes alerts.
 
-&#91;embedded content: system architecture · agent, central server, notifiers\]
-
 The agent runs as a systemd service as root (needed for sshd and sysctl changes), with privileged actions isolated in one package and every action audited.
 
 **Tech choices**
 
 | Concern | Choice | Why |
 | --- | --- | --- |
-| Language | Go 1.23+, `CGO_ENABLED=0` static binary | One file to install on any distro |
+| Language | Go 1.26+, `CGO_ENABLED=0` static binary | One file to install on any distro |
 | CLI | `spf13/cobra` + `viper` | Standard, subcommands, config binding |
 | Metrics collection | `shirou/gopsutil` + direct `/proc` parsing | Mature, low overhead |
 | Netlink / conntrack | `vishvananda/netlink`, `mdlayher/netlink` | Connection stats without shelling out |
@@ -295,8 +295,8 @@ The agent runs as a systemd service as root (needed for sshd and sysctl changes)
 | Central metrics store | VictoriaMetrics single-node, separate binary managed by Kurogane | High compression, PromQL queries, \~1 KB RAM per active series |
 | Central metadata store | SQLite via `modernc.org/sqlite` | Embedded file, no CGO, nothing to install |
 | Agent ↔ central | gRPC with mutual TLS, token-based enrollment | Streaming, strongly typed |
-| Web UI | Nuxt (Vue 3, TypeScript) + Tailwind CSS + shadcn-vue, static build embedded via `embed.FS` | Modern component library; no Node.js on production servers |
-| Charts | ECharts via `vue-echarts` | Handles large time series smoothly |
+| Web UI | Nuxt (Vue 3, TypeScript) + Tailwind CSS + shadcn-vue, static build embedded via `embed.FS` | Ready-made tables, forms, dialogs and toasts; no Node.js on production servers |
+| Charts | ECharts via `vue-echarts` | Canvas rendering with LTTB downsampling for long time series |
 | Terminal UI | `charmbracelet/bubbletea` | For `kurogane top` |
 | Logging | `log/slog` JSON | Standard library |
 
@@ -335,7 +335,7 @@ Metrics go to VictoriaMetrics and everything else to an embedded SQLite file, so
 - **Writes and reads:** the central server writes to VictoriaMetrics over local HTTP (`/api/v1/import/prometheus`, batched every 5 s) and reads with PromQL (`/api/v1/query_range`). The UI and CLI never talk to VictoriaMetrics directly.
 - **SQLite settings:** one writer connection, `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=ON`, `busy_timeout=5000`; migrations embedded and run on startup (`pressly/goose`). All access goes through a `Store` interface so PostgreSQL can be added later if high availability is ever needed.
 - **Installing VictoriaMetrics:** `kurogane server init` downloads a pinned release, verifies its SHA256, and runs it under its own systemd unit. An offline bundle ships both binaries for air-gapped servers.
-- **Sizing (estimate):** 500 servers × \~300 series at 10 s ≈ 15,000 samples/s and \~150,000 active series → \~150 MB RAM for VictoriaMetrics, about 0.6–1.5 GB disk per day, so roughly 60–130 GB for 90 days. Central server spec: 2 vCPU, 4 GB RAM, SSD.
+- **Sizing (estimate):** 500 servers × \~300 series at 10 s ≈ 15,000 samples/s and \~150,000 active series → \~150 MB RAM for VictoriaMetrics, about 0.6 to 1.5 GB disk per day, so roughly 60 to 130 GB for 90 days. Central server spec: 2 vCPU, 4 GB RAM, SSD.
 - **Backups:** `kurogane backup` runs nightly: SQLite `VACUUM INTO` plus VictoriaMetrics `/snapshot/create`, copied off-host. `kurogane restore` reverses it.
 - **Downsampling:** an Enterprise-only feature in VictoriaMetrics, so v1 relies on retention plus compression; hourly rollups via `vmalert` recording rules are optional.
 
@@ -350,7 +350,7 @@ Metrics go to VictoriaMetrics and everything else to an embedded SQLite file, so
 
 ## 10. Interfaces
 
-Every feature is reachable three ways — CLI, REST API and web UI — and the CLI is a thin client over the same API, so behaviour never diverges.
+Every feature is reachable from the CLI, the REST API and the web UI. The CLI is a thin client over the same API, so behavior never diverges.
 
 **10.1 CLI**
 
@@ -513,20 +513,18 @@ Because the agent runs as root and can change SSH and firewall settings, the too
 
 The proposed plan reaches a single-server MVP in about 18 weeks and fleet-capable v1 about 11 weeks later; adjust once team size is confirmed.
 
-&#91;embedded content: roadmap · Nov 2026 to May 2027\]
-
 **What each milestone delivers**
 
-1. **Foundations** — repo, CI (lint, `govulncheck`, tests), config loader, bbolt store, API skeleton with auth + audit log, systemd unit, `.deb`/`.rpm` packaging.
-2. **Monitoring + alerts** — all collectors (PM-1–5), `kurogane top`, web UI charts, threshold rules, Slack + Discord delivery (AL-1–3).
-3. **SSH management** — key inventory, add/revoke/expire, sshd\_config parser, safe-apply with rollback, login history (SSH-1–5).
-4. **Hardening** — \~40 checks, score, dry-run fixes, revert, JSON/Markdown reports (HD-1–4, HD-7).
-5. **Beta and polish** — 10–20 beta servers, docs site, install script, bug fixes. Exit: zero lockouts, overhead within budget.
-6. **Fleet features (v1)** — central server, enrollment, fleet key push/revoke, anomaly/DDoS detection, silences, scheduled scans + drift, PDF reports, RBAC.
+1. **Foundations:** repo, CI (lint, `govulncheck`, tests), config loader, bbolt store, API skeleton with auth + audit log, systemd unit, `.deb`/`.rpm` packaging.
+2. **Monitoring + alerts:** all collectors (PM-1 to PM-5), `kurogane top`, web UI charts, threshold rules, Slack + Discord delivery (AL-1 to AL-3).
+3. **SSH management:** key inventory, add/revoke/expire, sshd\_config parser, safe-apply with rollback, login history (SSH-1 to SSH-5).
+4. **Hardening:** \~40 checks, score, dry-run fixes, revert, JSON/Markdown reports (HD-1 to HD-4, HD-7).
+5. **Beta and polish:** 10 to 20 beta servers, docs site, install script, bug fixes. Exit: zero lockouts, overhead within budget.
+6. **Fleet features (v1):** central server, enrollment, fleet key push/revoke, anomaly/DDoS detection, silences, scheduled scans + drift, PDF reports, RBAC.
 
 **Testing strategy**
 
-- Unit tests for parsers (`/proc` fixtures, `sshd_config` edge cases, `authorized_keys` options) — target 80% coverage in `internal/`.
+- Unit tests for parsers (`/proc` fixtures, `sshd_config` edge cases, `authorized_keys` options), with a target of 80% coverage in `internal/`.
 - Integration tests in VMs/containers per supported distro (Ubuntu, Debian, Rocky) via a CI matrix; every hardening check is tested for scan, fix and revert.
 - Lockout tests: scripted SSH change with no confirm must roll back within the timeout, every release.
 - Load tests: simulated SYN flood and traffic spikes (hping3, iperf3) in an isolated lab to tune detection thresholds and false-positive rate.
@@ -553,8 +551,8 @@ The biggest risk is a tool with root access locking users out or becoming an att
 
 - [x] Final product name: Kurogane (CLI `kurogane`, short `krgn`). Still open: license (open source AGPL/Apache-2.0, or open-core with paid fleet features)?
 - [ ] Is the central server self-hosted only, or also offered as SaaS?
-- [ ] Run VictoriaMetrics as its own systemd unit (simpler, visible to admins) or as a child process supervised by Kurogane (one service to manage)?
+- [x] VictoriaMetrics runs as its own systemd unit by default; `server.vm.mode: child` runs it as a child process supervised by Kurogane.
 - [ ] Should auto-remediation of attacks (IP bans) ship in v1 or wait for more field data?
 - [ ] Which compliance mappings matter most to target users: CIS only, or also ISO 27001 / PCI DSS evidence?
-- [ ] Telegram and WhatsApp channels — needed early for users in Indonesia/SEA?
+- [ ] WhatsApp channel: needed early for users in Indonesia/SEA? (Telegram has shipped.)
 - [ ] Minimum team size and confirmed start date to lock the timeline.

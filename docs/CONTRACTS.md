@@ -1,6 +1,6 @@
 # Kurogane internal contracts
 
-Shared agreements between packages. Source of truth for requirements: `docs/PRD — Kurogane Go Server Management Agent.md`.
+Shared agreements between packages. Source of truth for requirements: `docs/PRD.md`.
 
 ## Conventions
 
@@ -17,11 +17,11 @@ Shared agreements between packages. Source of truth for requirements: `docs/PRD 
 - OpenAPI: each domain writes `internal/api/openapi/<domain>.yaml` (a `paths:` + `components.schemas:` fragment);
   they are merged into `internal/api/openapi.yaml`.
 - CLI: each domain adds cobra commands in `cmd/kurogane/<domain>.go` via `init(){ rootCmd.AddCommand(...) }`,
-  using the `client` in `cmd/kurogane/client.go` (thin client over the REST API). Honour `--json`.
+  using the `client` in `cmd/kurogane/client.go` (thin client over the REST API). Honor `--json`.
 
 ## Metric catalog (collector → store/alerts/UI)
 
-Names are dotted; labels in braces. `_pct` = 0–100, `_bps` = bytes/s, `_ps` = per second.
+Names are dotted; labels in braces. `_pct` = 0 to 100, `_bps` = bytes/s, `_ps` = per second.
 
 | Group | Metrics |
 | --- | --- |
