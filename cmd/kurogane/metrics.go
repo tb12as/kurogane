@@ -14,18 +14,28 @@ import (
 func init() {
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "top",
-		Short: "Live terminal dashboard: CPU, memory, disk, network, connections, processes",
+		Short: "Live terminal dashboard: alerts, hardening, metrics, processes, services, certificates, Redis, SSH",
 		RunE: func(*cobra.Command, []string) error {
 			c, err := newClient()
 			if err != nil {
 				return err
 			}
-			return tui.Run(func() (*collector.Snapshot, error) {
-				var s collector.Snapshot
-				if err := c.get("/metrics/current", nil, &s); err != nil {
+			return tui.Run(func() (*tui.Data, error) {
+				d := &tui.Data{Snap: &collector.Snapshot{}}
+				if err := c.get("/metrics/current", nil, d.Snap); err != nil {
 					return nil, err
 				}
-				return &s, nil
+				// the rest is optional: a failure shows as a warning line, the metrics keep updating
+				var st tui.Status
+				if err := c.get("/status", nil, &st); err != nil {
+					d.Warn = append(d.Warn, "alerts and hardening unavailable: "+err.Error())
+				} else {
+					d.Status = &st
+				}
+				if err := c.get("/ssh/sessions", nil, &d.Sessions); err != nil {
+					d.Warn = append(d.Warn, "ssh sessions unavailable: "+err.Error())
+				}
+				return d, nil
 			})
 		},
 	})
