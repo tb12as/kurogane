@@ -1,0 +1,32 @@
+name: go-cache
+# CI runs only on release tags, and a cache saved on a tag is visible to that tag alone. This job saves the Go
+# module and build cache on main, where every tag run can restore it. Keep the setup-go inputs identical to
+# ci.yml and release.yml so the cache keys match.
+on:
+  push:
+    branches: [main]
+    paths: [go.sum, Makefile, .github/workflows/go-cache.yml]
+  schedule:
+    # weekly: recreates the cache after a Go patch release (check-latest changes the key) or after GitHub
+    # evicts it (unused for 7 days)
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions: {contents: read}
+
+jobs:
+  warm:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        id: go
+        with:
+          go-version: "1.27.x"
+          check-latest: true
+          cache-dependency-path: |
+            go.sum
+            Makefile
+      # a hit means this key is already saved; setup-go would not save it again
+      - if: steps.go.outputs.cache-hit != 'true'
+        run: make deps
