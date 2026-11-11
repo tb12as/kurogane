@@ -22,6 +22,8 @@ func snap() *collector.Snapshot {
 			{Metric: "cpu.core_pct", Labels: l("core", "10"), Value: 5}, {Metric: "mem.used_pct", Value: 60},
 			{Metric: "mem.total_bytes", Value: 2 << 30}, {Metric: "net.rx_bps", Labels: l("iface", "eth0"), Value: 2048},
 			{Metric: "diskio.read_bps", Labels: l("dev", "sda"), Value: 1 << 20}, {Metric: "net.tcp.established", Value: 7},
+			{Metric: "agent.cpu_pct", Value: 1.5}, {Metric: "agent.rss_bytes", Value: 20 << 20},
+			{Metric: "agent.goroutines", Value: 42},
 		},
 		System: collector.SystemInfo{Hostname: "web-01", Uptime: 90000, CPUs: 2},
 		TopCPU: []collector.Proc{{PID: 1, Name: "nginx", Cmd: "nginx: master", CPU: 12}},
@@ -67,7 +69,7 @@ func TestView(t *testing.T) {
 	v := m.View()
 	for _, want := range []string{"web-01", "1d1h", "42.0%", "eth0", "2.0K", "sda", "1.0M", "203.0.113.5",
 		"104.16.0.1>443/tcp (90 cf)", "198.51.100.9>GET /login (4000)", "nginx: master",
-		"8.0G / 10.0G",
+		"8.0G / 10.0G", "cpu 1.5% · mem 20.0M · 42 goroutines",
 		"prod-web", "kurogane v1.2.3", "2 active", "CPU above 90%", "disk_full", "(acknowledged)", "B 78 / 100",
 		"nginx.service", "shop.example.org", "reload the web server", "unreadable", "7.2.4", "needs credentials",
 		"set collector.redis.instances", "deploy", "198.51.100.7"} {

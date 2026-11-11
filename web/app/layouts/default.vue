@@ -21,6 +21,7 @@ import {
 const me = useMe()
 const fleet = useFleet()
 const live = useLive()
+const rss = computed(() => metric(live.snap.value, 'agent.rss_bytes'))
 const dark = useDark()
 const toggleDark = useToggle(dark)
 const density = useDensity()
@@ -111,6 +112,9 @@ onMounted(startStream)
               aria-hidden="true"
             />
             {{ live.connected.value ? 'Live' : 'Reconnecting…' }}
+            <span v-if="live.connected.value && rss !== undefined" class="tabular-nums" title="Kurogane memory (RSS)">
+              · MEM {{ bytes(rss) }}
+            </span>
           </p>
           <div class="px-2">
             <p class="truncate" :title="me?.actor">{{ me?.actor }}</p>

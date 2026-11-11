@@ -293,6 +293,11 @@ func (m model) header(b *strings.Builder, s *collector.Snapshot) {
 	fmt.Fprintf(b, "%s  %s · kernel %s · %s · up %s · %d cpus · %s RAM%s · %s\n", title.Render(name), sys.OS,
 		sys.Kernel, sys.Arch, dur(sys.Uptime), sys.CPUs, bytes(float64(sys.MemTotal)), ver,
 		s.TS.Local().Format("15:04:05"))
+	// the agent's own usage; older agents do not report it
+	if ix := index(s); len(ix["agent.rss_bytes"]) > 0 {
+		b.WriteString(dim.Render(fmt.Sprintf("kurogane agent · cpu %.1f%% · mem %s · %.0f goroutines",
+			ix.v("agent.cpu_pct"), bytes(ix.v("agent.rss_bytes")), ix.v("agent.goroutines"))) + "\n")
+	}
 	if sys.RebootRequired || sys.SecurityUpdates > 0 || sys.PendingUpdates > 0 {
 		b.WriteString(warn.Render(fmt.Sprintf("%d security / %d pending updates · reboot required: %v",
 			sys.SecurityUpdates, sys.PendingUpdates, sys.RebootRequired)) + "\n")
