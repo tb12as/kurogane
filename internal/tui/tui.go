@@ -258,6 +258,8 @@ func (m model) body() string {
 		}
 		b.WriteString("http ips " + strings.Join(t, "  ") + "\n")
 	}
+	flowLine(&b, "tcp flow ", s.Conns.TopFlows, w)
+	flowLine(&b, "http req ", s.Conns.TopHTTPFlows, w)
 
 	procs, by := s.TopCPU, "CPU"
 	if m.byMem {
@@ -579,6 +581,22 @@ func ago(t time.Time) string {
 		return "just now"
 	}
 	return dur(d.Seconds()) + " ago"
+}
+
+// flowLine writes the five busiest source -> destination pairs on one line cut to the terminal width.
+func flowLine(b *strings.Builder, label string, fs []collector.Flow, w int) {
+	if len(fs) == 0 {
+		return
+	}
+	t := make([]string, 0, 5)
+	for _, f := range fs[:min(len(fs), 5)] {
+		cf := ""
+		if f.Cloudflare {
+			cf = " cf"
+		}
+		t = append(t, fmt.Sprintf("%s>%s (%d%s)", f.IP, f.Dest, f.Count, cf))
+	}
+	b.WriteString(trunc(label+strings.Join(t, "  "), w) + "\n")
 }
 
 func trunc(s string, n int) string {

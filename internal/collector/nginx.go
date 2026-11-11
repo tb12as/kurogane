@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"net"
 	"net/netip"
 	"os"
 	"syscall"
@@ -23,7 +24,14 @@ type nginxCollector struct {
 	buf   []byte
 	ips   map[[16]byte]int32
 	top   []IPCount // busiest client IPs of the last interval
+
+	flows    map[string]*int32 // 16-byte IP + request; pointer values so a hit does not allocate
+	kb       []byte
+	topFlows []Flow
 }
+
+// maxFlows caps distinct client -> request pairs per interval so a random-path flood cannot grow memory.
+const maxFlows = 10000
 
 func (c *nginxCollector) Collect(context.Context) ([]Sample, error) {
 	p := hostfs.P(c.path)
@@ -51,9 +59,10 @@ func (c *nginxCollector) Collect(context.Context) ([]Sample, error) {
 	}
 	var n, n4, n5 int
 	if c.ips == nil {
-		c.ips = map[[16]byte]int32{}
+		c.ips, c.flows = map[[16]byte]int32{}, map[string]*int32{}
 	}
 	clear(c.ips)
+	clear(c.flows)
 	if st.Size() > c.off {
 		f, err := os.Open(p)
 		if err != nil {
@@ -84,7 +93,7 @@ func (c *nginxCollector) Collect(context.Context) ([]Sample, error) {
 					}
 					n++
 					if a, ok := clientIP(line); ok {
-						c.ips[a.As16()]++
+						c.count(a, line)
 					}
 					switch status(line) / 100 {
 					case 4:
@@ -104,6 +113,7 @@ func (c *nginxCollector) Collect(context.Context) ([]Sample, error) {
 		}
 	}
 	c.top = topN(c.ips, 10, false)
+	c.topFlows = c.topHTTP(10)
 	out := make([]Sample, 0, 3)
 	out = add(out, "http.rps", float64(n)/dt)
 	out = add(out, "http.4xx_ps", float64(n4)/dt)
@@ -151,4 +161,61 @@ func clientIP(l []byte) (netip.Addr, bool) {
 		return r, true
 	}
 	return a, true
+}
+
+// count adds one request from a to the per-IP and per-request totals.
+func (c *nginxCollector) count(a netip.Addr, line []byte) {
+	ip := a.As16()
+	c.ips[ip]++
+	req := request(line)
+	if req == nil {
+		return
+	}
+	c.kb = append(append(c.kb[:0], ip[:]...), req...)
+	if p := c.flows[string(c.kb)]; p != nil {
+		*p++
+		return
+	}
+	// shortcut: pairs beyond maxFlows are not counted per request (per-IP totals stay exact), raise it if needed
+	if len(c.flows) < maxFlows {
+		n := int32(1)
+		c.flows[string(c.kb)] = &n
+	}
+}
+
+func (c *nginxCollector) topHTTP(n int) []Flow {
+	top := topK(func(yield func(string, int32) bool) {
+		for k, p := range c.flows {
+			if !yield(k, *p) {
+				return
+			}
+		}
+	}, n)
+	out := make([]Flow, len(top))
+	for i, x := range top {
+		out[i] = Flow{IP: net.IP(x.k[:16]).String(), Dest: x.k[16:], Count: int(x.v)}
+	}
+	return out
+}
+
+// request returns "METHOD /path" from the quoted request line, without the query string, capped at 100 bytes.
+func request(l []byte) []byte {
+	i := bytes.IndexByte(l, '"')
+	if i < 0 {
+		return nil
+	}
+	r := l[i+1:]
+	j := bytes.IndexByte(r, '"')
+	if j < 0 {
+		return nil
+	}
+	m, rest, ok := bytes.Cut(r[:j], []byte{' '})
+	if !ok || len(m) == 0 || len(rest) == 0 {
+		return nil
+	}
+	p, _, _ := bytes.Cut(rest, []byte{' '})
+	if k := bytes.IndexByte(p, '?'); k >= 0 {
+		p = p[:k]
+	}
+	return r[:min(len(m)+1+len(p), 100)]
 }

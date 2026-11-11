@@ -70,7 +70,7 @@ Metric collection on the agent.
 | `collector.retention_raw` | duration | `24h` | How long raw samples are kept. |
 | `collector.retention_rollup` | duration | `7d` | How long downsampled (rollup) samples are kept. |
 | `collector.watch_services` | list | `[]` | systemd units to monitor (`service_down` alert). nginx and Apache units are added automatically when `web.enabled` is true. |
-| `collector.nginx_log` | path | empty | nginx access log to tail for the HTTP 4xx/5xx rate and the top HTTP client IPs shown in the `ddos` alert and `krgn top`. Empty disables it. See [Behind Cloudflare](#behind-cloudflare). |
+| `collector.nginx_log` | path | empty | nginx access log to tail for the HTTP 4xx/5xx rate, the top HTTP client IPs and the top client -> request pairs (method and path, without the query string) shown in the `ddos` alert, `krgn top` and the server page. Empty disables it. See [Behind Cloudflare](#behind-cloudflare). |
 | `collector.prometheus` | bool | `false` | Exposes `GET /metrics` in Prometheus format (metric prefix `kurogane_`). Requires a token with the `read` scope. |
 
 ### `collector.certs`

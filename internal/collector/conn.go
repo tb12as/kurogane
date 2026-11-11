@@ -5,8 +5,11 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+	"iter"
 	"log/slog"
+	"maps"
 	"net"
+	"net/netip"
 	"os"
 	"strconv"
 	"time"
@@ -50,6 +53,7 @@ type connCollector struct {
 	states  [13]int
 	ips     map[[16]byte]int32
 	nets    map[[16]byte]int32
+	flows   map[fkey]int32
 	ports   []uint32 // per local port, non-listen sockets
 	lidx    map[lkey]int
 	listen  []Listener
@@ -64,8 +68,8 @@ type connCollector struct {
 }
 
 func newConn() *connCollector {
-	return &connCollector{ips: map[[16]byte]int32{}, nets: map[[16]byte]int32{}, ports: make([]uint32, 65536),
-		lidx: map[lkey]int{}, names: map[uint32]string{}}
+	return &connCollector{ips: map[[16]byte]int32{}, nets: map[[16]byte]int32{}, flows: map[fkey]int32{},
+		ports: make([]uint32, 65536), lidx: map[lkey]int{}, names: map[uint32]string{}}
 }
 
 func (c *connCollector) Collect(context.Context) ([]Sample, error) {
@@ -117,7 +121,7 @@ func (c *connCollector) Collect(context.Context) ([]Sample, error) {
 	}
 	sc := hostfs.ReadString("/proc/sys/net/ipv4/tcp_syncookies")
 	c.info = ConnInfo{States: states, TopIPs: tops, TopSubnets: subs, TopPorts: ports,
-		Listening:  append([]Listener(nil), c.listen...),
+		TopFlows: topFlows(c.flows, seenPort, 10), Listening: append([]Listener(nil), c.listen...),
 		SynCookies: sc != "" && sc != "0"}
 
 	out := make([]Sample, 0, 12)
@@ -146,6 +150,7 @@ func (c *connCollector) resetCounts() {
 	c.states = [13]int{}
 	clear(c.ips)
 	clear(c.nets)
+	clear(c.flows)
 	clear(c.ports)
 	clear(c.lidx)
 	c.listen, c.linodes = c.listen[:0], c.linodes[:0]
@@ -174,6 +179,7 @@ func (c *connCollector) add(s *sock) {
 		return
 	}
 	c.ips[s.rip]++
+	c.flows[fkey{s.rip, s.lport}]++
 	n := s.rip
 	if isV4(&n) {
 		n[15] = 0
@@ -342,14 +348,15 @@ func scanSocketOwners(want []uint32) map[uint32]string {
 	return out
 }
 
-// topN returns the n largest counts; subnet keys get a /24 or /64 suffix.
-func topN(m map[[16]byte]int32, n int, subnet bool) []IPCount {
-	type kv struct {
-		k [16]byte
-		v int32
-	}
-	top := make([]kv, 0, n+1)
-	for k, v := range m {
+type kv[K comparable] struct {
+	k K
+	v int32
+}
+
+// topK returns the n largest counts, largest first.
+func topK[K comparable](seq iter.Seq2[K, int32], n int) []kv[K] {
+	top := make([]kv[K], 0, n+1)
+	for k, v := range seq {
 		if len(top) == n && v <= top[n-1].v {
 			continue
 		}
@@ -357,13 +364,19 @@ func topN(m map[[16]byte]int32, n int, subnet bool) []IPCount {
 		for i > 0 && top[i-1].v < v {
 			i--
 		}
-		top = append(top, kv{})
+		top = append(top, kv[K]{})
 		copy(top[i+1:], top[i:])
-		top[i] = kv{k, v}
+		top[i] = kv[K]{k, v}
 		if len(top) > n {
 			top = top[:n]
 		}
 	}
+	return top
+}
+
+// topN returns the n largest counts; subnet keys get a /24 or /64 suffix.
+func topN(m map[[16]byte]int32, n int, subnet bool) []IPCount {
+	top := topK(maps.All(m), n)
 	out := make([]IPCount, len(top))
 	for i, x := range top {
 		s := net.IP(x.k[:]).String()
@@ -375,6 +388,29 @@ func topN(m map[[16]byte]int32, n int, subnet bool) []IPCount {
 			}
 		}
 		out[i] = IPCount{IP: s, Count: int(x.v)}
+	}
+	return out
+}
+
+type fkey struct {
+	ip   [16]byte
+	port uint16
+}
+
+// topFlows returns the n busiest source IP -> local port pairs, inbound only: the local port must be listening,
+// otherwise the pair is an outbound connection from an ephemeral port.
+func topFlows(m map[fkey]int32, listening map[uint16]bool, n int) []Flow {
+	top := topK(func(yield func(fkey, int32) bool) {
+		for k, v := range m {
+			if listening[k.port] && !yield(k, v) {
+				return
+			}
+		}
+	}, n)
+	out := make([]Flow, len(top))
+	for i, x := range top {
+		a := netip.AddrFrom16(x.k.ip).Unmap()
+		out[i] = Flow{IP: a.String(), Dest: strconv.Itoa(int(x.k.port)) + "/tcp", Count: int(x.v), Cloudflare: isCF(a)}
 	}
 	return out
 }

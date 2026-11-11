@@ -341,7 +341,21 @@ func ddosText(s *collector.Snapshot) (string, []notify.Field) {
 	}
 	return text, []notify.Field{{Name: "Top source IPs", Value: join(ips)}, {Name: "Top subnets", Value: join(nets)},
 		{Name: "Top destination ports", Value: join(ports)}, {Name: "SYN cookies", Value: cookies},
-		{Name: "Top HTTP clients (real IP)", Value: join(http)}}
+		{Name: "Top HTTP clients (real IP)", Value: join(http)},
+		{Name: "Top TCP flows (source -> port)", Value: flows(s.Conns.TopFlows, "")},
+		{Name: "Top HTTP requests (client -> request)", Value: flows(s.Conns.TopHTTPFlows, " req")}}
+}
+
+func flows(fs []collector.Flow, unit string) string {
+	out := make([]string, 0, len(fs))
+	for _, f := range fs {
+		cf := ""
+		if f.Cloudflare {
+			cf = ", Cloudflare"
+		}
+		out = append(out, fmt.Sprintf("%s -> %s (%d%s%s)", f.IP, f.Dest, f.Count, unit, cf))
+	}
+	return join(out)
 }
 
 func firstOr(s *collector.Snapshot, m string) float64 {

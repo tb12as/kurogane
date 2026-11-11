@@ -3925,8 +3925,12 @@ export interface components {
                 [key: string]: number;
             };
             syn_cookies?: boolean;
+            /** @description Busiest remote source IP -> local port pairs over current TCP sockets. */
+            top_flows?: components["schemas"]["Flow"][];
             /** @description Busiest client IPs of the last interval from collector.nginx_log. Behind Cloudflare, the logged CF-Connecting-IP value is used when the peer is a Cloudflare address. Absent when the log is not tailed. */
             top_http_clients?: components["schemas"]["IPCount"][];
+            /** @description Busiest client IP -> request pairs of the last interval from collector.nginx_log, using the same client IP as top_http_clients. Absent when the log is not tailed. */
+            top_http_flows?: components["schemas"]["Flow"][];
             top_ips?: components["schemas"]["IPCount"][];
             top_ports?: {
                 count?: number;
@@ -4057,6 +4061,16 @@ export interface components {
                 tls?: boolean;
                 toggleable?: boolean;
             }[];
+        };
+        /** @description One source -> destination pair. */
+        Flow: {
+            /** @description the source is a Cloudflare edge address */
+            cloudflare?: boolean;
+            /** @description sockets */
+            count?: number;
+            /** @description "443/tcp" for a socket, "GET /login" (query string dropped) for an HTTP request */
+            dest?: string;
+            ip?: string;
         };
         HardenCheck: {
             auto_fix?: string;

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -235,6 +236,25 @@ func TestConnProc(t *testing.T) {
 			t.Errorf("loopback in top ips: %v", in.TopIPs)
 		}
 	}
+	// flows pair each source with its local port; v4-mapped tcp6 sockets print as IPv4
+	flows := map[string]int{}
+	for _, f := range in.TopFlows {
+		flows[f.IP+">"+f.Dest] = f.Count
+	}
+	if in.TopFlows[0] != (Flow{"203.0.113.5", "80/tcp", 4, false}) || flows["198.51.100.7>80/tcp"] != 1 {
+		t.Errorf("top flows = %v", in.TopFlows)
+	}
+	for k := range flows {
+		if strings.HasPrefix(k, "127.") || strings.HasPrefix(k, "::") {
+			t.Errorf("local source in flows: %v", in.TopFlows)
+		}
+	}
+	cf := fkey{netip.MustParseAddr("::ffff:104.16.0.1").As16(), 443}
+	out := fkey{netip.MustParseAddr("::ffff:198.51.100.1").As16(), 40000} // outbound, ephemeral local port
+	f := topFlows(map[fkey]int32{cf: 9, out: 50}, map[uint16]bool{443: true}, 2)
+	if len(f) != 1 || f[0] != (Flow{"104.16.0.1", "443/tcp", 9, true}) {
+		t.Errorf("flows = %v, want only the inbound Cloudflare one", f)
+	}
 	want := []PortCount{{80, 7}, {22, 2}, {5432, 1}}
 	if len(in.TopPorts) != 3 || in.TopPorts[0] != want[0] || in.TopPorts[1] != want[1] || in.TopPorts[2] != want[2] {
 		t.Errorf("top ports = %v", in.TopPorts)
@@ -430,6 +450,13 @@ func TestNginx(t *testing.T) {
 	if len(c.top) != 2 || c.top[0].Count != 2 || c.top[1].Count != 2 {
 		t.Errorf("top http clients = %v", c.top)
 	}
+	got := map[string]int{}
+	for _, f := range c.topFlows {
+		got[f.IP+" "+f.Dest] = f.Count
+	}
+	if len(got) != 4 || got["203.0.113.5 GET /missing"] != 1 || got["198.51.100.7 POST /api"] != 1 {
+		t.Errorf("top http flows = %v", c.topFlows)
+	}
 
 	// finish the partial line
 	f, _ = os.OpenFile(p, os.O_APPEND|os.O_WRONLY, 0)
@@ -466,6 +493,38 @@ func TestStatus(t *testing.T) {
 		if got := status([]byte(in)); got != want {
 			t.Errorf("status(%q) = %d want %d", in, got, want)
 		}
+	}
+}
+
+func TestRequest(t *testing.T) {
+	long := "/" + strings.Repeat("a", 200)
+	for in, want := range map[string]string{
+		`1.1.1.1 - - [t] "GET /login?next=/x HTTP/1.1" 200 1`: "GET /login",
+		`1.1.1.1 - - [t] "POST /api HTTP/2.0" 200 1`:          "POST /api",
+		`1.1.1.1 - - [t] "GET ` + long + ` HTTP/1.1" 200 1`:   ("GET " + long)[:100],
+		`1.1.1.1 - - [t] "-" 400 0`:                           "",
+		`1.1.1.1 - - [t] "\x16\x03\x01" 400 0`:                "",
+		`no quotes`:                                           "",
+	} {
+		if got := string(request([]byte(in))); got != want {
+			t.Errorf("request(%q) = %q want %q", in, got, want)
+		}
+	}
+}
+
+// a random-path flood stops adding pairs at maxFlows; per-IP totals keep counting
+func TestFlowCap(t *testing.T) {
+	c := &nginxCollector{ips: map[[16]byte]int32{}, flows: map[string]*int32{}}
+	a := netip.MustParseAddr("198.51.100.9")
+	for i := range maxFlows + 50 {
+		c.count(a, []byte(`x "GET /`+strconv.Itoa(i)+` HTTP/1.1" 404 0`))
+	}
+	c.count(a, []byte(`x "GET /0 HTTP/1.1" 404 0`))
+	if len(c.flows) != maxFlows || c.ips[a.As16()] != maxFlows+51 {
+		t.Fatalf("flows = %d, ip total = %d", len(c.flows), c.ips[a.As16()])
+	}
+	if f := c.topHTTP(1); f[0] != (Flow{"198.51.100.9", "GET /0", 2, false}) {
+		t.Errorf("top = %v", f)
 	}
 }
 

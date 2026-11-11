@@ -23,11 +23,13 @@ func snap() *collector.Snapshot {
 			{Metric: "mem.total_bytes", Value: 2 << 30}, {Metric: "net.rx_bps", Labels: l("iface", "eth0"), Value: 2048},
 			{Metric: "diskio.read_bps", Labels: l("dev", "sda"), Value: 1 << 20}, {Metric: "net.tcp.established", Value: 7},
 		},
-		System:   collector.SystemInfo{Hostname: "web-01", Uptime: 90000, CPUs: 2},
-		TopCPU:   []collector.Proc{{PID: 1, Name: "nginx", Cmd: "nginx: master", CPU: 12}},
-		TopMem:   []collector.Proc{{PID: 2, Name: "mysqld", Cmd: "/usr/sbin/mysqld", RSS: 500 << 20}},
-		Mounts:   []collector.Mount{{Path: "/", UsedPct: 81, Used: 8 << 30, Total: 10 << 30}},
-		Conns:    collector.ConnInfo{TopIPs: []collector.IPCount{{IP: "203.0.113.5", Count: 4}}},
+		System: collector.SystemInfo{Hostname: "web-01", Uptime: 90000, CPUs: 2},
+		TopCPU: []collector.Proc{{PID: 1, Name: "nginx", Cmd: "nginx: master", CPU: 12}},
+		TopMem: []collector.Proc{{PID: 2, Name: "mysqld", Cmd: "/usr/sbin/mysqld", RSS: 500 << 20}},
+		Mounts: []collector.Mount{{Path: "/", UsedPct: 81, Used: 8 << 30, Total: 10 << 30}},
+		Conns: collector.ConnInfo{TopIPs: []collector.IPCount{{IP: "203.0.113.5", Count: 4}},
+			TopFlows:     []collector.Flow{{IP: "104.16.0.1", Dest: "443/tcp", Count: 90, Cloudflare: true}},
+			TopHTTPFlows: []collector.Flow{{IP: "198.51.100.9", Dest: "GET /login", Count: 4000}}},
 		Services: []collector.ServiceState{{Unit: "nginx.service", Active: "failed", Sub: "failed"}},
 		Certs: []certs.Cert{{Name: "shop.example.org", DaysLeft: 2, Stale: true, ServedPort: 443},
 			{Name: "broken.pem", Error: "unreadable"}},
@@ -63,7 +65,8 @@ func TestView(t *testing.T) {
 		t.Fatal("no poll scheduled")
 	}
 	v := m.View()
-	for _, want := range []string{"web-01", "1d1h", "42.0%", "eth0", "2.0K", "sda", "1.0M", "203.0.113.5", "nginx: master",
+	for _, want := range []string{"web-01", "1d1h", "42.0%", "eth0", "2.0K", "sda", "1.0M", "203.0.113.5",
+		"104.16.0.1>443/tcp (90 cf)", "198.51.100.9>GET /login (4000)", "nginx: master",
 		"8.0G / 10.0G",
 		"prod-web", "kurogane v1.2.3", "2 active", "CPU above 90%", "disk_full", "(acknowledged)", "B 78 / 100",
 		"nginx.service", "shop.example.org", "reload the web server", "unreadable", "7.2.4", "needs credentials",
