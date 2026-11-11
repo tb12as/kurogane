@@ -77,8 +77,8 @@ func RunPrivsep(ctx context.Context, cfg *config.Config, cfgPath, version string
 	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 	cmd.ExtraFiles = []*os.File{child}
 	cmd.Env = append(os.Environ(), "KRGN_SECRET_KEY="+strings.TrimSpace(string(key)))
-	cmd.SysProcAttr = &syscall.SysProcAttr{Credential: &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid)},
-		Pdeathsig: syscall.SIGTERM}
+	cred := &syscall.Credential{Uid: uint32(uid), Gid: uint32(gid), Groups: groupIDs(u)}
+	cmd.SysProcAttr = &syscall.SysProcAttr{Credential: cred, Pdeathsig: syscall.SIGTERM}
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("start worker: %w", err)
 	}
@@ -108,4 +108,21 @@ func RunWorker(ctx context.Context, cfg *config.Config, version string) error {
 		return err
 	}
 	return a.Run(ctx)
+}
+
+// groupIDs returns the supplementary groups of u. The worker needs them (adm reads /var/log/apache2 and
+// /var/log/nginx); a nil Credential.Groups would drop them all.
+func groupIDs(u *user.User) []uint32 {
+	ids, err := u.GroupIds()
+	if err != nil {
+		slog.Warn("cannot list groups of the kurogane user; the worker keeps only its primary group", "err", err)
+		return nil
+	}
+	out := make([]uint32, 0, len(ids))
+	for _, id := range ids {
+		if g, err := strconv.ParseUint(id, 10, 32); err == nil {
+			out = append(out, uint32(g))
+		}
+	}
+	return out
 }
