@@ -427,6 +427,9 @@ func TestNginx(t *testing.T) {
 	near(t, s, "http.rps", 0.5)
 	near(t, s, "http.4xx_ps", 0.1)
 	near(t, s, "http.5xx_ps", 0.2)
+	if len(c.top) != 2 || c.top[0].Count != 2 || c.top[1].Count != 2 {
+		t.Errorf("top http clients = %v", c.top)
+	}
 
 	// finish the partial line
 	f, _ = os.OpenFile(p, os.O_APPEND|os.O_WRONLY, 0)
@@ -462,6 +465,33 @@ func TestStatus(t *testing.T) {
 	} {
 		if got := status([]byte(in)); got != want {
 			t.Errorf("status(%q) = %d want %d", in, got, want)
+		}
+	}
+}
+
+// CF-Connecting-IP is trusted only when $remote_addr is a Cloudflare edge
+func TestClientIP(t *testing.T) {
+	for in, want := range map[string]string{
+		`104.16.0.1 - - [t] "GET / HTTP/1.1" 200 1 "-" "ua" "198.51.100.9"`:         "198.51.100.9",
+		`2606:4700::1 - - [t] "GET / HTTP/1.1" 200 1 "-" "ua" "2001:db8::5"` + "\r": "2001:db8::5",
+		`104.16.0.1 - - [t] "GET / HTTP/1.1" 200 1 "-" "ua" "-"`:                    "104.16.0.1",
+		`104.16.0.1 - - [t] "GET / HTTP/1.1" 200 1 "-" "curl/8.0"`:                  "104.16.0.1",
+		`203.0.113.5 - - [t] "GET / HTTP/1.1" 200 1 "-" "ua" "1.1.1.1"`:             "203.0.113.5",
+		`garbage line`: "",
+	} {
+		a, ok := clientIP([]byte(in))
+		got := ""
+		if ok {
+			got = a.String()
+		}
+		if got != want {
+			t.Errorf("clientIP(%q) = %q want %q", in, got, want)
+		}
+	}
+	for ip, want := range map[string]bool{"173.245.48.1": true, "2a06:98c0::1": true, "::ffff:162.158.1.1": true,
+		"203.0.113.5": false, "bogus": false} {
+		if IsCloudflare(ip) != want {
+			t.Errorf("IsCloudflare(%s) != %v", ip, want)
 		}
 	}
 }

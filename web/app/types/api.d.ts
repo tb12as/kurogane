@@ -3925,6 +3925,8 @@ export interface components {
                 [key: string]: number;
             };
             syn_cookies?: boolean;
+            /** @description Busiest client IPs of the last interval from collector.nginx_log. Behind Cloudflare, the logged CF-Connecting-IP value is used when the peer is a Cloudflare address. Absent when the log is not tailed. */
+            top_http_clients?: components["schemas"]["IPCount"][];
             top_ips?: components["schemas"]["IPCount"][];
             top_ports?: {
                 count?: number;

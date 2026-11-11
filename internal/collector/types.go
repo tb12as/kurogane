@@ -147,9 +147,11 @@ type ConnInfo struct {
 	States     map[string]int `json:"states"`
 	TopIPs     []IPCount      `json:"top_ips"`
 	TopSubnets []IPCount      `json:"top_subnets"`
-	TopPorts   []PortCount    `json:"top_ports"`
-	Listening  []Listener     `json:"listening"`
-	SynCookies bool           `json:"syn_cookies"`
+	// TopHTTPClients are real client IPs from the nginx access log (CF-Connecting-IP behind Cloudflare)
+	TopHTTPClients []IPCount   `json:"top_http_clients,omitempty"`
+	TopPorts       []PortCount `json:"top_ports"`
+	Listening      []Listener  `json:"listening"`
+	SynCookies     bool        `json:"syn_cookies"`
 }
 
 type ServiceState struct {

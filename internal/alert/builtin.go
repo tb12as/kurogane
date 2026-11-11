@@ -308,11 +308,22 @@ func ddosText(s *collector.Snapshot) (string, []notify.Field) {
 	nc, _ := s.Value("net.new_conns_ps", nil)
 	text := fmt.Sprintf("SYN_RECV %.0f, new connections %.0f/s, max %.0f conns from one IP. Host-level detection only: "+
 		"volumetric attacks need upstream mitigation (provider or CDN).", syn, nc, firstOr(s, "net.conns_per_ip_max"))
-	var ips, nets, ports []string
+	var ips, nets, ports, http []string
 	for i, x := range s.Conns.TopIPs {
-		if i < 10 {
-			ips = append(ips, fmt.Sprintf("%s (%d)", x.IP, x.Count))
+		if i >= 10 {
+			break
 		}
+		cf := ""
+		if collector.IsCloudflare(x.IP) {
+			cf = ", Cloudflare"
+		}
+		ips = append(ips, fmt.Sprintf("%s (%d%s)", x.IP, x.Count, cf))
+	}
+	if len(s.Conns.TopIPs) > 0 && collector.IsCloudflare(s.Conns.TopIPs[0].IP) {
+		text += " Traffic arrives through Cloudflare: block offenders there (WAF, rate limiting), not on this host."
+	}
+	for _, x := range s.Conns.TopHTTPClients {
+		http = append(http, fmt.Sprintf("%s (%d req)", x.IP, x.Count))
 	}
 	for i, x := range s.Conns.TopSubnets {
 		if i < 10 {
@@ -329,7 +340,8 @@ func ddosText(s *collector.Snapshot) (string, []notify.Field) {
 		cookies = "on"
 	}
 	return text, []notify.Field{{Name: "Top source IPs", Value: join(ips)}, {Name: "Top subnets", Value: join(nets)},
-		{Name: "Top destination ports", Value: join(ports)}, {Name: "SYN cookies", Value: cookies}}
+		{Name: "Top destination ports", Value: join(ports)}, {Name: "SYN cookies", Value: cookies},
+		{Name: "Top HTTP clients (real IP)", Value: join(http)}}
 }
 
 func firstOr(s *collector.Snapshot, m string) float64 {

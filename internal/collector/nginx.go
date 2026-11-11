@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"net/netip"
 	"os"
 	"syscall"
 	"time"
@@ -20,6 +21,8 @@ type nginxCollector struct {
 	prevT time.Time
 	rem   []byte // partial last line
 	buf   []byte
+	ips   map[[16]byte]int32
+	top   []IPCount // busiest client IPs of the last interval
 }
 
 func (c *nginxCollector) Collect(context.Context) ([]Sample, error) {
@@ -47,6 +50,10 @@ func (c *nginxCollector) Collect(context.Context) ([]Sample, error) {
 		c.ino, c.off, c.rem = ino, 0, c.rem[:0]
 	}
 	var n, n4, n5 int
+	if c.ips == nil {
+		c.ips = map[[16]byte]int32{}
+	}
+	clear(c.ips)
 	if st.Size() > c.off {
 		f, err := os.Open(p)
 		if err != nil {
@@ -76,6 +83,9 @@ func (c *nginxCollector) Collect(context.Context) ([]Sample, error) {
 						c.rem = c.rem[:0]
 					}
 					n++
+					if a, ok := clientIP(line); ok {
+						c.ips[a.As16()]++
+					}
 					switch status(line) / 100 {
 					case 4:
 						n4++
@@ -93,6 +103,7 @@ func (c *nginxCollector) Collect(context.Context) ([]Sample, error) {
 			c.rem = c.rem[:0] // not a log line, do not grow forever
 		}
 	}
+	c.top = topN(c.ips, 10, false)
 	out := make([]Sample, 0, 3)
 	out = add(out, "http.rps", float64(n)/dt)
 	out = add(out, "http.4xx_ps", float64(n4)/dt)
@@ -115,4 +126,29 @@ func status(l []byte) int {
 		return 0
 	}
 	return int(atou(s[1:4]))
+}
+
+// clientIP returns $remote_addr, or the last quoted field ("$http_cf_connecting_ip") when $remote_addr is a
+// Cloudflare edge: the header is trusted only from Cloudflare, so a spoofed one from anyone else is ignored.
+func clientIP(l []byte) (netip.Addr, bool) {
+	i := bytes.IndexByte(l, ' ')
+	if i < 0 {
+		return netip.Addr{}, false
+	}
+	a, err := netip.ParseAddr(string(l[:i]))
+	if err != nil {
+		return a, false
+	}
+	if !isCF(a) {
+		return a, true
+	}
+	l = bytes.TrimRight(l, " \r")
+	if len(l) < 2 || l[len(l)-1] != '"' {
+		return a, true
+	}
+	j := bytes.LastIndexByte(l[:len(l)-1], '"')
+	if r, err := netip.ParseAddr(string(l[j+1 : len(l)-1])); err == nil {
+		return r, true
+	}
+	return a, true
 }

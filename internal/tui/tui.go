@@ -251,6 +251,13 @@ func (m model) body() string {
 		}
 		b.WriteString("top ips  " + strings.Join(t, "  ") + "\n")
 	}
+	if ips := s.Conns.TopHTTPClients; len(ips) > 0 {
+		var t []string
+		for _, x := range ips[:min(len(ips), 5)] {
+			t = append(t, fmt.Sprintf("%s (%d)", x.IP, x.Count))
+		}
+		b.WriteString("http ips " + strings.Join(t, "  ") + "\n")
+	}
 
 	procs, by := s.TopCPU, "CPU"
 	if m.byMem {

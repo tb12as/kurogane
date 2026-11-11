@@ -268,7 +268,17 @@ func TestDDoSBody(t *testing.T) {
 	s.Conns.TopIPs = []collector.IPCount{{IP: "198.51.100.7", Count: 300}}
 	s.Conns.SynCookies = true
 	txt, f := ddosText(s)
-	if !strings.Contains(txt, "upstream mitigation") || f[0].Value != "198.51.100.7 (300)" || f[3].Value != "on" {
+	if !strings.Contains(txt, "upstream mitigation") || f[0].Value != "198.51.100.7 (300)" || f[3].Value != "on" ||
+		strings.Contains(txt, "Cloudflare") || f[4].Value != "-" {
+		t.Fatal(txt, f)
+	}
+
+	// behind Cloudflare: edges are marked and real IPs come from the access log
+	s.Conns.TopIPs = []collector.IPCount{{IP: "162.158.1.1", Count: 300}}
+	s.Conns.TopHTTPClients = []collector.IPCount{{IP: "198.51.100.9", Count: 4000}}
+	txt, f = ddosText(s)
+	if !strings.Contains(txt, "through Cloudflare") || f[0].Value != "162.158.1.1 (300, Cloudflare)" ||
+		f[4].Value != "198.51.100.9 (4000 req)" {
 		t.Fatal(txt, f)
 	}
 }
@@ -289,14 +299,16 @@ func TestAutoBan(t *testing.T) {
 	e.d.Audit = &audit.Logger{Store: e.d.DB}
 	ctx := context.Background()
 	s := snap("net.tcp.syn_recv", 900.0)
-	s.Conns.TopIPs = []collector.IPCount{{IP: "203.0.113.5", Count: 900}, {IP: "198.51.100.7", Count: 400},
+	s.Conns.TopIPs = []collector.IPCount{{IP: "203.0.113.5", Count: 900}, {IP: "104.16.0.1", Count: 800},
+		{IP: "198.51.100.7", Count: 400},
 		{IP: "198.51.100.8", Count: 300}, {IP: "198.51.100.9", Count: 250}, {IP: "192.0.2.1", Count: 3}}
 	e.Eval(ctx, s)
 	bans := e.d.Firewall.Bans()
 	if len(bans) != 2 || bans[0].IP == "203.0.113.5" || bans[1].IP == "203.0.113.5" {
 		t.Fatalf("want 2 bans (cap), never the allowlisted IP: %+v", bans)
 	}
-	if ex.Called("iptables -I KUROGANE -s 198.51.100.9") || ex.Called("iptables -I KUROGANE -s 192.0.2.1") {
+	if ex.Called("iptables -I KUROGANE -s 198.51.100.9") || ex.Called("iptables -I KUROGANE -s 192.0.2.1") ||
+		ex.Called("iptables -I KUROGANE -s 104.16.0.1") {
 		t.Fatal("cap exceeded or low-count source banned")
 	}
 	if !allowed([]string{"10.0.0.0/8"}, "10.1.2.3") || allowed([]string{"10.0.0.0/8"}, "11.1.2.3") {
