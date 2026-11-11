@@ -345,10 +345,20 @@ components:
                     type: object
                 syn_cookies:
                     type: boolean
+                top_flows:
+                    description: Busiest remote source IP -> local port pairs over current TCP sockets.
+                    items:
+                        $ref: '#/components/schemas/Flow'
+                    type: array
                 top_http_clients:
                     description: Busiest client IPs of the last interval from collector.nginx_log. Behind Cloudflare, the logged CF-Connecting-IP value is used when the peer is a Cloudflare address. Absent when the log is not tailed.
                     items:
                         $ref: '#/components/schemas/IPCount'
+                    type: array
+                top_http_flows:
+                    description: Busiest client IP -> request pairs of the last interval from collector.nginx_log, using the same client IP as top_http_clients. Absent when the log is not tailed.
+                    items:
+                        $ref: '#/components/schemas/Flow'
                     type: array
                 top_ips:
                     items:
@@ -624,6 +634,22 @@ components:
             required:
                 - servers
                 - sites
+            type: object
+        Flow:
+            description: One source -> destination pair.
+            properties:
+                cloudflare:
+                    description: the source is a Cloudflare edge address
+                    type: boolean
+                count:
+                    description: sockets
+                    or requests in the last interval: null
+                    type: integer
+                dest:
+                    description: '"443/tcp" for a socket, "GET /login" (query string dropped) for an HTTP request'
+                    type: string
+                ip:
+                    type: string
             type: object
         HardenCheck:
             properties:

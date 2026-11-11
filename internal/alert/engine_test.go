@@ -269,16 +269,19 @@ func TestDDoSBody(t *testing.T) {
 	s.Conns.SynCookies = true
 	txt, f := ddosText(s)
 	if !strings.Contains(txt, "upstream mitigation") || f[0].Value != "198.51.100.7 (300)" || f[3].Value != "on" ||
-		strings.Contains(txt, "Cloudflare") || f[4].Value != "-" {
+		strings.Contains(txt, "Cloudflare") || f[4].Value != "-" || f[5].Value != "-" || f[6].Value != "-" {
 		t.Fatal(txt, f)
 	}
 
 	// behind Cloudflare: edges are marked and real IPs come from the access log
 	s.Conns.TopIPs = []collector.IPCount{{IP: "162.158.1.1", Count: 300}}
 	s.Conns.TopHTTPClients = []collector.IPCount{{IP: "198.51.100.9", Count: 4000}}
+	s.Conns.TopFlows = []collector.Flow{{IP: "162.158.1.1", Dest: "443/tcp", Count: 300, Cloudflare: true}}
+	s.Conns.TopHTTPFlows = []collector.Flow{{IP: "198.51.100.9", Dest: "GET /login", Count: 3900}}
 	txt, f = ddosText(s)
 	if !strings.Contains(txt, "through Cloudflare") || f[0].Value != "162.158.1.1 (300, Cloudflare)" ||
-		f[4].Value != "198.51.100.9 (4000 req)" {
+		f[4].Value != "198.51.100.9 (4000 req)" || f[5].Value != "162.158.1.1 -> 443/tcp (300, Cloudflare)" ||
+		f[6].Value != "198.51.100.9 -> GET /login (3900 req)" {
 		t.Fatal(txt, f)
 	}
 }

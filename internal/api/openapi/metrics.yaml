@@ -62,6 +62,14 @@ components:
     IPCount:
       type: object
       properties: {ip: {type: string, description: "address, or subnet with /24 (v4) or /64 (v6)"}, count: {type: integer}}
+    Flow:
+      type: object
+      description: One source -> destination pair.
+      properties:
+        ip: {type: string}
+        dest: {type: string, description: '"443/tcp" for a socket, "GET /login" (query string dropped) for an HTTP request'}
+        count: {type: integer, description: sockets, or requests in the last interval}
+        cloudflare: {type: boolean, description: the source is a Cloudflare edge address}
     ConnInfo:
       type: object
       properties:
@@ -74,6 +82,16 @@ components:
             Busiest client IPs of the last interval from collector.nginx_log. Behind Cloudflare, the logged
             CF-Connecting-IP value is used when the peer is a Cloudflare address. Absent when the log is not tailed.
           items: {$ref: "#/components/schemas/IPCount"}
+        top_flows:
+          type: array
+          description: Busiest remote source IP -> local port pairs over current TCP sockets.
+          items: {$ref: "#/components/schemas/Flow"}
+        top_http_flows:
+          type: array
+          description: >-
+            Busiest client IP -> request pairs of the last interval from collector.nginx_log, using the same client
+            IP as top_http_clients. Absent when the log is not tailed.
+          items: {$ref: "#/components/schemas/Flow"}
         top_ports:
           type: array
           items: {type: object, properties: {port: {type: integer}, count: {type: integer}}}

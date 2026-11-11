@@ -143,12 +143,22 @@ type Listener struct {
 	Process string `json:"process,omitempty"`
 }
 
+// Flow is one source -> destination pair: "443/tcp" for sockets, "GET /login" for HTTP requests.
+type Flow struct {
+	IP         string `json:"ip"`
+	Dest       string `json:"dest"`
+	Count      int    `json:"count"`
+	Cloudflare bool   `json:"cloudflare,omitempty"`
+}
+
 type ConnInfo struct {
 	States     map[string]int `json:"states"`
 	TopIPs     []IPCount      `json:"top_ips"`
 	TopSubnets []IPCount      `json:"top_subnets"`
 	// TopHTTPClients are real client IPs from the nginx access log (CF-Connecting-IP behind Cloudflare)
 	TopHTTPClients []IPCount   `json:"top_http_clients,omitempty"`
+	TopFlows       []Flow      `json:"top_flows"`                // source IP -> local port
+	TopHTTPFlows   []Flow      `json:"top_http_flows,omitempty"` // client IP -> request, from the nginx log
 	TopPorts       []PortCount `json:"top_ports"`
 	Listening      []Listener  `json:"listening"`
 	SynCookies     bool        `json:"syn_cookies"`

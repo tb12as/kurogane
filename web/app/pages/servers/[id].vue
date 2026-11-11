@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useIntervalFn, useLocalStorage } from '@vueuse/core'
-import type { Cert, Line, Proc, Series, Snapshot } from '~/types/models'
+import type { Cert, Flow, Line, Proc, Series, Snapshot } from '~/types/models'
 
 const route = useRoute()
 const id = computed(() => String(route.params.id))
@@ -155,6 +155,15 @@ function setWide(title: string, on: boolean) {
 
 const procTab = ref('cpu')
 const procs = computed<Proc[]>(() => (procTab.value === 'cpu' ? snap.value?.top_cpu : snap.value?.top_mem) || [])
+const flowTab = ref('tcp')
+const flows = computed<Flow[]>(
+  () => (flowTab.value === 'tcp' ? snap.value?.conns?.top_flows : snap.value?.conns?.top_http_flows) || [],
+)
+const flowEmpty = computed(() => {
+  if (!snap.value) return 'No connection data yet.'
+  if (flowTab.value === 'tcp') return 'No inbound TCP connections from remote addresses right now.'
+  return 'No HTTP requests in the last interval. Requests are read from collector.nginx_log.'
+})
 
 // soonest expiry first; unreadable files last
 const certs = computed<Cert[]>(() =>
@@ -277,6 +286,42 @@ async function kill(pid: number) {
       </CardContent>
     </Card>
   </div>
+
+  <Card v-if="local">
+    <CardHeader class="flex flex-row items-center justify-between">
+      <CardTitle>Top connections</CardTitle>
+      <Tabs v-model="flowTab">
+        <TabsList aria-label="Connection source">
+          <TabsTrigger value="tcp">TCP</TabsTrigger>
+          <TabsTrigger value="http">HTTP</TabsTrigger>
+        </TabsList>
+      </Tabs>
+    </CardHeader>
+    <CardContent>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Source IP</TableHead>
+            <TableHead>{{ flowTab === 'tcp' ? 'Local port' : 'Request' }}</TableHead>
+            <TableHead class="text-right">{{ flowTab === 'tcp' ? 'Connections' : 'Requests' }}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-for="f in flows" :key="f.ip + f.dest">
+            <TableCell class="font-mono text-xs">
+              {{ f.ip }}
+              <span v-if="f.cloudflare" class="ml-2 font-sans text-muted-foreground">Cloudflare</span>
+            </TableCell>
+            <TableCell class="max-w-96 whitespace-normal break-all font-mono text-xs">{{ f.dest }}</TableCell>
+            <TableCell class="text-right tabular-nums">{{ f.count }}</TableCell>
+          </TableRow>
+          <TableEmpty v-if="!flows.length" :colspan="3" class="whitespace-normal text-center">
+            {{ flowEmpty }}
+          </TableEmpty>
+        </TableBody>
+      </Table>
+    </CardContent>
+  </Card>
 
   <section v-if="local && snap?.redis?.length" aria-label="Redis" class="grid gap-4 xl:grid-cols-2">
     <RedisCard v-for="r in snap.redis" :key="r.name" :r="r" />

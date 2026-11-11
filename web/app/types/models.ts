@@ -36,13 +36,27 @@ export interface SystemInfo {
   cpus: number
   mem_total: number
 }
+// Flow is one source -> destination pair: "443/tcp" for a socket, "GET /login" for an HTTP request
+export interface Flow {
+  ip: string
+  dest: string
+  count: number
+  cloudflare?: boolean
+}
 export interface Snapshot {
   ts: string
   samples: Sample[]
   system: SystemInfo
   top_cpu: Proc[]
   top_mem: Proc[]
-  conns: { states: Record<string, number>; top_ips: { ip: string; count: number }[]; syn_cookies: boolean }
+  conns: {
+    states: Record<string, number>
+    top_ips: { ip: string; count: number }[]
+    top_http_clients?: { ip: string; count: number }[]
+    top_flows?: Flow[]
+    top_http_flows?: Flow[]
+    syn_cookies: boolean
+  }
   services: { unit: string; active: string; sub: string }[]
   mounts: Mount[]
   certs?: Cert[]
