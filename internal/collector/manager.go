@@ -33,6 +33,7 @@ type Manager struct {
 	svc      *svcCollector
 	certs    *certCollector  // nil when collector.certs.enabled is off
 	redis    *redisCollector // nil when collector.redis.enabled is false
+	nginx    *nginxCollector // nil when collector.nginx_log is empty
 	cols     []named
 
 	latest atomic.Pointer[Snapshot]
@@ -49,7 +50,8 @@ func NewManager(cfg config.Collector, ex executor.Executor) *Manager {
 	m.cols = []named{{"cpu", m.cpu}, {"mem", m.mem}, {"disk", m.disk}, {"net", newNet()}, {"conn", m.conn},
 		{"proc", m.proc}, {"system", m.sys}, {"services", m.svc}, {"self", &selfCollector{}}}
 	if cfg.NginxLog != "" {
-		m.cols = append(m.cols, named{"nginx", &nginxCollector{path: cfg.NginxLog}})
+		m.nginx = &nginxCollector{path: cfg.NginxLog}
+		m.cols = append(m.cols, named{"nginx", m.nginx})
 	}
 	if cfg.Redis.Mode() != "off" {
 		m.redis = newRedis(cfg.Redis, ex, m.interval)
@@ -158,8 +160,12 @@ func (m *Manager) collect(ctx context.Context, delay time.Duration) *Snapshot {
 	if cs == nil {
 		cs = []certs.Cert{}
 	}
+	conns := m.conn.info
+	if m.nginx != nil {
+		conns.TopHTTPClients = m.nginx.top
+	}
 	return &Snapshot{TS: start, Samples: all, System: sys, TopCPU: m.proc.topCPU, TopMem: m.proc.topMem,
-		Conns: m.conn.info, Services: m.svc.state, Mounts: m.disk.mounts, Certs: cs, Redis: m.Redis(), Lag: lag}
+		Conns: conns, Services: m.svc.state, Mounts: m.disk.mounts, Certs: cs, Redis: m.Redis(), Lag: lag}
 }
 
 // logErr logs a failing collector at most once a minute so one broken source cannot flood logs.

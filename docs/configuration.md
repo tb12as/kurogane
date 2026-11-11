@@ -70,7 +70,7 @@ Metric collection on the agent.
 | `collector.retention_raw` | duration | `24h` | How long raw samples are kept. |
 | `collector.retention_rollup` | duration | `7d` | How long downsampled (rollup) samples are kept. |
 | `collector.watch_services` | list | `[]` | systemd units to monitor (`service_down` alert). nginx and Apache units are added automatically when `web.enabled` is true. |
-| `collector.nginx_log` | path | empty | nginx access log to tail for the HTTP 4xx/5xx rate. Empty disables it. |
+| `collector.nginx_log` | path | empty | nginx access log to tail for the HTTP 4xx/5xx rate and the top HTTP client IPs shown in the `ddos` alert and `krgn top`. Empty disables it. See [Behind Cloudflare](#behind-cloudflare). |
 | `collector.prometheus` | bool | `false` | Exposes `GET /metrics` in Prometheus format (metric prefix `kurogane_`). Requires a token with the `read` scope. |
 
 ### `collector.certs`
@@ -283,6 +283,66 @@ volumetric attacks; those need upstream mitigation.
 | `alerts.auto_ban.max_bans` | int | `50` | Maximum number of automatic bans per agent run. `0` removes the cap. |
 | `alerts.auto_ban.allowlist` | list of CIDRs | `[]` | Addresses that are never banned. `ssh.bruteforce.allowlist` also applies. |
 | `alerts.auto_ban.rate_limit` | bool | `false` | Reserved. It currently has no effect. |
+
+Cloudflare edge addresses are never banned automatically: a ban would block every visitor routed through that edge.
+Behind Cloudflare, visitor addresses never reach the host firewall either, so offenders must be blocked in Cloudflare
+(WAF or rate limiting rules).
+
+### Behind Cloudflare
+
+Behind Cloudflare, every TCP connection comes from a Cloudflare edge, so the `ddos` alert marks those addresses with
+`Cloudflare` and lists the real visitor addresses under "Top HTTP clients (real IP)". The real address comes from the
+`CF-Connecting-IP` request header, which the web server must log. `collector.nginx_log` reads any access log in the
+combined format, so it also accepts an Apache log. Use one of the following setups.
+
+#### nginx
+
+Append the header as the last quoted field of the log format:
+
+```nginx
+log_format cf '$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent '
+              '"$http_referer" "$http_user_agent" "$http_cf_connecting_ip"';
+access_log /var/log/nginx/access.log cf;
+```
+
+The agent uses that field only when `$remote_addr` is a published Cloudflare address, so a forged header sent
+directly to the origin is ignored. Alternatively, let nginx rewrite `$remote_addr` with the `realip` module, adding
+one `set_real_ip_from` line per range listed at <https://www.cloudflare.com/ips/>:
+
+```nginx
+set_real_ip_from 173.245.48.0/20;
+# one line per published range
+real_ip_header CF-Connecting-IP;
+```
+
+#### Apache
+
+Point `collector.nginx_log` at the Apache access log, for example `/var/log/apache2/access.log`, and append the header
+as the last quoted field of the log format:
+
+```apache
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" \"%{CF-Connecting-IP}i\"" cf
+CustomLog ${APACHE_LOG_DIR}/access.log cf
+```
+
+As with nginx, the field is used only when `%h` is a published Cloudflare address. Alternatively, use `mod_remoteip`
+with one `RemoteIPTrustedProxy` line per published range, and log `%a` instead of `%h`: `%h` keeps logging the
+Cloudflare address.
+
+```apache
+RemoteIPHeader CF-Connecting-IP
+RemoteIPTrustedProxy 173.245.48.0/20
+# one line per published range
+LogFormat "%a %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+```
+
+Do not point the agent at a log in the `vhost_combined` format (Debian's `other_vhosts_access.log`): it starts each
+line with `host:port` instead of the client address, so request rates are counted but client addresses are not.
+
+#### Limits
+
+The agent reads one access log. When each site writes its own log, only the configured one is counted. The agent ships
+the Cloudflare ranges published on 2026-11-11. `CF-Connecting-IPv6` (Pseudo IPv4) is not supported.
 
 ## `web`
 

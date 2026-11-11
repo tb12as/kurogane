@@ -617,8 +617,9 @@ func (e *Engine) autoBan(ctx context.Context) {
 			slog.Warn("auto-ban cap reached", "max_bans", ab.MaxBans)
 			return
 		}
-		// only clear offenders: far above a normal client's concurrency
-		if x.Count < 50 || e.d.Firewall.Exempt(x.IP) || allowed(ab.Allowlist, x.IP) {
+		// only clear offenders: far above a normal client's concurrency; banning a Cloudflare edge blocks every
+		// visitor routed through it, and real IPs behind Cloudflare never reach the host firewall
+		if x.Count < 50 || e.d.Firewall.Exempt(x.IP) || allowed(ab.Allowlist, x.IP) || collector.IsCloudflare(x.IP) {
 			continue
 		}
 		if err := e.d.Firewall.Ban(ctx, x.IP, ab.Duration, fmt.Sprintf("auto-ban: %d concurrent connections", x.Count)); err != nil {

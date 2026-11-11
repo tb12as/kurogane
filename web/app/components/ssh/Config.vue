@@ -112,8 +112,8 @@ const impact = computed(() => [
           <TableBody>
             <TableRow v-for="r in data!.rows" :key="r.key">
               <TableCell class="font-mono">{{ r.key }}</TableCell>
-              <TableCell class="max-w-64 break-all font-mono text-xs">{{ r.current || '(default)' }}</TableCell>
-              <TableCell class="max-w-64 break-all font-mono text-xs">{{ r.recommended || '-' }}</TableCell>
+              <TableCell class="max-w-64 whitespace-normal break-all font-mono text-xs">{{ r.current || '(default)' }}</TableCell>
+              <TableCell class="max-w-64 whitespace-normal break-all font-mono text-xs">{{ r.recommended || '-' }}</TableCell>
               <TableCell><StateBadge :value="r.recommended ? (r.ok ? 'ok' : 'warning') : ''" /></TableCell>
               <TableCell class="text-xs text-muted-foreground">{{ r.note }}</TableCell>
               <TableCell class="text-right">
