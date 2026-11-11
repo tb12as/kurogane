@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import QRCode from 'qrcode'
 import { toast } from 'vue-sonner'
-import type { APIToken, User } from '~/types/models'
+import type { APIToken, Line, Series, User } from '~/types/models'
 
 useHead({ title: 'Settings · Kurogane' })
 const tab = useTab('users')
@@ -73,6 +73,20 @@ async function copy(s: string) {
 const { data: health } = useAsyncData('health', () => api.get('/health'))
 const { data: status } = useAsyncData('status', () => api.get('/status'))
 
+// usage: the agent's own cpu/memory from the live snapshot; 24 h history fetched only while the tab is open
+const self = (k: string) => metric(useLive().snap.value, k)
+const { data: uHist, pending: uhPending, error: uhErr } = useAsyncData(
+  'usage',
+  async () => {
+    if (tab.value !== 'usage') return []
+    const q = { names: 'agent.cpu_pct,agent.rss_bytes', from: '24h', step: '5m' }
+    return list<Series>(await api.get('/metrics/history', { query: q }), 'series')
+  },
+  { lazy: true, watch: [tab] },
+)
+const usageLine = (m: string, name: string): Line[] =>
+  (uHist.value || []).filter(s => s.metric === m).map(s => ({ name, data: s.points.map(p => [p[0], p[1]]) }))
+
 // backup: SQLite + agent store (+ VictoriaMetrics snapshot on central) into the configured destination
 const backing = ref(false)
 const lastBackup = ref<{ path?: string, manifest?: { files?: Record<string, string> } } | null>(null)
@@ -124,6 +138,7 @@ async function uninstall() {
       <TabsTrigger value="storage">Storage</TabsTrigger>
       <TabsTrigger value="appearance">Appearance</TabsTrigger>
       <TabsTrigger value="about">About</TabsTrigger>
+      <TabsTrigger v-if="!useFleet().value" value="usage">Usage</TabsTrigger>
     </TabsList>
 
     <TabsContent value="users" class="space-y-3">
@@ -381,6 +396,28 @@ async function uninstall() {
           </template>
         </CardContent>
       </Card>
+    </TabsContent>
+    <TabsContent v-if="!useFleet().value" value="usage" class="space-y-4">
+      <p class="text-sm text-muted-foreground">
+        Resources used by the Kurogane agent process on this server. Updates live with each collection.
+      </p>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="CPU" :value="pct(self('agent.cpu_pct'))" :meter="self('agent.cpu_pct')" :warn="10" :crit="25" />
+        <StatCard label="Memory (RSS)" :value="bytes(self('agent.rss_bytes'))" />
+        <StatCard label="Goroutines" :value="num(self('agent.goroutines'))" />
+        <StatCard label="Metrics store" :value="bytes(self('agent.store_bytes'))" />
+      </div>
+      <LoadState
+        :pending="uhPending"
+        :error="uhErr"
+        :empty="!uHist?.length"
+        empty-text="No usage history yet. It appears after the first collections."
+      >
+        <div class="grid gap-4 lg:grid-cols-2">
+          <MetricChart title="Agent CPU, last 24 h" unit="pct" :lines="usageLine('agent.cpu_pct', 'cpu')" />
+          <MetricChart title="Agent memory, last 24 h" unit="bytes" :lines="usageLine('agent.rss_bytes', 'rss')" />
+        </div>
+      </LoadState>
     </TabsContent>
     <TabsContent value="appearance" class="space-y-4"><SettingsAppearance /></TabsContent>
   </Tabs>
