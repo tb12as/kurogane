@@ -1,0 +1,1 @@
+import{D as e,Q as t}from"./DpptWimn.js";import{t as n,x as r}from"#entry";var i=r(`/logo-128.png`),a=r(`/logo-256.png`),o={},s={src:i,srcset:i+` 1x, `+a+` 2x`,alt:``,"aria-hidden":`true`,width:`128`,height:`128`,class:`shrink-0 rounded-full`};function c(n,r){return t(),e(`img`,s)}var l=Object.assign(n(o,[[`render`,c]]),{__name:`Logo`});export{l as t};
