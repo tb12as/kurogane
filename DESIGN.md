@@ -51,6 +51,8 @@ Measured contrast (WCAG):
 | `#A3A09C` (muted text) on `#161618` (dark card)       | 6.94:1 | Dark muted     |
 | `#EE5A0A` (ring) on `#FAF6F1`                         | 3.20:1 | Focus ring     |
 | `#F65F0A` (ring) on `#0B0B0C`                         | 6.15:1 | Focus ring     |
+| `#8A837A` (input border) on a card                    | 3.70:1 | Field boundary |
+| `#6E6A66` (input border) on a dark card               | 3.42:1 | Field boundary |
 
 Primary actions use white text in light mode and charcoal text in dark mode; white on the bright logo orange is
 3.2:1 and fails 4.5:1. Orange is never used for body text or labels on light surfaces.
@@ -78,7 +80,7 @@ be replaced with brand colors, because multi-series charts need clearly distinct
 | `muted`              | `#EFEAE4`  | `#232326`                 |
 | `muted-foreground`   | `#5E5D5B`  | `#A3A09C`                 |
 | `border`             | `#E3DDD5`  | `rgb(239 234 228 / 12%)`  |
-| `input`              | `#CFC8BF`  | `rgb(239 234 228 / 20%)`  |
+| `input`              | `#8A837A`  | `#6E6A66`                 |
 | `ring`               | `#EE5A0A`  | `#F65F0A`                 |
 
 To add a token, add it to both `:root` and `.dark`, map it in `@theme inline`, verify contrast in both modes, and
@@ -125,7 +127,8 @@ gives the flat background some of the logo's character without competing with th
   through the `.dither` class, at `opacity-35 dark:opacity-60`.
 - Nowhere else. In the work area the top-left fade sits under the page title and description, so do not raise its
   opacity above these values.
-- Both are hidden under `prefers-contrast: more`.
+- Both are hidden under `prefers-contrast: more` and `forced-colors: active`. Under `prefers-contrast: more`
+  cards also turn opaque, since there is nothing left to show through.
 - Regenerate the PNG with:
 
   ```sh

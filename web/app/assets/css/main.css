@@ -39,8 +39,8 @@ html[data-density="compact"] {
 .dither-canvas {
   image-rendering: pixelated;
 }
-/* the dither is decoration: drop it when the user asks for more contrast */
-@media (prefers-contrast: more) {
+/* the dither is decoration: drop it when the user asks for more contrast or forced colors */
+@media (prefers-contrast: more), (forced-colors: active) {
   .dither,
   .dither-canvas {
     display: none;
@@ -73,7 +73,7 @@ html[data-density="compact"] {
   --accent-foreground: #141416;
   --destructive: oklch(0.52 0.22 27.325);
   --border: #e3ddd5;
-  --input: #cfc8bf;
+  --input: #8a837a;
   --ring: #ee5a0a;
   --ok: oklch(0.48 0.13 150);
   --warn: oklch(0.49 0.11 70);
@@ -102,7 +102,7 @@ html[data-density="compact"] {
   --accent-foreground: #efeae4;
   --destructive: oklch(0.704 0.191 22.216);
   --border: rgb(239 234 228 / 12%);
-  --input: rgb(239 234 228 / 20%);
+  --input: #6e6a66;
   --ring: #f65f0a;
   --ok: oklch(0.75 0.15 150);
   --warn: oklch(0.8 0.14 80);
@@ -112,6 +112,16 @@ html[data-density="compact"] {
   --chart-3: oklch(0.8 0.14 80);
   --chart-4: oklch(0.72 0.17 330);
   --chart-5: oklch(0.72 0.18 25);
+}
+
+/* without the dither there is nothing to show through, so cards go solid and keep a clear edge */
+@media (prefers-contrast: more) {
+  :root {
+    --card: #ffffff;
+  }
+  .dark {
+    --card: #161618;
+  }
 }
 
 @theme inline {
