@@ -1,1 +1,0 @@
-import{c as e,u as t}from"./DafQfqhF.js";import{$ as n,D as r,P as i,ht as a}from"./Df6S83k-.js";var o={class:`text-sm text-muted-foreground`},s=i({__name:`silence`,async setup(i){let s,c,l=t();return[s,c]=a(()=>e({path:`/alerts`,query:{...l.query,tab:`silences`}},{replace:!0})),await s,c(),(e,t)=>(n(),r(`p`,o,`Opening silences…`))}});export{s as default};

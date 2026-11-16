@@ -24,7 +24,7 @@ export default defineNuxtConfig({
       title: 'Kurogane',
       htmlAttrs: { lang: 'en' },
       meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1' }],
-      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
+      link: [{ rel: 'icon', type: 'image/png', sizes: '64x64', href: '/favicon.png' }],
     },
   },
   experimental: { appManifest: false },
