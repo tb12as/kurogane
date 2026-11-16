@@ -70,7 +70,7 @@ be replaced with brand colors, because multi-series charts need clearly distinct
 |----------------------|------------|---------------------------|
 | `background`         | `#FAF6F1`  | `#0B0B0C`                 |
 | `foreground`         | `#141416`  | `#EFEAE4`                 |
-| `card`               | `#FFFFFF`  | `#161618`                 |
+| `card`               | `rgb(255 255 255 / 60%)` | `rgb(22 22 24 / 60%)` |
 | `popover`            | `#FFFFFF`  | `#1C1C1F`                 |
 | `primary`            | `#C2410C`  | `#F65F0A`                 |
 | `primary-foreground` | `#FFFFFF`  | `#0B0B0C`                 |
@@ -160,7 +160,9 @@ gives the flat background some of the logo's character without competing with th
 
 - Radius comes from the `--radius` scale (`rounded-md`, `rounded-lg`, `rounded-xl`). Pills (`rounded-full`) are
   limited to badges, meters, and status dots.
-- Cards are flat: a border on a white (light) or `#0B2A38` (dark) surface over the page background. Cards carry no
+- Cards are flat: a border on a translucent white (light) or charcoal (dark) fill, 60% opaque, so the background
+  dither continues through them, dimmed. Popovers stay opaque. Measured worst case (card over a dither dot):
+  `foreground` 16.97:1 and `muted-foreground` 6.07:1 in light, 14.40:1 and 6.62:1 in dark. Cards carry no
   shadow. Shadows are allowed only on floating layers: popovers, dropdowns, dialogs, tooltips, toasts.
 - No glassmorphism, `backdrop-blur`, or glow.
 - Page content sits in `main` with `space-y-6`; related controls group with `gap-2` to `gap-4`. Use the Tailwind

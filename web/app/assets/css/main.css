@@ -59,7 +59,7 @@ html[data-density="compact"] {
   --radius: 0.5rem;
   --background: #faf6f1;
   --foreground: #141416;
-  --card: #ffffff;
+  --card: rgb(255 255 255 / 60%);
   --card-foreground: #141416;
   --popover: #ffffff;
   --popover-foreground: #141416;
@@ -88,7 +88,7 @@ html[data-density="compact"] {
 .dark {
   --background: #0b0b0c;
   --foreground: #efeae4;
-  --card: #161618;
+  --card: rgb(22 22 24 / 60%);
   --card-foreground: #efeae4;
   --popover: #1c1c1f;
   --popover-foreground: #efeae4;
