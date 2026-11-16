@@ -12,6 +12,10 @@ export default defineNuxtConfig({
     '@fontsource-variable/ibm-plex-sans/wght.css',
     '@fontsource/ibm-plex-mono/latin-400.css',
     '@fontsource/ibm-plex-mono/latin-500.css',
+    // font-brand: wordmark, page and card titles, labels and buttons (matches the logo artwork)
+    '@fontsource/montserrat/latin-400.css',
+    '@fontsource/montserrat/latin-500.css',
+    '@fontsource/montserrat/latin-600.css',
     '~/assets/css/main.css',
   ],
   shadcn: { prefix: '', componentDir: './app/components/ui' },

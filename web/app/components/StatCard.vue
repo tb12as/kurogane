@@ -12,7 +12,8 @@ const tone = computed(() => {
   const m = props.meter ?? 0
   if (props.crit !== undefined && m >= props.crit) return 'bg-crit'
   if (props.warn !== undefined && m >= props.warn) return 'bg-warn'
-  return 'bg-primary/70'
+  // neutral, not orange: orange is too close to warn amber to tell a normal meter from a warning one
+  return 'bg-muted-foreground'
 })
 </script>
 

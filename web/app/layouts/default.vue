@@ -60,10 +60,10 @@ onMounted(startStream)
       Skip to content
     </a>
 
-    <header class="dark flex items-center justify-between border-b bg-background px-4 py-3 text-foreground md:hidden">
-      <span class="flex items-center gap-2 font-semibold">
-        <Logo class="size-6" />
-        Kurogane
+    <header class="flex items-center justify-between border-b bg-background px-4 py-3 text-foreground md:hidden">
+      <span class="flex items-center gap-2">
+        <Logo disc class="size-7" />
+        <span class="font-brand font-medium tracking-[0.2em] uppercase">Kurogane</span>
       </span>
       <Button
         variant="ghost"
@@ -82,13 +82,13 @@ onMounted(startStream)
       id="sidenav"
       :class="[
         navOpen ? 'block' : 'hidden',
-        'dark border-b bg-background text-foreground md:sticky md:top-0 md:block md:h-dvh md:border-r md:border-b-0',
+        'border-b bg-background text-foreground md:sticky md:top-0 md:block md:h-dvh md:border-r md:border-b-0',
       ]"
     >
       <div class="flex h-full flex-col gap-4 p-3">
-        <NuxtLink to="/" class="hidden items-center gap-2 px-2 pt-1 text-lg font-semibold md:flex">
-          <Logo class="size-7" />
-          Kurogane
+        <NuxtLink to="/" class="hidden items-center gap-2 px-2 pt-1 md:flex">
+          <Logo disc class="size-8" />
+          <span class="font-brand font-medium tracking-[0.2em] uppercase">Kurogane</span>
         </NuxtLink>
         <nav aria-label="Main" class="flex flex-col gap-0.5">
           <NuxtLink

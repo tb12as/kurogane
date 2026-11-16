@@ -18,34 +18,42 @@ Dial: ENERGY 1 / RHYTHM 1 / MOTION 1
 - RHYTHM 1: screens repeat one structure (title, filters, card with table) so every page reads the same way.
 - MOTION 1: hover and focus states only; nothing moves unless the operator acts.
 
-Identity motif: the ink sidebar with the shield mark, set against an off-white work area. It is the one element that
-makes the product recognizable, and it repeats on every authenticated screen.
+Identity motif: the hexagon mark with its orange block, on charcoal or warm cream surfaces. It sits at the top of
+the sidebar on every authenticated screen and on the sign-in card, and it is the one element that makes the product
+recognizable.
 
 Focal point: each screen leads with what needs action. On the Overview, active alerts come first, ahead of the
 live metrics.
 
 ## 2. Palette
 
-The brand palette has four colors. No other brand colors are introduced.
+The brand palette comes from the logo (`web/app/assets/logo/`). No other brand colors are introduced.
 
-| Name       | Hex       | Role                                                                        |
-|------------|-----------|-----------------------------------------------------------------------------|
-| Ink        | `#061E29` | Text in light mode; page background in dark mode; the sidebar in both.      |
-| Deep teal  | `#1D546D` | Primary actions in light mode (buttons, links styled as buttons, meters).   |
-| Muted teal | `#5F9598` | The single accent: focus ring in both modes, primary actions in dark mode.  |
-| Off-white  | `#F3F4F4` | Page background in light mode; text in dark mode.                           |
+| Name     | Hex       | Role                                                                          |
+|----------|-----------|-------------------------------------------------------------------------------|
+| Charcoal | `#0B0B0C` | Page background in dark mode.                                                 |
+| Ink      | `#141416` | Text in light mode; text on primary actions in light mode.                    |
+| Cream    | `#FAF6F1` | Page background in light mode.                                                |
+| Bone     | `#EFEAE4` | Text in dark mode; muted surfaces in light mode.                              |
+| Orange   | `#F65F0A` | The single accent: primary actions and the focus ring (see light mode below). |
+
+Light mode uses two shades. Primary actions use burnt orange `#C2410C` so that their white text reaches 4.5:1.
+The focus ring uses `#EE5A0A`, visually identical to the logo orange, because `#F65F0A` reaches only 2.98:1
+against the cream background and the ring needs 3:1.
 
 Measured contrast (WCAG):
 
 | Pair                                                  | Ratio  | Use            |
 |-------------------------------------------------------|--------|----------------|
-| `#FFFFFF` on `#1D546D`                                | 8.26:1 | Light primary  |
-| `#061E29` on `#5F9598`                                | 5.09:1 | Dark primary   |
-| `#4A6572` (muted text) on `#F3F4F4`                   | 5.61:1 | Light muted    |
-| `#9DB4BA` (muted text) on `#0B2A38` (dark card)       | 6.90:1 | Dark muted     |
-| `#5F9598` (ring) on `#F3F4F4`                         | 3.05:1 | Focus ring     |
+| `#FFFFFF` on `#C2410C`                                | 5.18:1 | Light primary  |
+| `#0B0B0C` on `#F65F0A`                                | 6.15:1 | Dark primary   |
+| `#5E5D5B` (muted text) on `#FAF6F1`                   | 6.11:1 | Light muted    |
+| `#A3A09C` (muted text) on `#161618` (dark card)       | 6.94:1 | Dark muted     |
+| `#EE5A0A` (ring) on `#FAF6F1`                         | 3.20:1 | Focus ring     |
+| `#F65F0A` (ring) on `#0B0B0C`                         | 6.15:1 | Focus ring     |
 
-`#5F9598` fails 4.5:1 as text on light surfaces. Never use it for body text or labels in light mode.
+Primary actions use white text in light mode and charcoal text in dark mode; white on the bright logo orange is
+3.2:1 and fails 4.5:1. Orange is never used for body text or labels on light surfaces.
 
 ## 3. Tokens
 
@@ -60,18 +68,18 @@ be replaced with brand colors, because multi-series charts need clearly distinct
 
 | Token                | Light      | Dark                      |
 |----------------------|------------|---------------------------|
-| `background`         | `#F3F4F4`  | `#061E29`                 |
-| `foreground`         | `#061E29`  | `#F3F4F4`                 |
-| `card`               | `#FFFFFF`  | `#0B2A38`                 |
-| `popover`            | `#FFFFFF`  | `#0E3142`                 |
-| `primary`            | `#1D546D`  | `#5F9598`                 |
-| `primary-foreground` | `#FFFFFF`  | `#061E29`                 |
-| `secondary`/`accent` | `#E3EDEE`  | `#12394A`                 |
-| `muted`              | `#E6EBEC`  | `#12394A`                 |
-| `muted-foreground`   | `#4A6572`  | `#9DB4BA`                 |
-| `border`             | `#D5DEE0`  | `rgb(243 244 244 / 12%)`  |
-| `input`              | `#B9C7CA`  | `rgb(243 244 244 / 20%)`  |
-| `ring`               | `#5F9598`  | `#5F9598`                 |
+| `background`         | `#FAF6F1`  | `#0B0B0C`                 |
+| `foreground`         | `#141416`  | `#EFEAE4`                 |
+| `card`               | `#FFFFFF`  | `#161618`                 |
+| `popover`            | `#FFFFFF`  | `#1C1C1F`                 |
+| `primary`            | `#C2410C`  | `#F65F0A`                 |
+| `primary-foreground` | `#FFFFFF`  | `#0B0B0C`                 |
+| `secondary`/`accent` | `#EFEAE4`  | `#232326`                 |
+| `muted`              | `#EFEAE4`  | `#232326`                 |
+| `muted-foreground`   | `#5E5D5B`  | `#A3A09C`                 |
+| `border`             | `#E3DDD5`  | `rgb(239 234 228 / 12%)`  |
+| `input`              | `#CFC8BF`  | `rgb(239 234 228 / 20%)`  |
+| `ring`               | `#EE5A0A`  | `#F65F0A`                 |
 
 To add a token, add it to both `:root` and `.dark`, map it in `@theme inline`, verify contrast in both modes, and
 record it in this table.
@@ -80,8 +88,11 @@ record it in this table.
 
 - The UI supports light and dark modes through the existing toggle (`useDark` in `layouts/default.vue`). Every
   change must work in both.
-- The sidebar and the mobile header always render in the dark token scope (the `dark` class on the element). This
-  anchors the ink color in light mode without separate sidebar tokens. Do not add `--sidebar-*` variables.
+- The sidebar and the mobile header follow the active theme like the rest of the page, separated from the work area
+  by a border. Do not add `--sidebar-*` variables.
+- `Logo` switches its fills with the `dark:` variant, so it matches whichever theme is active. `public/favicon.svg`
+  switches with `prefers-color-scheme`, because the browser tab strip follows the browser theme, not the in-app
+  toggle.
 
 ## 5. Status colors
 
@@ -90,26 +101,37 @@ record it in this table.
 - State is never conveyed by color alone. Use `StateBadge`, which renders the state word with its color. Add new
   state words to its map instead of styling badges by hand.
 - `destructive` is reserved for destructive actions and error messages.
-- Status hues are intentionally distinct from the brand teal. Do not tint them toward the palette.
+- Status hues are not tinted toward the palette. Brand orange sits between `crit` and `warn`, so status is
+  always paired with its word through `StateBadge` and never shown as an orange surface.
 
 ## 6. Accent
 
-Muted teal (`#5F9598`) is the only accent. It appears on the focus ring, as the primary action color in dark mode,
-and as the active navigation surface inside the sidebar. It does not appear on borders, dividers, icons, headings,
-or backgrounds elsewhere.
+Orange is the only accent. It appears on primary actions, on the focus ring, and as the underline of
+link-style buttons (the link text stays `foreground`, because orange text fails 4.5:1 on light surfaces). It does not
+appear on borders, dividers, icons, headings, navigation, or backgrounds elsewhere; the active navigation item uses
+the neutral `accent` surface. Meters below their warn threshold use `muted-foreground`, because orange is too
+close to `warn` amber to tell a normal meter from a warning one.
 
 ## 7. Typography
 
 - Sans: IBM Plex Sans (variable, `@fontsource-variable/ibm-plex-sans`). Mono: IBM Plex Mono, weights 400 and
   500, Latin subset only (`@fontsource/ibm-plex-mono`). Reason: Plex was drawn for engineering tools, and its mono
   separates `0`/`O` and `l`/`1`/`I`, which matters when an operator reads IPs, hostnames, and key fingerprints.
+- Brand: Montserrat, weights 400, 500 and 600, Latin subset only (`@fontsource/montserrat`), exposed as
+  `font-brand`. It matches the logo artwork and is used only for the wordmark, page titles and the description
+  paragraph that follows them (base rule `h1, h1 + p` in `main.css`), card titles (`CardTitle`), form labels
+  (`Label`), input and select placeholders, and button text (`buttonVariants`). Body text, tables, badges, tabs
+  and menus stay in IBM Plex Sans.
 - Fonts are bundled through `nuxt.config.ts` and embedded in the Go binary, so the UI never fetches fonts from the
-  internet. Do not add a font CDN, a third family, or more mono weights.
+  internet. Do not add a font CDN, a fourth family, or more weights.
 - ECharts draws on a canvas and does not inherit CSS fonts; `MetricChart` sets the Plex family explicitly.
 - Mono: only for machine values that the operator copies or compares: SSH key fingerprints, IP addresses, file
   paths, config keys and values, audit action names, CIS identifiers. Never for headings or decoration.
 - Numbers in tables, stat cards, and counters use `tabular-nums`.
 - Headings use sentence case. No uppercase labels with wide letter-spacing.
+- Wordmark: "KUROGANE" next to `Logo` (sidebar, mobile header, sign-in card) uses `font-brand` (Montserrat 500,
+  Latin subset, `@fontsource/montserrat`) with `uppercase tracking-[0.2em]`, matching the logo artwork. It is the
+  only uppercase, wide-tracked text.
 - Page title: `text-2xl font-semibold`. Card title: the `CardTitle` default. Supporting text: `text-sm` or
   `text-xs` with `text-muted-foreground`.
 
@@ -138,7 +160,7 @@ Use existing components before writing new markup.
 | Pending SSH change countdown           | `PendingBanner`                                       |
 | Labelled select                        | `FormSelect`                                          |
 | Before/after text                      | `DiffView`                                            |
-| Brand mark (shield on deep teal tile)  | `Logo`; keep it identical to `public/favicon.svg`     |
+| Brand mark (hexagon with orange block) | `Logo` (`disc` adds the round backing used at small sizes); keep its paths identical to `public/favicon.svg` |
 | Dates, durations, sizes, percentages   | `ago`, `fmtDate`, `pct`, `bytes`, `num` (composables) |
 
 Merge class overrides with `cn` from `web/app/lib`.
@@ -209,7 +231,7 @@ The following are not permitted without a written reason added to this document:
 ## 16. Checklist before merging a UI change
 
 - [ ] Only token classes are used; no raw hex or Tailwind palette colors (except `MetricChart`).
-- [ ] The change was checked in light and dark mode, including the ink sidebar.
+- [ ] The change was checked in light and dark mode, including the sidebar and mobile header.
 - [ ] Status colors mark real state and are paired with a word.
 - [ ] New text and UI pairs meet 4.5:1 and 3:1 contrast.
 - [ ] Async content has loading, error, and empty states with actionable empty text.
