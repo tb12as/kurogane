@@ -92,7 +92,8 @@ record it in this table.
   change must work in both.
 - The sidebar and the mobile header follow the active theme like the rest of the page, separated from the work area
   by a border. Do not add `--sidebar-*` variables.
-- `Logo` and the favicon are one round icon with its own dark disc, the same in both themes.
+- `Logo` shows the light emblem in light mode and the dark icon in dark mode (`dark:` variant). The favicon is
+  the dark icon in both, since it sits on the browser tab strip rather than the page.
 
 ## 5. Status colors
 
@@ -114,10 +115,15 @@ close to `warn` amber to tell a normal meter from a warning one.
 
 ### Logo files
 
-`Logo` and the favicon use the delivered round icon set (`Kurogane-Terminal-Diptych-*.png`) as is, without
-resizing or theme variants. `public/logo-128.png` and `public/logo-256.png` (the 2x source in `srcset`) are copies
-of the 128x128 and 256x256 files, and `public/favicon.png` is the 64x64 file. Replace them by copying new files
-over these names.
+`Logo` and the favicon use the delivered round icons as is, without resizing:
+
+- Light mode: `public/logo-light-128.png` and `public/logo-light-256.png` (the 2x source in `srcset`) are copies of
+  the 128x128 and 256x256 `Circular-Kurogane-Terminal-Emblem` files.
+- Dark mode: `public/logo-128.png` and `public/logo-256.png` are copies of the 128x128 and 256x256
+  `kurogane-dark-minimal-1080` files.
+- Favicon: `public/favicon.png` is the 64x64 `kurogane-dark-minimal-1080` file.
+
+Replace them by copying new files over these names.
 
 ### Background dither
 
