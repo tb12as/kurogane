@@ -112,6 +112,27 @@ appear on borders, dividers, icons, headings, navigation, or backgrounds elsewhe
 the neutral `accent` surface. Meters below their warn threshold use `muted-foreground`, because orange is too
 close to `warn` amber to tell a normal meter from a warning one.
 
+### Background dither
+
+The page background carries one texture: an orange ordered (8x8 Bayer) dither that fades out from the corners. It
+gives the flat background some of the logo's character without competing with the data.
+
+- Work area (`layouts/default.vue`): `DitherBackground` draws two fades, from the top-left and bottom-right
+  corners, that die out before the middle (`lib/dither.ts`, tested in `tests/dither.test.ts`). It renders into a
+  canvas at half resolution shown at exactly 2x with crisp pixels and redraws on resize. Opacity is
+  `opacity-12 dark:opacity-20`. The sidebar stays flat.
+- Sign-in page: two corners (bottom-right and mirrored top-left) from `web/public/dither-corner.png`, 240x150,
+  through the `.dither` class, at `opacity-35 dark:opacity-60`.
+- Nowhere else. In the work area the top-left fade sits under the page title and description, so do not raise its
+  opacity above these values.
+- Both are hidden under `prefers-contrast: more`.
+- Regenerate the PNG with:
+
+  ```sh
+  magick -size 240x150 xc: -fx "max(0,1-hypot((w-i)/w,(h-j)/h))^1.5" -ordered-dither o8x8 \
+    -fill '#f65f0a' -opaque white -transparent black -strip PNG8:web/public/dither-corner.png
+  ```
+
 ## 7. Typography
 
 - Sans: IBM Plex Sans (variable, `@fontsource-variable/ibm-plex-sans`). Mono: IBM Plex Mono, weights 400 and
@@ -218,7 +239,8 @@ pulsing, bouncing, or entrance animations. Charts render with `animation: false`
 
 The following are not permitted without a written reason added to this document:
 
-- Gradients, colored glows, radial blobs, or background grid and dot patterns.
+- Gradients, colored glows, radial blobs, or background grid and dot patterns, except the background dither
+  in section 6.
 - Colors outside the palette and status tokens.
 - Glassmorphism or `backdrop-blur`.
 - Shadows on cards or inline content.

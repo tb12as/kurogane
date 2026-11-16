@@ -155,7 +155,10 @@ onMounted(startStream)
       </div>
     </aside>
 
-    <div class="min-w-0">
+    <div class="relative isolate min-w-0">
+      <DitherBackground
+        class="pointer-events-none fixed top-0 right-0 -z-10 h-full w-full opacity-12 md:w-[calc(100%-14rem)] dark:opacity-20"
+      />
       <PendingBanner />
       <main id="main" tabindex="-1" class="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
         <slot />

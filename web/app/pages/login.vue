@@ -34,7 +34,9 @@ async function submit() {
 </script>
 
 <template>
-  <main class="flex min-h-dvh items-center justify-center p-4">
+  <main class="relative isolate flex min-h-dvh items-center justify-center p-4">
+    <div class="dither right-0 bottom-0 -z-10 opacity-35 dark:opacity-60" aria-hidden="true" />
+    <div class="dither top-0 left-0 -z-10 -scale-100 opacity-35 dark:opacity-60" aria-hidden="true" />
     <Card class="w-full max-w-sm">
       <CardHeader class="justify-items-center text-center">
         <Logo class="mb-2 size-20" />

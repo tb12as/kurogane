@@ -26,6 +26,27 @@ html[data-density="compact"] {
   object-fit: none;
   object-position: left top;
 }
+/* orange ordered dither fading from a corner (public/dither-corner.png, see DESIGN.md), shown at 2x */
+.dither {
+  pointer-events: none;
+  position: fixed;
+  width: 480px;
+  height: 300px;
+  background: url(/dither-corner.png) no-repeat 0 0 / 100% 100%;
+  image-rendering: pixelated;
+}
+/* full work-area fade (components/DitherBackground.vue) */
+.dither-canvas {
+  image-rendering: pixelated;
+}
+/* the dither is decoration: drop it when the user asks for more contrast */
+@media (prefers-contrast: more) {
+  .dither,
+  .dither-canvas {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*),
   ::view-transition-old(*),
