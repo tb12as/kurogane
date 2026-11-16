@@ -36,11 +36,10 @@ async function submit() {
 <template>
   <main class="flex min-h-dvh items-center justify-center p-4">
     <Card class="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle class="flex items-center gap-2 text-xl">
-          <Logo class="size-7" />
-          Kurogane
-        </CardTitle>
+      <CardHeader class="justify-items-center text-center">
+        <Logo class="mb-2 size-20" />
+        <!-- negative margin cancels the trailing letter-spacing so the word sits centered -->
+        <CardTitle class="-mr-[0.2em] text-xl font-medium tracking-[0.2em] uppercase">Kurogane</CardTitle>
         <CardDescription>Sign in with your password and authenticator code.</CardDescription>
       </CardHeader>
       <CardContent>

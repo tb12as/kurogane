@@ -94,7 +94,7 @@ function ms(ns: number) {
             :aria-label="`Redis ${r.name} memory used`"
           >
             <div
-              :class="['h-full', memPct > 90 ? 'bg-crit' : memPct > 75 ? 'bg-warn' : 'bg-primary']"
+              :class="['h-full', memPct > 90 ? 'bg-crit' : memPct > 75 ? 'bg-warn' : 'bg-muted-foreground']"
               :style="{ width: `${Math.min(memPct, 100)}%` }"
             />
           </div>

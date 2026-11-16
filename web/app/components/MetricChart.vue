@@ -32,8 +32,8 @@ function fmt(v: number) {
 }
 
 const option = computed(() => {
-  const ink = dark.value ? '#9db4ba' : '#4a6572'
-  const grid = dark.value ? '#12394a' : '#e3e8e9'
+  const ink = dark.value ? '#a3a09c' : '#5e5d5b'
+  const grid = dark.value ? '#232326' : '#efeae4'
   // shortcut: more than 8 series (many mounts/ifaces) keep the first 8, upgrade to "Other" folding if fleets need it
   const lines = props.lines.slice(0, 8)
   return {
@@ -60,9 +60,9 @@ const option = computed(() => {
       trigger: 'axis',
       axisPointer: { type: 'line' },
       valueFormatter: (v: number) => fmt(v),
-      backgroundColor: dark.value ? '#0e3142' : '#fff',
+      backgroundColor: dark.value ? '#1c1c1f' : '#fff',
       borderColor: grid,
-      textStyle: { color: dark.value ? '#f3f4f4' : '#061e29' },
+      textStyle: { color: dark.value ? '#efeae4' : '#141416' },
     },
     xAxis: {
       type: 'time',

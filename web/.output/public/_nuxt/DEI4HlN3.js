@@ -1,1 +1,0 @@
-import{D as e,Ft as t,N as n,Q as r,Qt as i,nt as a}from"./BqtRONIv.js";import{t as o}from"./2-uXRFyo.js";var s=n({__name:`CardDescription`,props:{class:{type:[Boolean,null,String,Object,Array]}},setup(n){let s=n;return(n,c)=>(r(),e(`p`,{"data-slot":`card-description`,class:i(t(o)(`text-muted-foreground text-sm`,s.class))},[a(n.$slots,`default`)],2))}});export{s as t};
