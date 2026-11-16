@@ -18,16 +18,16 @@ Dial: ENERGY 1 / RHYTHM 1 / MOTION 1
 - RHYTHM 1: screens repeat one structure (title, filters, card with table) so every page reads the same way.
 - MOTION 1: hover and focus states only; nothing moves unless the operator acts.
 
-Identity motif: the hexagon mark with its orange block, on charcoal or warm cream surfaces. It sits at the top of
-the sidebar on every authenticated screen and on the sign-in card, and it is the one element that makes the product
-recognizable.
+Identity motif: the round mark (keyhole with a `>_` prompt and an orange tab), on charcoal or warm cream surfaces.
+It sits at the top of the sidebar on every authenticated screen and on the sign-in card, and it is the one element
+that makes the product recognizable.
 
 Focal point: each screen leads with what needs action. On the Overview, active alerts come first, ahead of the
 live metrics.
 
 ## 2. Palette
 
-The brand palette comes from the logo (`web/app/assets/logo/`). No other brand colors are introduced.
+The brand palette comes from the logo. No other brand colors are introduced.
 
 | Name     | Hex       | Role                                                                          |
 |----------|-----------|-------------------------------------------------------------------------------|
@@ -92,9 +92,7 @@ record it in this table.
   change must work in both.
 - The sidebar and the mobile header follow the active theme like the rest of the page, separated from the work area
   by a border. Do not add `--sidebar-*` variables.
-- `Logo` switches its fills with the `dark:` variant, so it matches whichever theme is active. `public/favicon.svg`
-  switches with `prefers-color-scheme`, because the browser tab strip follows the browser theme, not the in-app
-  toggle.
+- `Logo` and the favicon are one round icon with its own dark disc, the same in both themes.
 
 ## 5. Status colors
 
@@ -113,6 +111,13 @@ link-style buttons (the link text stays `foreground`, because orange text fails 
 appear on borders, dividers, icons, headings, navigation, or backgrounds elsewhere; the active navigation item uses
 the neutral `accent` surface. Meters below their warn threshold use `muted-foreground`, because orange is too
 close to `warn` amber to tell a normal meter from a warning one.
+
+### Logo files
+
+`Logo` and the favicon use the delivered round icon set (`Kurogane-Terminal-Diptych-*.png`) as is, without
+resizing or theme variants. `public/logo-128.png` and `public/logo-256.png` (the 2x source in `srcset`) are copies
+of the 128x128 and 256x256 files, and `public/favicon.png` is the 64x64 file. Replace them by copying new files
+over these names.
 
 ### Background dither
 
@@ -186,7 +191,7 @@ Use existing components before writing new markup.
 | Pending SSH change countdown           | `PendingBanner`                                       |
 | Labelled select                        | `FormSelect`                                          |
 | Before/after text                      | `DiffView`                                            |
-| Brand mark (hexagon with orange block) | `Logo` (`disc` adds the round backing used at small sizes); keep its paths identical to `public/favicon.svg` |
+| Brand mark (round keyhole, orange tab) | `Logo`; its files are copies of the delivered icon set (section 6) |
 | Dates, durations, sizes, percentages   | `ago`, `fmtDate`, `pct`, `bytes`, `num` (composables) |
 
 Merge class overrides with `cn` from `web/app/lib`.

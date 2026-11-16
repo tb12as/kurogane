@@ -62,7 +62,7 @@ onMounted(startStream)
 
     <header class="flex items-center justify-between border-b bg-background px-4 py-3 text-foreground md:hidden">
       <span class="flex items-center gap-2">
-        <Logo disc class="size-7" />
+        <Logo class="size-7" />
         <span class="font-brand font-medium tracking-[0.2em] uppercase">Kurogane</span>
       </span>
       <Button
@@ -87,7 +87,7 @@ onMounted(startStream)
     >
       <div class="flex h-full flex-col gap-4 p-3">
         <NuxtLink to="/" class="hidden items-center gap-2 px-2 pt-1 md:flex">
-          <Logo disc class="size-8" />
+          <Logo class="size-8" />
           <span class="font-brand font-medium tracking-[0.2em] uppercase">Kurogane</span>
         </NuxtLink>
         <nav aria-label="Main" class="flex flex-col gap-0.5">
