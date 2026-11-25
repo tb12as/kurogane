@@ -70,7 +70,7 @@ Metric collection on the agent.
 | `collector.retention_raw` | duration | `24h` | How long raw samples are kept. |
 | `collector.retention_rollup` | duration | `7d` | How long downsampled (rollup) samples are kept. |
 | `collector.watch_services` | list | `[]` | systemd units to monitor (`service_down` alert). nginx and Apache units are added automatically when `web.enabled` is true. |
-| `collector.nginx_log` | path | empty | nginx access log to tail for the HTTP 4xx/5xx rate, the top HTTP client IPs and the top client -> request pairs (method and path, without the query string) shown in the `ddos` alert, `krgn top` and the server page. Empty disables it. See [Behind Cloudflare](#behind-cloudflare). |
+| `collector.nginx_log` | path | empty | nginx access log to tail for the HTTP 4xx/5xx rate, the top HTTP client IPs and the top client -> request pairs (method and path, without the query string) shown in the `ddos` alert, `krgn top` and the server page. It also feeds the `http_ip_path_burst` and `http_path_burst` alerts. Empty disables it. See [Behind Cloudflare](#behind-cloudflare). |
 | `collector.prometheus` | bool | `false` | Exposes `GET /metrics` in Prometheus format (metric prefix `kurogane_`). Requires a token with the `read` scope. |
 
 ### `collector.certs`
@@ -244,10 +244,13 @@ Each entry of `alerts.rules` defines a custom rule, or replaces a built-in rule 
 Built-in rules whose threshold can be changed with `alerts.thresholds` (default in parentheses): `high_cpu` (90),
 `mem_available_low` (10), `disk_full` (85), `disk_full_projected` (24 hours), `high_iowait` (30), `high_traffic`
 (3 times the baseline), `ddos` (500 SYN_RECV), `cert_expiring` (14 days), `redis_down` (1), `redis_memory_high`
-(90), `redis_evicting` (0), `redis_clients_high` (80) and `redis_slow` (50 ms). Other built-in rules that can be
-disabled with `alerts.disable_builtin`: `oom_kill`, `service_down`, `updates_pending`, `cert_stale_served`,
-`redis_persistence_failing`, `redis_replication_broken`, `ssh_bruteforce`, `ssh_login`, `ssh_config_changed`,
-`ssh_rolled_back`, `hardening_drift`, `agent_offline`, `web_config_invalid` and `site_change_rolled_back`.
+(90), `redis_evicting` (0), `redis_clients_high` (80), `redis_slow` (50 ms), `http_ip_path_burst` (30 requests
+from one client IP to the same method and path in the last minute) and `http_path_burst` (300 requests to the same
+method and path from all clients in the last minute). The two HTTP rules need `collector.nginx_log`. Other built-in
+rules that can be disabled with `alerts.disable_builtin`: `oom_kill`, `service_down`, `updates_pending`,
+`cert_stale_served`, `redis_persistence_failing`, `redis_replication_broken`, `ssh_bruteforce`, `ssh_login`,
+`ssh_config_changed`, `ssh_rolled_back`, `hardening_drift`, `agent_offline`, `web_config_invalid` and
+`site_change_rolled_back`.
 
 Threshold edits made in the UI are kept across restarts unless `alerts.thresholds` sets the same rule.
 

@@ -150,6 +150,11 @@ logged.
 Host-level detection cannot stop volumetric DDoS: that needs upstream mitigation (provider or CDN). Optional
 auto-ban (`alerts.auto_ban`) is off by default.
 
+With `collector.nginx_log` set, two rules watch the access log over a sliding one-minute window:
+`http_ip_path_burst` fires when one client IP requests the same method and path more than 30 times, and
+`http_path_burst` fires when one method and path receives more than 300 requests from all clients. Both thresholds
+are set with `alerts.thresholds` or in the UI.
+
 ## TLS certificates
 
 The agent finds certificates on its own: Let's Encrypt lineages (`/etc/letsencrypt/renewal/*.conf`, falling back to

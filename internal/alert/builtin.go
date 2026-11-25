@@ -43,6 +43,9 @@ var builtins = []builtin{
 	{"high_traffic", "High traffic", "net.rx_baseline_ratio > %g or net.tx_baseline_ratio > %g", "warning", 3, 3 * time.Minute},
 	{"ddos", "Possible DDoS / SYN flood", "net.tcp.syn_recv > %g or net.new_conns_ratio > 10 or net.conns_per_ip_max > 200 or net.anomaly > 0",
 		"critical", 500, 0},
+	// sliding last-minute counts from the access log tail (collector.nginx_log)
+	{"http_ip_path_burst", "One client hammering a URL", "http.ip_path_max_1m > %g", "warning", 30, 0},
+	{"http_path_burst", "URL request burst", "http.path_max_1m > %g", "warning", 300, 0},
 	{"service_down", "Service down", "service.active < 1", "critical", 0, 0},
 	{"updates_pending", "Reboot required / security updates pending", "sys.security_updates > 0 or sys.reboot_required > 0",
 		"info", 0, 0},
@@ -198,6 +201,8 @@ func describe(r *rule, in inst, s *collector.Snapshot, held time.Duration) (stri
 		text = fmt.Sprintf("Traffic rx %s/s, tx %s/s (%.1fx the usual level for this hour)", bytesH(rx), bytesH(tx), in.v)
 	case "ddos":
 		text, fields = ddosText(s)
+	case "http_ip_path_burst", "http_path_burst":
+		text, fields = burstText(r.ID, in.v, s)
 	case "service_down":
 		sub := ""
 		for _, sv := range s.Services {
@@ -344,6 +349,35 @@ func ddosText(s *collector.Snapshot) (string, []notify.Field) {
 		{Name: "Top HTTP clients (real IP)", Value: join(http)},
 		{Name: "Top TCP flows (source -> port)", Value: flows(s.Conns.TopFlows, "")},
 		{Name: "Top HTTP requests (client -> request)", Value: flows(s.Conns.TopHTTPFlows, " req")}}
+}
+
+// burstText names the client/request behind an http burst rule from the snapshot's last-minute estimates.
+func burstText(id string, v float64, s *collector.Snapshot) (string, []notify.Field) {
+	fs, ps := s.Conns.BurstHTTPFlows, s.Conns.BurstHTTPPaths
+	if id == "http_ip_path_burst" {
+		if len(fs) == 0 {
+			return fmt.Sprintf("One client requested the same URL %.0f times in the last minute", v), nil
+		}
+		return fmt.Sprintf("%s requested %s %d times in the last minute", fs[0].IP, fs[0].Dest, fs[0].Count),
+			[]notify.Field{{Name: "Top clients -> request (last minute)", Value: flows(fs, " req")}}
+	}
+	if len(ps) == 0 {
+		return fmt.Sprintf("One URL was requested %.0f times in the last minute", v), nil
+	}
+	p := ps[0]
+	reqs := make([]string, 0, len(ps))
+	for _, x := range ps {
+		reqs = append(reqs, fmt.Sprintf("%s (%d req, %d IPs)", x.Path, x.Count, x.IPs))
+	}
+	var clients []collector.Flow
+	for _, f := range fs {
+		if f.Dest == p.Path {
+			clients = append(clients, f)
+		}
+	}
+	return fmt.Sprintf("%s requested %d times in the last minute by %d client IPs", p.Path, p.Count, p.IPs),
+		[]notify.Field{{Name: "Top requests (last minute)", Value: join(reqs)},
+			{Name: "Top clients for this request", Value: flows(clients, " req")}}
 }
 
 func flows(fs []collector.Flow, unit string) string {

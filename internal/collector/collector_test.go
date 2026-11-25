@@ -649,3 +649,40 @@ func TestHelpers(t *testing.T) {
 		t.Errorf("fields = %q", f)
 	}
 }
+
+// burst counts slide over the last minute: full right after the burst, half 30 s into the next minute, gone after two
+func TestBurstWindow(t *testing.T) {
+	c := &nginxCollector{ips: map[[16]byte]int32{}, flows: map[string]*int32{}}
+	t0 := time.Unix(1_700_000_000, 0)
+	for range 40 {
+		c.count(netip.MustParseAddr("198.51.100.9"), []byte(`x "POST /login HTTP/1.1" 401 0`))
+	}
+	for _, ip := range []string{"203.0.113.1", "203.0.113.2", "203.0.113.3"} {
+		for range 20 {
+			c.count(netip.MustParseAddr(ip), []byte(`x "GET /api?q=1 HTTP/1.1" 200 0`))
+		}
+	}
+	pair, path := c.window(t0)
+	if pair != 40 || path != 60 {
+		t.Fatalf("pair = %v, path = %v", pair, path)
+	}
+	if c.burstFlows[0] != (Flow{IP: "198.51.100.9", Dest: "POST /login", Count: 40}) {
+		t.Errorf("flows = %v", c.burstFlows)
+	}
+	if c.burstPaths[0] != (PathCount{Path: "GET /api", Count: 60, IPs: 3}) {
+		t.Errorf("paths = %v", c.burstPaths)
+	}
+
+	clear(c.flows)
+	for _, tc := range []struct {
+		at         time.Duration
+		pair, path float64
+	}{{30 * time.Second, 40, 60}, {time.Minute, 40, 60}, {90 * time.Second, 20, 30}, {3 * time.Minute, 0, 0}} {
+		if pair, path := c.window(t0.Add(tc.at)); pair != tc.pair || path != tc.path {
+			t.Errorf("at %s: pair = %v, path = %v, want %v %v", tc.at, pair, path, tc.pair, tc.path)
+		}
+	}
+	if len(c.burstFlows) != 0 || len(c.burstPaths) != 0 {
+		t.Errorf("idle window keeps %v %v", c.burstFlows, c.burstPaths)
+	}
+}
