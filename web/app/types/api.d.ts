@@ -168,6 +168,10 @@ export interface paths {
                     server?: string;
                     /** @description duration, e.g. 7d */
                     since?: string;
+                    /** @description RFC3339 or YYYY-MM-DD (local midnight); overrides since */
+                    from?: string;
+                    /** @description Exclusive RFC3339 or inclusive YYYY-MM-DD (local date) */
+                    to?: string;
                     limit?: number;
                 };
                 header?: never;
@@ -184,6 +188,13 @@ export interface paths {
                     content: {
                         "application/json": components["schemas"]["AlertEvent"][];
                     };
+                };
+                /** @description Invalid period */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
                 };
             };
         };
@@ -289,7 +300,12 @@ export interface paths {
             parameters: {
                 query?: {
                     format?: "csv" | "json";
+                    /** @description Positive duration, e.g. 7d */
                     since?: string;
+                    /** @description RFC3339 or YYYY-MM-DD (local midnight); overrides since */
+                    from?: string;
+                    /** @description Exclusive RFC3339 or inclusive YYYY-MM-DD (local date) */
+                    to?: string;
                 };
                 header?: never;
                 path?: never;
@@ -307,10 +323,137 @@ export interface paths {
                         "text/csv": string;
                     };
                 };
+                /** @description Invalid period */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
             };
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/alerts/events/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Summarize events (read); defaults to local midnight until now, at most 100000 events */
+        get: {
+            parameters: {
+                query?: {
+                    format?: "json" | "csv";
+                    /** @description Positive duration, e.g. 7d */
+                    since?: string;
+                    /** @description RFC3339 or YYYY-MM-DD (local midnight); overrides since */
+                    from?: string;
+                    /** @description Exclusive RFC3339 or inclusive YYYY-MM-DD (local date) */
+                    to?: string;
+                    state?: string;
+                    rule?: string;
+                    server?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Summary or CSV attachment (dimension,key,count) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Summary"];
+                        "text/csv": string;
+                    };
+                };
+                /** @description Invalid period; use RFC3339 or YYYY-MM-DD with from before to */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/alerts/events/summary/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a summary to a configured chat, email or webhook channel (admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        channel: string;
+                        /** @description RFC3339 or YYYY-MM-DD (local midnight); overrides since */
+                        from?: string;
+                        /** @description Positive duration, e.g. 7d; defaults to today without a period */
+                        since?: string;
+                        /** @description Exclusive RFC3339 or inclusive YYYY-MM-DD (local date) */
+                        to?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Sent */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            ok: boolean;
+                            total: number;
+                        };
+                    };
+                };
+                /** @description Invalid period */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Delivery failed; check the channel and retry */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -4580,6 +4723,28 @@ export interface components {
                 path?: string;
             }[];
             total_bytes?: number;
+        };
+        Summary: {
+            by_rule: components["schemas"]["SummaryCount"][];
+            by_server: components["schemas"]["SummaryCount"][];
+            by_severity: {
+                [key: string]: number;
+            };
+            by_state: {
+                [key: string]: number;
+            };
+            /** Format: date-time */
+            from: string;
+            noise: number;
+            /** @description Events whose current state is not resolved */
+            open: number;
+            /** Format: date-time */
+            to: string;
+            total: number;
+        };
+        SummaryCount: {
+            count: number;
+            key: string;
         };
         SystemInfo: {
             arch?: string;

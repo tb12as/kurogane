@@ -179,6 +179,13 @@ func color(a Alert) int {
 
 // Header is e.g. "🔴 CRITICAL · web-01 · RAM almost full".
 func Header(a Alert) string {
+	if a.State == "summary" {
+		h := "SUMMARY · "
+		if a.Server != "" {
+			h += a.Server + " · "
+		}
+		return h + a.Title
+	}
 	icon, sev := icons[a.Severity], strings.ToUpper(a.Severity)
 	if icon == "" {
 		icon = "🔵"
@@ -212,6 +219,8 @@ func Body(a Alert) string {
 // Footer is e.g. "Firing since 23:41 WIB · Rule: mem_available_low" in the host's local timezone.
 func Footer(a Alert) string {
 	switch a.State {
+	case "summary":
+		return "Generated " + clock(time.Now())
 	case "test":
 		return "Sent " + clock(a.StartedAt) + " · Test message"
 	case "resolved":
@@ -251,7 +260,7 @@ func links(a Alert) [][2]string {
 	if a.DashboardURL != "" {
 		out = append(out, [2]string{"Open dashboard", a.DashboardURL})
 	}
-	if a.SilenceURL != "" && a.State != "resolved" && a.State != "test" {
+	if a.SilenceURL != "" && a.State != "resolved" && a.State != "test" && a.State != "summary" {
 		out = append(out, [2]string{"Silence 1h", a.SilenceURL})
 	}
 	return out

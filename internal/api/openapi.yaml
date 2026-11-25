@@ -1620,6 +1620,58 @@ components:
                 total_bytes:
                     type: integer
             type: object
+        Summary:
+            properties:
+                by_rule:
+                    items:
+                        $ref: '#/components/schemas/SummaryCount'
+                    type: array
+                by_server:
+                    items:
+                        $ref: '#/components/schemas/SummaryCount'
+                    type: array
+                by_severity:
+                    additionalProperties:
+                        type: integer
+                    type: object
+                by_state:
+                    additionalProperties:
+                        type: integer
+                    type: object
+                from:
+                    format: date-time
+                    type: string
+                noise:
+                    type: integer
+                open:
+                    description: Events whose current state is not resolved
+                    type: integer
+                to:
+                    format: date-time
+                    type: string
+                total:
+                    type: integer
+            required:
+                - from
+                - to
+                - total
+                - open
+                - noise
+                - by_severity
+                - by_state
+                - by_rule
+                - by_server
+            type: object
+        SummaryCount:
+            properties:
+                count:
+                    type: integer
+                key:
+                    type: string
+            required:
+                - key
+                - count
+            type: object
         SystemInfo:
             properties:
                 arch:
@@ -1831,6 +1883,16 @@ paths:
                   name: since
                   schema:
                     type: string
+                - description: RFC3339 or YYYY-MM-DD (local midnight); overrides since
+                  in: query
+                  name: from
+                  schema:
+                    type: string
+                - description: Exclusive RFC3339 or inclusive YYYY-MM-DD (local date)
+                  in: query
+                  name: to
+                  schema:
+                    type: string
                 - in: query
                   name: limit
                   schema:
@@ -1844,6 +1906,8 @@ paths:
                                     $ref: '#/components/schemas/AlertEvent'
                                 type: array
                     description: ok
+                "400":
+                    description: Invalid period
             summary: Alert history
     /alerts/events/{id}/ack:
         post:
@@ -1895,8 +1959,19 @@ paths:
                         - csv
                         - json
                     type: string
-                - in: query
+                - description: Positive duration, e.g. 7d
+                  in: query
                   name: since
+                  schema:
+                    type: string
+                - description: RFC3339 or YYYY-MM-DD (local midnight); overrides since
+                  in: query
+                  name: from
+                  schema:
+                    type: string
+                - description: Exclusive RFC3339 or inclusive YYYY-MM-DD (local date)
+                  in: query
+                  name: to
                   schema:
                     type: string
             responses:
@@ -1911,7 +1986,103 @@ paths:
                             schema:
                                 type: string
                     description: file
+                "400":
+                    description: Invalid period
             summary: Export alert history (AL-7)
+    /alerts/events/summary:
+        get:
+            parameters:
+                - in: query
+                  name: format
+                  schema:
+                    enum:
+                        - json
+                        - csv
+                    type: string
+                - description: Positive duration, e.g. 7d
+                  in: query
+                  name: since
+                  schema:
+                    type: string
+                - description: RFC3339 or YYYY-MM-DD (local midnight); overrides since
+                  in: query
+                  name: from
+                  schema:
+                    type: string
+                - description: Exclusive RFC3339 or inclusive YYYY-MM-DD (local date)
+                  in: query
+                  name: to
+                  schema:
+                    type: string
+                - in: query
+                  name: state
+                  schema:
+                    type: string
+                - in: query
+                  name: rule
+                  schema:
+                    type: string
+                - in: query
+                  name: server
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Summary'
+                        text/csv:
+                            schema:
+                                type: string
+                    description: Summary or CSV attachment (dimension,key,count)
+                "400":
+                    description: Invalid period; use RFC3339 or YYYY-MM-DD with from before to
+            summary: Summarize events (read); defaults to local midnight until now, at most 100000 events
+    /alerts/events/summary/send:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                channel:
+                                    type: string
+                                from:
+                                    description: RFC3339 or YYYY-MM-DD (local midnight); overrides since
+                                    type: string
+                                since:
+                                    description: Positive duration, e.g. 7d; defaults to today without a period
+                                    type: string
+                                to:
+                                    description: Exclusive RFC3339 or inclusive YYYY-MM-DD (local date)
+                                    type: string
+                            required:
+                                - channel
+                            type: object
+                required: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                properties:
+                                    ok:
+                                        type: boolean
+                                    total:
+                                        type: integer
+                                required:
+                                    - ok
+                                    - total
+                                type: object
+                    description: Sent
+                "400":
+                    description: Invalid period
+                    or PagerDuty channel: null
+                    unknown or misconfigured channel: null
+                "502":
+                    description: Delivery failed; check the channel and retry
+            summary: Send a summary to a configured chat, email or webhook channel (admin)
     /alerts/metrics:
         get:
             responses:

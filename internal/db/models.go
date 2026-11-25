@@ -223,6 +223,7 @@ type AuditFilter struct {
 }
 
 type EventFilter struct {
+	Until    time.Time
 	State    string
 	RuleID   string
 	ServerID string

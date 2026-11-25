@@ -673,6 +673,14 @@ func (s *SQLite) OpenEvent(ctx context.Context, fp string) (AlertEvent, error) {
 
 func (s *SQLite) ListEvents(ctx context.Context, f EventFilter) ([]AlertEvent, error) {
 	q, args := "SELECT "+eventCols+" FROM alert_events WHERE started_at >= ?", []any{unix(f.Since)}
+	if !f.Until.IsZero() {
+		q += " AND started_at < ?"
+		until := unix(f.Until)
+		if f.Until.Nanosecond() > 0 {
+			until++
+		}
+		args = append(args, until)
+	}
 	if f.State == "open" {
 		q += " AND state != 'resolved'"
 	} else if f.State != "" {

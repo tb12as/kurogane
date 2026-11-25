@@ -188,6 +188,21 @@ checks:
 | `alerts.new_login_only_root` | bool | `false` | Sends `ssh_login` only for logins as `root`. |
 | `alerts.auto_ban` | map | see below | Automatic firewall bans during a suspected DDoS. |
 
+### Event history and summaries
+
+`kurogane alert events` lists recent events. Select a period with `--since 7d` or
+`--from 2026-11-01 --to 2026-11-25`, and export it with `--export csv` or `--export json`.
+`from` overrides `since`. Dates refer to server local midnight; end dates include the entire day.
+RFC3339 timestamps are also accepted, with an exclusive end timestamp.
+
+`kurogane alert summary` summarizes today from server local midnight until now. It accepts the same period flags.
+Use `--csv` to download the summary, `--json` for structured output, or `--send ops` to send it to a configured
+Discord, Slack, Telegram, email or webhook channel. Sending requires admin access; PagerDuty is excluded.
+Summaries count at most 100000 events by start time. Open counts use each event's current state.
+
+The Alerts Events tab provides the same period selector, summary download and channel delivery controls.
+Its Today preset uses the browser's local midnight. Neither interface schedules automatic summaries.
+
 ### Channels
 
 Each entry of `alerts.channels` needs a unique `name` and a `type`.

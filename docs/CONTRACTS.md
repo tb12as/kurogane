@@ -66,6 +66,16 @@ Details that are not numbers live in `collector.Snapshot` (`System`, `TopCPU`, `
   `Rule` + `Labels`. Rule ids for externally fired events: `ssh_bruteforce`, `ssh_login`, `ssh_config_changed`,
   `ssh_rolled_back`, `hardening_drift`, `agent_offline`, `updates_pending`, `ddos`, `web_config_invalid`,
   `site_change_rolled_back`.
+- Alert history: `GET /alerts/events` and `GET /alerts/events/export` accept `from`, `to`, and `since`.
+  `GET /alerts/events/summary` (read) returns a summary or a CSV attachment with `format=csv`.
+  `POST /alerts/events/summary/send` (admin) accepts `{channel, from?, to?, since?}` and records
+  `alert.summary.send`. Summary periods default to server local midnight until now and include at most 100000 events.
+  Dates use local midnight, with inclusive end dates; RFC3339 end timestamps are exclusive. `from` overrides `since`.
+  `alert.Summarize(events, from, to) EventSummary` counts supplied events;
+  `alert.SummaryAlert(summary, dashboardURL) notify.Alert` renders the message;
+  `Engine.SendSummary(ctx, channel, message)` rejects PagerDuty and sends directly through a configured notifier.
+  CLI: `kurogane alert summary [--from date] [--to date] [--since duration] [--csv | --send channel]`,
+  with global `--json` for structured output. `kurogane alert events` also accepts `--from` and `--to`.
 - `notify.New(config.Channel, *secret.Box) (Notifier, error)`; `Notifier.Send(ctx, notify.Alert) error`.
 - `sshmgr.New(Deps) *Manager`; `Run(ctx)`; `Settings(ctx)`; `SafeApply(ctx, set, rollback)`; `AddKey`; `RemoveKey`;
   `BruteforceActive()`.
