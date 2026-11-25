@@ -54,6 +54,7 @@ type Collector struct {
 	RetentionRollup time.Duration `mapstructure:"retention_rollup" json:"retention_rollup"`
 	WatchServices   []string      `mapstructure:"watch_services" json:"watch_services"`
 	NginxLog        string        `mapstructure:"nginx_log" json:"nginx_log"`
+	ConnAllowlist   []string      `mapstructure:"conn_allowlist" json:"conn_allowlist"`
 	Prometheus      bool          `mapstructure:"prometheus" json:"prometheus"`
 	Certs           Certs         `mapstructure:"certs" json:"certs"`
 	Redis           Redis         `mapstructure:"redis" json:"redis"`

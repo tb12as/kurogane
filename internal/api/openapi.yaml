@@ -346,7 +346,7 @@ components:
                 syn_cookies:
                     type: boolean
                 top_flows:
-                    description: Busiest remote source IP -> local port pairs over current TCP sockets.
+                    description: Busiest remote source IP -> local port pairs, counted like top_ips.
                     items:
                         $ref: '#/components/schemas/Flow'
                     type: array
@@ -361,6 +361,7 @@ components:
                         $ref: '#/components/schemas/Flow'
                     type: array
                 top_ips:
+                    description: Remote addresses with the most connections. Inbound sockets only (the local port is listening) in ESTABLISHED or SYN_RECV state, without collector.conn_allowlist addresses.
                     items:
                         $ref: '#/components/schemas/IPCount'
                     type: array
@@ -374,6 +375,7 @@ components:
                         type: object
                     type: array
                 top_subnets:
+                    description: Remote subnets with the most connections, counted like top_ips.
                     items:
                         $ref: '#/components/schemas/IPCount'
                     type: array

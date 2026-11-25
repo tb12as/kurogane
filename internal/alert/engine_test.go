@@ -267,7 +267,7 @@ func TestDDoSBody(t *testing.T) {
 	s := snap("net.tcp.syn_recv", 900.0)
 	s.Conns.TopIPs = []collector.IPCount{{IP: "198.51.100.7", Count: 300}}
 	s.Conns.SynCookies = true
-	txt, f := ddosText(s)
+	txt, f := ddosText("ddos", s)
 	if !strings.Contains(txt, "upstream mitigation") || f[0].Value != "198.51.100.7 (300)" || f[3].Value != "on" ||
 		strings.Contains(txt, "Cloudflare") || f[4].Value != "-" || f[5].Value != "-" || f[6].Value != "-" {
 		t.Fatal(txt, f)
@@ -278,11 +278,82 @@ func TestDDoSBody(t *testing.T) {
 	s.Conns.TopHTTPClients = []collector.IPCount{{IP: "198.51.100.9", Count: 4000}}
 	s.Conns.TopFlows = []collector.Flow{{IP: "162.158.1.1", Dest: "443/tcp", Count: 300, Cloudflare: true}}
 	s.Conns.TopHTTPFlows = []collector.Flow{{IP: "198.51.100.9", Dest: "GET /login", Count: 3900}}
-	txt, f = ddosText(s)
+	txt, f = ddosText("ddos", s)
 	if !strings.Contains(txt, "through Cloudflare") || f[0].Value != "162.158.1.1 (300, Cloudflare)" ||
 		f[4].Value != "198.51.100.9 (4000 req)" || f[5].Value != "162.158.1.1 -> 443/tcp (300, Cloudflare)" ||
 		f[6].Value != "198.51.100.9 -> GET /login (3900 req)" {
 		t.Fatal(txt, f)
+	}
+}
+
+// TestDDoSRules feeds the values the collector reports for its conn fixtures (collector.TestConnDirection) and
+// checks that each attack rule fires only on its own evidence.
+func TestDDoSRules(t *testing.T) {
+	outDB := collector.Peer{IP: "203.0.113.50", Port: 3306, States: "20 ESTABLISHED / 477 TIME_WAIT / 1 LAST_ACK", Total: 498}
+	cases := []struct {
+		name  string
+		s     *collector.Snapshot
+		rule  string // "" = nothing may fire
+		sev   string
+		title string
+	}{
+		{"outbound database connections", snap("net.tcp.syn_recv", 0.0, "net.new_conns_ps", 34.0,
+			"net.tcp.time_wait", 477.0, "net.conns_per_ip_max", 3.0), "", "", ""},
+		{"syn flood", snap("net.tcp.syn_recv", 600.0, "net.conns_per_ip_max", 3.0), "ddos", "critical",
+			"Possible SYN flood"},
+		{"connection flood", snap("net.tcp.syn_recv", 0.0, "net.conns_per_ip_max", 250.0), "conn_flood", "warning",
+			"Connection flood from one client"},
+		{"allowlisted client", snap("net.tcp.syn_recv", 0.0, "net.conns_per_ip_max", 3.0), "", "", ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			e, sink, _ := setup(t, nil)
+			ctx := context.Background()
+			c.s.Conns.TopPeers = []collector.Peer{outDB}
+			if c.rule == "conn_flood" {
+				c.s.Conns.TopFlows = []collector.Flow{{IP: "198.51.100.7", Dest: "443/tcp", Count: 250}}
+			}
+			e.Eval(ctx, c.s)
+			e.Flush(ctx)
+			if c.rule == "" {
+				if sink.n() != 0 {
+					t.Fatalf("want no alert: %v", sink.msgs)
+				}
+				return
+			}
+			m := sink.msgs
+			if len(m) != 1 || m[0]["rule"] != c.rule || m[0]["severity"] != c.sev || m[0]["title"] != c.title {
+				t.Fatalf("want only %s (%s): %v", c.rule, c.sev, m)
+			}
+			raw, _ := json.Marshal(m[0])
+			if !strings.Contains(string(raw), ":3306 outbound (20 ESTABLISHED / 477 TIME_WAIT") {
+				t.Fatalf("direction and states missing: %s", raw)
+			}
+			if c.rule == "conn_flood" && !strings.Contains(string(raw), "198.51.100.7 holds 250 inbound connections") {
+				t.Fatalf("message: %s", raw)
+			}
+		})
+	}
+}
+
+// an upgraded agent replaces the old combined ddos default, keeping a changed threshold, but not a custom expr
+func TestDDoSRuleMigration(t *testing.T) {
+	e, _, _ := setup(t, nil)
+	ctx := context.Background()
+	old := "net.tcp.syn_recv > 800 or net.new_conns_ratio > 10 or net.conns_per_ip_max > 200 or net.anomaly > 0"
+	custom := "net.tcp.syn_recv > 800 or net.conns_per_ip_max > 50"
+	for expr, want := range map[string]string{old: "net.tcp.syn_recv > 800", custom: custom} {
+		if err := e.d.DB.UpsertRule(ctx, db.AlertRule{ID: "ddos", Name: "x", Expr: expr, Severity: "critical",
+			Enabled: true, Builtin: true}); err != nil {
+			t.Fatal(err)
+		}
+		if err := e.seed(ctx); err != nil {
+			t.Fatal(err)
+		}
+		r, err := e.d.DB.GetRule(ctx, "ddos")
+		if err != nil || r.Expr != want || r.Name != "Possible SYN flood" {
+			t.Fatalf("expr %q -> %+v %v, want %q", expr, r, err, want)
+		}
 	}
 }
 

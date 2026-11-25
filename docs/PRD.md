@@ -225,7 +225,9 @@ An in-agent rule engine evaluates every sample against rules and sends alerts th
 | Disk almost full | Mount > 85% (warn) / 95% (crit), or projected full in < 24 h | Warning / Critical |
 | High I/O wait | iowait > 30% for 5 min | Warning |
 | High traffic | rx or tx > 3× the 7-day baseline for the same hour, for 3 min | Warning |
-| Possible DDoS / SYN flood | SYN\_RECV > 500 or new conns/s > 10× baseline, or one IP > 200 concurrent conns | Critical |
+| Possible SYN flood | SYN\_RECV > 500 | Critical |
+| Possible DDoS: connection surge | New conns/s > 10× baseline, or a traffic anomaly | Critical |
+| Connection flood from one client | One IP > 200 inbound ESTABLISHED or SYN\_RECV conns (outbound and closing sockets excluded) | Warning |
 | SSH brute force | > 20 failed logins from one IP in 5 min | Warning |
 | New SSH login | Successful login (optionally only from new IPs or as root) | Info |
 | SSH config changed / rolled back | Any sshd change or rollback | Info / Critical |

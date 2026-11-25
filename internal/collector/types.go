@@ -158,6 +158,15 @@ type Flow struct {
 	Cloudflare bool   `json:"cloudflare,omitempty"`
 }
 
+// Peer is one remote address with its direction and socket states, e.g. "20 ESTABLISHED / 477 TIME_WAIT".
+type Peer struct {
+	IP      string
+	Port    int // local port when inbound, remote port when outbound
+	Inbound bool
+	States  string
+	Total   int
+}
+
 type ConnInfo struct {
 	States     map[string]int `json:"states"`
 	TopIPs     []IPCount      `json:"top_ips"`
@@ -169,6 +178,7 @@ type ConnInfo struct {
 	// last-minute estimates behind the http burst rules; alert detail only, not part of the API
 	BurstHTTPFlows []Flow      `json:"-"`
 	BurstHTTPPaths []PathCount `json:"-"`
+	TopPeers       []Peer      `json:"-"` // busiest peers in both directions, alert detail only
 	TopPorts       []PortCount `json:"top_ports"`
 	Listening      []Listener  `json:"listening"`
 	SynCookies     bool        `json:"syn_cookies"`

@@ -30,7 +30,7 @@ Names are dotted; labels in braces. `_pct` = 0 to 100, `_bps` = bytes/s, `_ps` =
 | Disk space | `disk.used_pct{mount}`, `disk.used_bytes{mount}`, `disk.total_bytes{mount}`, `disk.free_bytes{mount}`, `disk.inodes_used_pct{mount}` |
 | Disk I/O | `diskio.read_bps{dev}`, `diskio.write_bps{dev}`, `diskio.read_iops{dev}`, `diskio.write_iops{dev}`, `diskio.await_ms{dev}`, `diskio.util_pct{dev}` |
 | Network | `net.rx_bps{iface}`, `net.tx_bps{iface}`, `net.rx_pps{iface}`, `net.tx_pps{iface}`, `net.rx_errors_ps{iface}`, `net.tx_errors_ps{iface}`, `net.rx_drops_ps{iface}`, `net.tx_drops_ps{iface}`, totals over non-loopback: `net.rx_bps_total`, `net.tx_bps_total`, `net.rx_pps_total`, `net.tx_pps_total`, `net.udp_pps` |
-| Connections | `net.tcp.established`, `net.tcp.syn_recv`, `net.tcp.syn_sent`, `net.tcp.time_wait`, `net.tcp.close_wait`, `net.tcp.fin_wait`, `net.tcp.listen`, `net.tcp.total`, `net.new_conns_ps`, `net.conns_per_ip_max`, `net.conns_per_subnet_max`, `net.listening_ports` |
+| Connections | `net.tcp.established`, `net.tcp.syn_recv`, `net.tcp.syn_sent`, `net.tcp.time_wait`, `net.tcp.close_wait`, `net.tcp.fin_wait`, `net.tcp.listen`, `net.tcp.total`, `net.new_conns_ps`, `net.conns_per_ip_max`, `net.conns_per_subnet_max` (inbound ESTABLISHED and SYN_RECV sockets only, without collector.conn_allowlist addresses), `net.listening_ports` |
 | Processes | `proc.total`, `proc.running`, `proc.zombies`, `proc.threads` |
 | System | `sys.uptime_s`, `sys.reboot_required` (0/1), `sys.security_updates`, `sys.pending_updates` |
 | Services | `service.active{unit}` (1 active, 0 otherwise) |

@@ -51,13 +51,15 @@ type lkey struct {
 // connCollector counts TCP sockets via netlink sock_diag, falling back to /proc/net/tcp{,6}.
 type connCollector struct {
 	states  [13]int
+	socks   []sock // non-listen sockets with a remote peer, classified once every listener is known
 	ips     map[[16]byte]int32
 	nets    map[[16]byte]int32
-	flows   map[fkey]int32
+	peers   map[pkey][13]int32
 	ports   []uint32 // per local port, non-listen sockets
 	lidx    map[lkey]int
 	listen  []Listener
 	linodes []uint32
+	allow   allowlist
 
 	noNetlink bool
 	names     map[uint32]string // socket inode -> process name
@@ -67,12 +69,12 @@ type connCollector struct {
 	f    [][]byte
 }
 
-func newConn() *connCollector {
-	return &connCollector{ips: map[[16]byte]int32{}, nets: map[[16]byte]int32{}, flows: map[fkey]int32{},
-		ports: make([]uint32, 65536), lidx: map[lkey]int{}, names: map[uint32]string{}}
+func newConn(allow []string) *connCollector {
+	return &connCollector{ips: map[[16]byte]int32{}, nets: map[[16]byte]int32{}, peers: map[pkey][13]int32{},
+		ports: make([]uint32, 65536), lidx: map[lkey]int{}, names: map[uint32]string{}, allow: newAllowlist(allow)}
 }
 
-func (c *connCollector) Collect(context.Context) ([]Sample, error) {
+func (c *connCollector) Collect(ctx context.Context) ([]Sample, error) {
 	c.resetCounts()
 	var err error
 	if c.noNetlink || (hostfs.Root != "/" && hostfs.Root != "") {
@@ -101,8 +103,6 @@ func (c *connCollector) Collect(context.Context) ([]Sample, error) {
 			total += n
 		}
 	}
-	tops := topN(c.ips, 10, false)
-	subs := topN(c.nets, 10, true)
 	ports := make([]PortCount, 0, len(c.listen))
 	seenPort := map[uint16]bool{}
 	for _, l := range c.listen {
@@ -115,13 +115,17 @@ func (c *connCollector) Collect(context.Context) ([]Sample, error) {
 			ports = append(ports, PortCount{Port: l.Port, Count: int(n)})
 		}
 	}
+	c.allow.refresh(ctx)
+	c.classify(seenPort)
+	tops := topN(c.ips, 10, false)
+	subs := topN(c.nets, 10, true)
 	sortTop(ports)
 	if len(ports) > 10 {
 		ports = ports[:10]
 	}
 	sc := hostfs.ReadString("/proc/sys/net/ipv4/tcp_syncookies")
 	c.info = ConnInfo{States: states, TopIPs: tops, TopSubnets: subs, TopPorts: ports,
-		TopFlows: topFlows(c.flows, seenPort, 10), Listening: append([]Listener(nil), c.listen...),
+		TopFlows: topFlows(c.peers, 10), TopPeers: topPeers(c.peers, 10), Listening: append([]Listener(nil), c.listen...),
 		SynCookies: sc != "" && sc != "0"}
 
 	out := make([]Sample, 0, 12)
@@ -148,18 +152,20 @@ func first(x []IPCount) int {
 
 func (c *connCollector) resetCounts() {
 	c.states = [13]int{}
+	c.socks = c.socks[:0]
 	clear(c.ips)
 	clear(c.nets)
-	clear(c.flows)
+	clear(c.peers)
 	clear(c.ports)
 	clear(c.lidx)
 	c.listen, c.linodes = c.listen[:0], c.linodes[:0]
 }
 
 func (c *connCollector) add(s *sock) {
-	if int(s.state) < len(c.states) {
-		c.states[s.state]++
+	if int(s.state) >= len(c.states) {
+		return
 	}
+	c.states[s.state]++
 	if s.state == tcpListen {
 		k := lkey{s.lip, s.lport, s.v6}
 		if _, ok := c.lidx[k]; ok {
@@ -175,18 +181,44 @@ func (c *connCollector) add(s *sock) {
 		return
 	}
 	c.ports[s.lport]++
-	if isLocal(&s.rip) {
-		return
+	if !isLocal(&s.rip) {
+		c.socks = append(c.socks, *s)
 	}
-	c.ips[s.rip]++
-	c.flows[fkey{s.rip, s.lport}]++
-	n := s.rip
-	if isV4(&n) {
-		n[15] = 0
-	} else {
-		clear(n[8:])
+}
+
+// classify counts every socket per peer and direction. Only inbound ESTABLISHED and SYN_RECV sockets feed the
+// per-IP and per-subnet totals behind the attack rules: outbound connections (to a database, an API) and closing
+// states such as TIME_WAIT are normal traffic. A socket is inbound when its local port is listening.
+func (c *connCollector) classify(listening map[uint16]bool) {
+	for i := range c.socks {
+		s := &c.socks[i]
+		if c.allow.has(&s.rip) {
+			continue
+		}
+		st := s.state
+		if st == tcpNewSynRecv {
+			st = tcpSynRecv
+		}
+		in := listening[s.lport]
+		k := pkey{s.rip, s.rport, in}
+		if in {
+			k.port = s.lport
+		}
+		p := c.peers[k]
+		p[st]++
+		c.peers[k] = p
+		if !in || (st != tcpEstablished && st != tcpSynRecv) {
+			continue
+		}
+		c.ips[s.rip]++
+		n := s.rip
+		if isV4(&n) {
+			n[15] = 0
+		} else {
+			clear(n[8:])
+		}
+		c.nets[n]++
 	}
-	c.nets[n]++
 }
 
 var v4prefix = [12]byte{10: 0xff, 11: 0xff}
@@ -392,17 +424,18 @@ func topN(m map[[16]byte]int32, n int, subnet bool) []IPCount {
 	return out
 }
 
-type fkey struct {
+// pkey is one remote address and port: the local port when inbound, the remote port when outbound.
+type pkey struct {
 	ip   [16]byte
 	port uint16
+	in   bool
 }
 
-// topFlows returns the n busiest source IP -> local port pairs, inbound only: the local port must be listening,
-// otherwise the pair is an outbound connection from an ephemeral port.
-func topFlows(m map[fkey]int32, listening map[uint16]bool, n int) []Flow {
-	top := topK(func(yield func(fkey, int32) bool) {
+// topFlows returns the n busiest inbound source IP -> local port pairs by ESTABLISHED and SYN_RECV sockets.
+func topFlows(m map[pkey][13]int32, n int) []Flow {
+	top := topK(func(yield func(pkey, int32) bool) {
 		for k, v := range m {
-			if listening[k.port] && !yield(k, v) {
+			if a := v[tcpEstablished] + v[tcpSynRecv]; k.in && a > 0 && !yield(k, a) {
 				return
 			}
 		}
@@ -411,6 +444,39 @@ func topFlows(m map[fkey]int32, listening map[uint16]bool, n int) []Flow {
 	for i, x := range top {
 		a := netip.AddrFrom16(x.k.ip).Unmap()
 		out[i] = Flow{IP: a.String(), Dest: strconv.Itoa(int(x.k.port)) + "/tcp", Count: int(x.v), Cloudflare: isCF(a)}
+	}
+	return out
+}
+
+// topPeers returns the n peers with the most sockets in any state, both directions, with their state breakdown.
+func topPeers(m map[pkey][13]int32, n int) []Peer {
+	top := topK(func(yield func(pkey, int32) bool) {
+		for k, v := range m {
+			var t int32
+			for _, x := range v {
+				t += x
+			}
+			if !yield(k, t) {
+				return
+			}
+		}
+	}, n)
+	out := make([]Peer, len(top))
+	var b []byte
+	for i, x := range top {
+		b = b[:0]
+		for st, cnt := range m[x.k] {
+			if cnt == 0 {
+				continue
+			}
+			if len(b) > 0 {
+				b = append(b, " / "...)
+			}
+			b = append(strconv.AppendInt(b, int64(cnt), 10), ' ')
+			b = append(b, tcpStateNames[st]...)
+		}
+		out[i] = Peer{IP: netip.AddrFrom16(x.k.ip).Unmap().String(), Port: int(x.k.port), Inbound: x.k.in,
+			States: string(b), Total: int(x.v)}
 	}
 	return out
 }

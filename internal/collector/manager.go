@@ -42,7 +42,7 @@ type Manager struct {
 }
 
 func NewManager(cfg config.Collector, ex executor.Executor) *Manager {
-	m := &Manager{interval: cfg.Interval, cpu: newCPU(), mem: &memCollector{}, disk: newDisk(), conn: newConn(),
+	m := &Manager{interval: cfg.Interval, cpu: newCPU(), mem: &memCollector{}, disk: newDisk(), conn: newConn(cfg.ConnAllowlist),
 		proc: newProc(), sys: newSys(ex), svc: newSvc(ex, cfg.WatchServices), errAt: map[string]time.Time{}}
 	if m.interval <= 0 {
 		m.interval = 10 * time.Second

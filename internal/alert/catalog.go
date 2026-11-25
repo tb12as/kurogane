@@ -151,8 +151,8 @@ var catalog = []MetricDef{
 	def("net.tcp.total", "Connections", "All TCP sockets", "count", "TCP sockets in any state. "+srcConns).p(1000, 5000, 10000, 50000),
 	def("net.new_conns_ps", "Connections", "New connections per second", "per_s", "TCP connections opened per second (active and passive), from /proc/net/snmp.").p(50, 100, 500, 1000, 5000),
 	def("net.new_conns_ratio", "Connections", "New connections vs usual", "ratio", "New connections per second divided by the usual level for this hour of the week. "+srcEngine).computed(),
-	def("net.conns_per_ip_max", "Connections", "Most connections from one IP", "count", "Connections from the busiest single remote address. "+srcConns).p(50, 100, 200, 500),
-	def("net.conns_per_subnet_max", "Connections", "Most connections from one /24", "count", "Connections from the busiest /24 subnet. "+srcConns).p(100, 200, 500, 1000),
+	def("net.conns_per_ip_max", "Connections", "Most connections from one IP", "count", "Inbound ESTABLISHED and SYN_RECV connections from the busiest remote address; outbound connections, closing states (TIME_WAIT and others) and collector.conn_allowlist are left out. "+srcConns).p(50, 100, 200, 500),
+	def("net.conns_per_subnet_max", "Connections", "Most connections from one /24", "count", "Inbound ESTABLISHED and SYN_RECV connections from the busiest /24 subnet, counted like net.conns_per_ip_max. "+srcConns).p(100, 200, 500, 1000),
 	def("net.listening_ports", "Connections", "Listening ports", "count", "Distinct listening TCP/UDP ports. "+srcConns),
 	def("net.anomaly", "Connections", "Traffic pattern", "bool", "1 when traffic or new connections are far above the learned baseline for this hour. "+srcEngine).states("anomalous", "normal").computed(),
 

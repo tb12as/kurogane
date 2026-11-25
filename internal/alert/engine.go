@@ -126,6 +126,9 @@ func (e *Engine) seed(ctx context.Context) error {
 			r.Channels, r.For, r.Enabled, r.Tags = old.Channels, old.For, old.Enabled, old.Tags
 			if _, ok := cfg.Thresholds[r.ID]; !ok {
 				r.Expr = old.Expr
+				if x, ok := migrate(r.ID, b.tmpl, old.Expr); ok {
+					r.Expr = x
+				}
 			}
 		}
 		if disabled[r.ID] {
@@ -146,6 +149,19 @@ func (e *Engine) seed(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+// migrate rewrites a stored copy of a retired default expression to the current template, keeping its threshold.
+func migrate(id, tmpl, expr string) (string, bool) {
+	old := retired[id]
+	if old == "" {
+		return "", false
+	}
+	var v float64
+	if n, _ := fmt.Sscanf(expr, old, &v); n != 1 || strings.ReplaceAll(old, "%g", fmt.Sprintf("%g", v)) != expr {
+		return "", false
+	}
+	return strings.ReplaceAll(tmpl, "%g", fmt.Sprintf("%g", v)), true
 }
 
 // ValidateRule checks severity and expression syntax.
@@ -369,7 +385,7 @@ func (e *Engine) raise(ctx context.Context, r *rule, fp string, labels map[strin
 		e.d.Publish("alert", ev)
 	}
 	a := e.message(ev, state, text, fields)
-	if r.ID == "ddos" && state == "firing" {
+	if banRules[r.ID] && state == "firing" {
 		e.autoBan(ctx)
 	}
 	e.dispatch(ctx, r, labels, a)
