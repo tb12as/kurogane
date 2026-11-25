@@ -28,13 +28,81 @@ paths:
         - {name: rule, in: query, schema: {type: string}}
         - {name: server, in: query, schema: {type: string}}
         - {name: since, in: query, schema: {type: string}, description: "duration, e.g. 7d"}
+        - name: from
+          in: query
+          schema: {type: string}
+          description: RFC3339 or YYYY-MM-DD (local midnight); overrides since
+        - name: to
+          in: query
+          schema: {type: string}
+          description: Exclusive RFC3339 or inclusive YYYY-MM-DD (local date)
         - {name: limit, in: query, schema: {type: integer}}
-      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/AlertEvent"}}}}}}
+      responses: {"200": {description: ok, content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/AlertEvent"}}}}}, "400": {description: Invalid period}}
   /alerts/events/export:
     get:
       summary: Export alert history (AL-7)
-      parameters: [{name: format, in: query, schema: {type: string, enum: [csv, json]}}, {name: since, in: query, schema: {type: string}}]
-      responses: {"200": {description: file, content: {text/csv: {schema: {type: string}}, application/json: {schema: {type: array, items: {$ref: "#/components/schemas/AlertEvent"}}}}}}
+      parameters:
+        - {name: format, in: query, schema: {type: string, enum: [csv, json]}}
+        - {name: since, in: query, schema: {type: string}, description: "Positive duration, e.g. 7d"}
+        - name: from
+          in: query
+          schema: {type: string}
+          description: RFC3339 or YYYY-MM-DD (local midnight); overrides since
+        - name: to
+          in: query
+          schema: {type: string}
+          description: Exclusive RFC3339 or inclusive YYYY-MM-DD (local date)
+      responses: {"200": {description: file, content: {text/csv: {schema: {type: string}}, application/json: {schema: {type: array, items: {$ref: "#/components/schemas/AlertEvent"}}}}}, "400": {description: Invalid period}}
+  /alerts/events/summary:
+    get:
+      summary: Summarize events (read); defaults to local midnight until now, at most 100000 events
+      parameters:
+        - {name: format, in: query, schema: {type: string, enum: [json, csv]}}
+        - {name: since, in: query, schema: {type: string}, description: "Positive duration, e.g. 7d"}
+        - name: from
+          in: query
+          schema: {type: string}
+          description: RFC3339 or YYYY-MM-DD (local midnight); overrides since
+        - name: to
+          in: query
+          schema: {type: string}
+          description: Exclusive RFC3339 or inclusive YYYY-MM-DD (local date)
+        - {name: state, in: query, schema: {type: string}}
+        - {name: rule, in: query, schema: {type: string}}
+        - {name: server, in: query, schema: {type: string}}
+      responses:
+        "200":
+          description: Summary or CSV attachment (dimension,key,count)
+          content:
+            application/json: {schema: {$ref: "#/components/schemas/Summary"}}
+            text/csv: {schema: {type: string}}
+        "400": {description: Invalid period; use RFC3339 or YYYY-MM-DD with from before to}
+  /alerts/events/summary/send:
+    post:
+      summary: Send a summary to a configured chat, email or webhook channel (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [channel]
+              properties:
+                channel: {type: string}
+                from: {type: string, description: "RFC3339 or YYYY-MM-DD (local midnight); overrides since"}
+                to: {type: string, description: "Exclusive RFC3339 or inclusive YYYY-MM-DD (local date)"}
+                since: {type: string, description: "Positive duration, e.g. 7d; defaults to today without a period"}
+      responses:
+        "200":
+          description: Sent
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, total]
+                properties: {ok: {type: boolean}, total: {type: integer}}
+        "400": {description: Invalid period, unknown or misconfigured channel, or PagerDuty channel}
+        "502": {description: Delivery failed; check the channel and retry}
   /alerts/events/{id}/ack:
     post:
       summary: Acknowledge (stops reminders) (admin)
@@ -135,6 +203,23 @@ components:
     AlertEvent:
       type: object
       properties: {id: {type: string}, rule_id: {type: string}, server_id: {type: string}, fingerprint: {type: string}, state: {type: string, enum: [firing, acknowledged, resolved]}, severity: {type: string}, summary: {type: string}, started_at: {type: string, format: date-time}, acked_at: {type: string, format: date-time}, acked_by: {type: string}, resolved_at: {type: string, format: date-time}, last_sent_at: {type: string, format: date-time}, noise: {type: boolean}, payload: {type: object}}
+    Summary:
+      type: object
+      required: [from, to, total, open, noise, by_severity, by_state, by_rule, by_server]
+      properties:
+        from: {type: string, format: date-time}
+        to: {type: string, format: date-time}
+        total: {type: integer}
+        open: {type: integer, description: Events whose current state is not resolved}
+        noise: {type: integer}
+        by_severity: {type: object, additionalProperties: {type: integer}}
+        by_state: {type: object, additionalProperties: {type: integer}}
+        by_rule: {type: array, items: {$ref: "#/components/schemas/SummaryCount"}}
+        by_server: {type: array, items: {$ref: "#/components/schemas/SummaryCount"}}
+    SummaryCount:
+      type: object
+      required: [key, count]
+      properties: {key: {type: string}, count: {type: integer}}
     Silence:
       type: object
       properties: {id: {type: string}, matcher: {type: object, properties: {server: {type: string}, rule: {type: string}, tag: {type: string}}}, starts_at: {type: string, format: date-time}, ends_at: {type: string, format: date-time}, created_by: {type: string}, reason: {type: string}}

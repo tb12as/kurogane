@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"time"
@@ -130,9 +131,15 @@ func (s *Server) alertRoutes() {
 	})
 
 	s.Route("GET /alerts/events", auth.ScopeRead, func(r *http.Request) (any, error) {
-		return s.DB.ListEvents(r.Context(), eventFilter(r))
+		f, err := eventFilter(r.URL.Query())
+		if err != nil {
+			return nil, err
+		}
+		return s.DB.ListEvents(r.Context(), f)
 	})
 	s.Raw("GET /api/v1/alerts/events/export", auth.ScopeRead, s.exportEvents)
+	s.Raw("GET /api/v1/alerts/events/summary", auth.ScopeRead, s.eventSummary)
+	s.Route("POST /alerts/events/summary/send", auth.ScopeAdmin, s.sendEventSummary)
 	s.Route("POST /alerts/events/{id}/ack", auth.ScopeAdmin, func(r *http.Request) (any, error) {
 		ev, err := s.Alerts.Ack(r.Context(), r.PathValue("id"), PrincipalFrom(r).Actor)
 		if err != nil && !errors.Is(err, db.ErrNotFound) {
@@ -289,19 +296,51 @@ func (s *Server) saveRule(r *http.Request, old *db.AlertRule, rule db.AlertRule)
 	return ruleView(rule), s.Alerts.Reload(r.Context())
 }
 
-func eventFilter(r *http.Request) db.EventFilter {
-	q := r.URL.Query()
+func eventFilter(q url.Values) (db.EventFilter, error) {
 	lim, _ := strconv.Atoi(q.Get("limit"))
 	f := db.EventFilter{State: q.Get("state"), RuleID: q.Get("rule"), ServerID: q.Get("server"), Limit: lim}
-	if d, err := config.ParseDuration(q.Get("since")); err == nil {
+	if q.Get("since") != "" {
+		d, err := config.ParseDuration(q.Get("since"))
+		if err != nil || d <= 0 {
+			return f, Errf(http.StatusBadRequest, "invalid since %q: use a positive duration like 24h or 7d", q.Get("since"))
+		}
 		f.Since = time.Now().Add(-d)
 	}
-	return f
+	for _, key := range []string{"from", "to"} {
+		v := q.Get(key)
+		if v == "" {
+			continue
+		}
+		t, err := time.Parse(time.RFC3339, v)
+		if err != nil {
+			t, err = time.ParseInLocation(time.DateOnly, v, time.Local)
+			if err == nil && key == "to" {
+				t = t.AddDate(0, 0, 1)
+			}
+		}
+		if err != nil {
+			return f, Errf(http.StatusBadRequest, "invalid %s %q: use RFC3339 or YYYY-MM-DD", key, v)
+		}
+		if key == "from" {
+			f.Since = t
+		} else {
+			f.Until = t
+		}
+	}
+	if !f.Since.IsZero() && !f.Until.IsZero() && !f.Since.Before(f.Until) {
+		return f, Errf(http.StatusBadRequest,
+			"from must be before to: use RFC3339 or YYYY-MM-DD with an increasing period")
+	}
+	return f, nil
 }
 
 // exportEvents is the AL-7 alert history export as CSV or JSON.
 func (s *Server) exportEvents(w http.ResponseWriter, r *http.Request) {
-	f := eventFilter(r)
+	f, err := eventFilter(r.URL.Query())
+	if err != nil {
+		writeErr(w, err)
+		return
+	}
 	if f.Limit == 0 {
 		f.Limit = 100000
 	}

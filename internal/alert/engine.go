@@ -481,15 +481,9 @@ func (e *Engine) MarkNoise(ctx context.Context, id string, noise bool) (db.Alert
 
 // Test sends a test message to a channel directly (bypasses queue, silences and rate limit).
 func (e *Engine) Test(ctx context.Context, channel string) error {
-	e.mu.Lock()
-	n, ok := e.notif[channel]
-	_, known := e.chans[channel]
-	e.mu.Unlock()
-	if !known {
-		return fmt.Errorf("unknown channel %q: list channels with `kurogane alert channels list`", channel)
-	}
-	if !ok {
-		return fmt.Errorf("channel %q is misconfigured (check its webhook URL or env var)", channel)
+	n, err := e.channel(channel, false)
+	if err != nil {
+		return err
 	}
 	a := notify.Alert{ID: "test", Rule: "test", Server: e.d.Cfg.ServerName, Severity: "info", State: "test",
 		Title: "Test message", Text: "Kurogane can reach this channel.", StartedAt: e.now()}
@@ -497,6 +491,23 @@ func (e *Engine) Test(ctx context.Context, channel string) error {
 		return fmt.Errorf("%s", secret.Redact(err.Error()))
 	}
 	return nil
+}
+
+func (e *Engine) channel(channel string, summary bool) (notify.Notifier, error) {
+	e.mu.Lock()
+	n, ok := e.notif[channel]
+	ch, known := e.chans[channel]
+	e.mu.Unlock()
+	if summary && ch.Type == "pagerduty" {
+		return nil, fmt.Errorf("pagerduty pages on-call; pick a chat or email channel")
+	}
+	if !known {
+		return nil, fmt.Errorf("unknown channel %q: list channels with `kurogane alert channels list`", channel)
+	}
+	if !ok {
+		return nil, fmt.Errorf("channel %q is misconfigured (check its webhook URL or env var)", channel)
+	}
+	return n, nil
 }
 
 // Channels lists configured channels (never with secrets).

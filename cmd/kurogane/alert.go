@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"sort"
 	"strings"
+
+	"github.com/tb12as/kurogane/internal/alert"
 
 	"github.com/spf13/cobra"
 )
@@ -213,13 +216,13 @@ func init() {
 		return c.do("DELETE", "/alerts/silences/"+url.PathEscape(args[0]), nil, nil)
 	}})
 
-	var eState, eSince, eExport string
+	var eState, eSince, eExport, eFrom, eTo string
 	events := &cobra.Command{Use: "events", Short: "Alert history (AL-7)", RunE: func(cmd *cobra.Command, _ []string) error {
 		c, err := newClient()
 		if err != nil {
 			return err
 		}
-		q := url.Values{"state": {eState}, "since": {eSince}}
+		q := url.Values{"state": {eState}, "since": {eSince}, "from": {eFrom}, "to": {eTo}}
 		if eExport != "" {
 			q.Set("format", eExport)
 			b, err := c.raw("GET", "/alerts/events/export?"+q.Encode(), nil)
@@ -252,6 +255,8 @@ func init() {
 	}}
 	events.Flags().StringVar(&eState, "state", "", "open | firing | acknowledged | resolved")
 	events.Flags().StringVar(&eSince, "since", "", "e.g. 7d")
+	events.Flags().StringVar(&eFrom, "from", "", "RFC3339 or YYYY-MM-DD")
+	events.Flags().StringVar(&eTo, "to", "", "RFC3339 or inclusive YYYY-MM-DD")
 	events.Flags().StringVar(&eExport, "export", "", "csv | json (writes to stdout)")
 	ack := &cobra.Command{Use: "ack <id>", Args: cobra.ExactArgs(1), Short: "Acknowledge a firing alert",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -270,6 +275,79 @@ func init() {
 			return c.do("POST", "/alerts/events/"+url.PathEscape(args[0])+"/noise", map[string]bool{"noise": true}, nil)
 		}}
 
-	al.AddCommand(rules, channels, test, silence, silences, events, ack, noise)
+	al.AddCommand(rules, channels, test, silence, silences, events, summaryCommand(), ack, noise)
 	rootCmd.AddCommand(al)
+}
+
+func summaryCommand() *cobra.Command {
+	var from, to, since, send string
+	var csv bool
+	cmd := &cobra.Command{Use: "summary", Short: "Summarize alert events (today by default)",
+		Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
+			c, err := newClient()
+			if err != nil {
+				return err
+			}
+			q := url.Values{"from": {from}, "to": {to}, "since": {since}}
+			if send != "" {
+				var out struct {
+					OK    bool `json:"ok"`
+					Total int  `json:"total"`
+				}
+				body := map[string]string{"channel": send, "from": from, "to": to, "since": since}
+				if err := c.do("POST", "/alerts/events/summary/send", body, &out); err != nil {
+					return err
+				}
+				if flagJSON {
+					printJSON(out)
+					return nil
+				}
+				fmt.Printf("Summary sent to %s (%d events)\n", send, out.Total)
+				return nil
+			}
+			if csv {
+				q.Set("format", "csv")
+				b, err := c.raw("GET", "/alerts/events/summary?"+q.Encode(), nil)
+				if err != nil {
+					return err
+				}
+				_, err = os.Stdout.Write(b)
+				return err
+			}
+			var out alert.EventSummary
+			if err := c.get("/alerts/events/summary", q, &out); err != nil {
+				return err
+			}
+			if flagJSON {
+				printJSON(out)
+				return nil
+			}
+			fmt.Printf("Alert summary %s to %s\n", ts(out.From), ts(out.To))
+			w := table("DIMENSION", "KEY", "COUNT")
+			fmt.Fprintf(w, "total\t\t%d\nopen\t\t%d\nnoise\t\t%d\n", out.Total, out.Open, out.Noise)
+			for _, group := range []struct {
+				name   string
+				counts map[string]int
+			}{{"severity", out.BySeverity}, {"state", out.ByState}} {
+				keys := make([]string, 0, len(group.counts))
+				for key := range group.counts {
+					keys = append(keys, key)
+				}
+				sort.Strings(keys)
+				for _, key := range keys {
+					fmt.Fprintf(w, "%s\t%s\t%d\n", group.name, key, group.counts[key])
+				}
+			}
+			for _, rule := range out.ByRule[:min(10, len(out.ByRule))] {
+				fmt.Fprintf(w, "rule\t%s\t%d\n", rule.Key, rule.Count)
+			}
+			return w.Flush()
+		}}
+	cmd.Flags().StringVar(&from, "from", "", "RFC3339 or YYYY-MM-DD")
+	cmd.Flags().StringVar(&to, "to", "", "RFC3339 or inclusive YYYY-MM-DD")
+	cmd.Flags().StringVar(&since, "since", "", "duration, e.g. 24h or 7d")
+	cmd.Flags().BoolVar(&csv, "csv", false, "write raw CSV to stdout")
+	cmd.Flags().StringVar(&send, "send", "", "send to a configured channel")
+	cmd.MarkFlagsMutuallyExclusive("csv", "send")
+	return cmd
 }

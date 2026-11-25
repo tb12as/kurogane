@@ -213,3 +213,23 @@ func TestEmail(t *testing.T) {
 		t.Fatal(msg)
 	}
 }
+
+func TestSummaryRendering(t *testing.T) {
+	a := sample()
+	a.State, a.ID, a.Rule, a.Title = "summary", "summary", "summary", "Alert summary today"
+	a.Text = "Total: 3\nOpen: 2\nNoise: 1"
+	if !strings.HasPrefix(Header(a), "SUMMARY") || !strings.HasPrefix(Footer(a), "Generated ") ||
+		strings.Contains(Text(a), "Silence 1h") || !strings.Contains(Text(a), "Open dashboard") {
+		t.Fatal(Text(a))
+	}
+	for name, body := range map[string]any{
+		"slack": slackBody(a), "discord": discordBody(a), "telegram": telegramBody("chat", a),
+		"webhook": webhookBody(a),
+	} {
+		raw, err := json.Marshal(body)
+		if err != nil || strings.Contains(string(raw), "Silence 1h") || !strings.Contains(string(raw), "SUMMARY") ||
+			!strings.Contains(string(raw), "Total: 3") {
+			t.Fatalf("%s: %s, %v", name, raw, err)
+		}
+	}
+}
