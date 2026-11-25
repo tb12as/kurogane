@@ -2,13 +2,16 @@ package api
 
 import (
 	"errors"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/tb12as/kurogane/internal/auth"
 	"github.com/tb12as/kurogane/internal/config"
+	"github.com/tb12as/kurogane/internal/firewall"
 	"github.com/tb12as/kurogane/internal/sshmgr"
 )
 
@@ -164,6 +167,45 @@ func (s *Server) sshRoutes() {
 			return []any{}, nil
 		}
 		return map[string]any{"backend": s.Firewall.Backend(), "bans": s.Firewall.Bans()}, nil
+	})
+	s.Route("POST /ssh/bans", auth.ScopeSSH, func(r *http.Request) (any, error) {
+		if s.Firewall == nil {
+			return nil, Errf(http.StatusNotFound, "firewall not available")
+		}
+		var q struct {
+			IP       string `json:"ip"`
+			Duration string `json:"duration"`
+			Reason   string `json:"reason"`
+		}
+		if err := Decode(r, &q); err != nil {
+			return nil, err
+		}
+		ip := net.ParseIP(strings.TrimSpace(q.IP))
+		if ip == nil {
+			return nil, Errf(http.StatusBadRequest, "invalid IP %q: give one IPv4 or IPv6 address", q.IP)
+		}
+		if ip.Equal(net.ParseIP(clientIP(r))) {
+			return nil, Errf(http.StatusBadRequest, "%s is your own address: banning it would lock you out", ip)
+		}
+		d := 24 * time.Hour
+		if q.Duration != "" {
+			var err error
+			if d, err = config.ParseDuration(q.Duration); err != nil || d <= 0 {
+				return nil, Errf(http.StatusBadRequest, "invalid duration %q: use a duration like 30m, 24h or 7d", q.Duration)
+			}
+		}
+		reason := "manual ban"
+		if q.Reason = strings.TrimSpace(q.Reason); q.Reason != "" {
+			reason += ": " + q.Reason[:min(len(q.Reason), 200)]
+		}
+		if err := s.Firewall.Ban(r.Context(), ip.String(), d, reason); err != nil {
+			if errors.Is(err, firewall.ErrExempt) || errors.Is(err, firewall.ErrCap) {
+				return nil, Errf(http.StatusBadRequest, "%s", err.Error())
+			}
+			return nil, err
+		}
+		s.Audit.Record(r.Context(), "firewall.ban", ip.String(), nil, map[string]any{"for": d.String(), "reason": reason})
+		return nil, nil
 	})
 	s.Route("DELETE /ssh/bans/{ip}", auth.ScopeSSH, func(r *http.Request) (any, error) {
 		if s.Firewall == nil {

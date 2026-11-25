@@ -120,7 +120,14 @@ Bans source addresses that fail SSH authentication repeatedly.
 | `ssh.bruteforce.max_failures` | int | `5` | Failed attempts within `window` that trigger a ban. |
 | `ssh.bruteforce.window` | duration | `10m` | Counting window for failures. |
 | `ssh.bruteforce.ban_for` | duration | `1h` | Ban duration. |
-| `ssh.bruteforce.allowlist` | list of CIDRs | `[]` | Addresses that are never banned (also applies to `alerts.auto_ban`). |
+| `ssh.bruteforce.allowlist` | list of CIDRs | `[]` | Addresses that are never banned (also applies to `alerts.auto_ban` and manual bans). |
+
+Every active ban (SSH brute force, DDoS auto-ban and manual) is listed on the SSH page under Bans and by
+`krgn ssh bans`. An operator with the `ssh:write` scope can also ban an address by hand, with the Ban IP button or
+`krgn ssh bans --ban <ip> [--for 24h] [--reason <text>]`, and remove any ban with `krgn ssh bans --unban <ip>`.
+A manual ban lasts 24 hours unless `--for` says otherwise. Loopback addresses, allowlisted addresses and the
+caller's own address are refused. Every ban and unban is recorded in the audit log (`firewall.ban`,
+`firewall.unban`).
 
 ### `ssh.ca`
 

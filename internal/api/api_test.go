@@ -321,6 +321,22 @@ func TestSSHRoutes(t *testing.T) {
 	s.do("GET", "/api/v1/ssh/logins?since=7d", s.read, nil, 200)
 	s.do("GET", "/api/v1/ssh/logins?since=x", s.read, nil, 400)
 	s.do("GET", "/api/v1/ssh/bans", s.read, nil, 200)
+	s.do("POST", "/api/v1/ssh/bans", s.read, map[string]string{"ip": "198.51.100.7"}, 403)
+	for _, bad := range []map[string]string{{"ip": "not-an-ip"}, {"ip": "198.51.100.7", "duration": "soon"},
+		{"ip": "198.51.100.7", "duration": "-1h"}, {"ip": "127.0.0.2"}} {
+		s.do("POST", "/api/v1/ssh/bans", s.admin, bad, 400)
+	}
+	if b := s.do("POST", "/api/v1/ssh/bans", s.admin, map[string]string{"ip": "127.0.0.1"}, 400); !strings.Contains(
+		string(b), "your own address") {
+		t.Fatalf("self ban: %s", b)
+	}
+	s.do("POST", "/api/v1/ssh/bans", s.admin, map[string]string{"ip": "198.51.100.7", "duration": "2h",
+		"reason": "scanner"}, 200)
+	bans := decode[map[string]any](t, s.do("GET", "/api/v1/ssh/bans", s.read, nil, 200))
+	if l := bans["bans"].([]any); len(l) != 1 || l[0].(map[string]any)["reason"] != "manual ban: scanner" {
+		t.Fatalf("bans: %v", bans)
+	}
+	s.do("DELETE", "/api/v1/ssh/bans/198.51.100.7", s.admin, nil, 200)
 	s.do("POST", "/api/v1/ssh/ca/sign", s.admin, map[string]any{"public_key": newKey(), "principals": []string{"deploy"}}, 400)
 	s.do("POST", "/api/v1/ssh/ca/init", s.admin, nil, 200)
 	s.do("POST", "/api/v1/ssh/config/confirm", s.admin, map[string]string{}, 200)
