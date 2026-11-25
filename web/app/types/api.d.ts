@@ -3925,17 +3925,19 @@ export interface components {
                 [key: string]: number;
             };
             syn_cookies?: boolean;
-            /** @description Busiest remote source IP -> local port pairs over current TCP sockets. */
+            /** @description Busiest remote source IP -> local port pairs, counted like top_ips. */
             top_flows?: components["schemas"]["Flow"][];
             /** @description Busiest client IPs of the last interval from collector.nginx_log. Behind Cloudflare, the logged CF-Connecting-IP value is used when the peer is a Cloudflare address. Absent when the log is not tailed. */
             top_http_clients?: components["schemas"]["IPCount"][];
             /** @description Busiest client IP -> request pairs of the last interval from collector.nginx_log, using the same client IP as top_http_clients. Absent when the log is not tailed. */
             top_http_flows?: components["schemas"]["Flow"][];
+            /** @description Remote addresses with the most connections. Inbound sockets only (the local port is listening) in ESTABLISHED or SYN_RECV state, without collector.conn_allowlist addresses. */
             top_ips?: components["schemas"]["IPCount"][];
             top_ports?: {
                 count?: number;
                 port?: number;
             }[];
+            /** @description Remote subnets with the most connections, counted like top_ips. */
             top_subnets?: components["schemas"]["IPCount"][];
         };
         Error: {

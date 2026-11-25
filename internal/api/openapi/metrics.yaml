@@ -74,8 +74,14 @@ components:
       type: object
       properties:
         states: {type: object, additionalProperties: {type: integer}}
-        top_ips: {type: array, items: {$ref: "#/components/schemas/IPCount"}}
-        top_subnets: {type: array, items: {$ref: "#/components/schemas/IPCount"}}
+        top_ips:
+          type: array
+          description: Remote addresses with the most connections. Inbound sockets only (the local port is listening) in ESTABLISHED or SYN_RECV state, without collector.conn_allowlist addresses.
+          items: {$ref: "#/components/schemas/IPCount"}
+        top_subnets:
+          type: array
+          description: Remote subnets with the most connections, counted like top_ips.
+          items: {$ref: "#/components/schemas/IPCount"}
         top_http_clients:
           type: array
           description: >-
@@ -84,7 +90,7 @@ components:
           items: {$ref: "#/components/schemas/IPCount"}
         top_flows:
           type: array
-          description: Busiest remote source IP -> local port pairs over current TCP sockets.
+          description: Busiest remote source IP -> local port pairs, counted like top_ips.
           items: {$ref: "#/components/schemas/Flow"}
         top_http_flows:
           type: array

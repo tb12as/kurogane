@@ -70,7 +70,8 @@ Metric collection on the agent.
 | `collector.retention_raw` | duration | `24h` | How long raw samples are kept. |
 | `collector.retention_rollup` | duration | `7d` | How long downsampled (rollup) samples are kept. |
 | `collector.watch_services` | list | `[]` | systemd units to monitor (`service_down` alert). nginx and Apache units are added automatically when `web.enabled` is true. |
-| `collector.nginx_log` | path | empty | nginx access log to tail for the HTTP 4xx/5xx rate, the top HTTP client IPs and the top client -> request pairs (method and path, without the query string) shown in the `ddos` alert, `krgn top` and the server page. It also feeds the `http_ip_path_burst` and `http_path_burst` alerts. Empty disables it. See [Behind Cloudflare](#behind-cloudflare). |
+| `collector.conn_allowlist` | list | `[]` | Remote addresses that the connection attack detection ignores, such as a database, a cache or an internal service. Entries are IP addresses, CIDRs or hostnames; hostnames are resolved again every 5 minutes because managed-service addresses change, and a failed lookup keeps the last addresses. Listed addresses are left out of `net.conns_per_ip_max`, `net.conns_per_subnet_max`, the top source lists, the `ddos`, `conn_surge` and `conn_flood` alerts and auto-ban. The global `net.tcp.*` counts still include them. Changes need an agent restart. |
+| `collector.nginx_log` | path | empty | nginx access log to tail for the HTTP 4xx/5xx rate, the top HTTP client IPs and the top client -> request pairs (method and path, without the query string) shown in the `ddos`, `conn_surge` and `conn_flood` alerts, `krgn top` and the server page. It also feeds the `http_ip_path_burst` and `http_path_burst` alerts. Empty disables it. See [Behind Cloudflare](#behind-cloudflare). |
 | `collector.prometheus` | bool | `false` | Exposes `GET /metrics` in Prometheus format (metric prefix `kurogane_`). Requires a token with the `read` scope. |
 
 ### `collector.certs`
@@ -243,7 +244,7 @@ Each entry of `alerts.rules` defines a custom rule, or replaces a built-in rule 
 
 Built-in rules whose threshold can be changed with `alerts.thresholds` (default in parentheses): `high_cpu` (90),
 `mem_available_low` (10), `disk_full` (85), `disk_full_projected` (24 hours), `high_iowait` (30), `high_traffic`
-(3 times the baseline), `ddos` (500 SYN_RECV), `cert_expiring` (14 days), `redis_down` (1), `redis_memory_high`
+(3 times the baseline), `ddos` (500 SYN_RECV, titled "Possible SYN flood"), `conn_surge` (10 times the baseline of new connections per second, or a traffic anomaly), `conn_flood` (200 inbound ESTABLISHED or SYN_RECV connections from one IP, warning), `cert_expiring` (14 days), `redis_down` (1), `redis_memory_high`
 (90), `redis_evicting` (0), `redis_clients_high` (80), `redis_slow` (50 ms), `http_ip_path_burst` (30 requests
 from one client IP to the same method and path in the last minute) and `http_path_burst` (300 requests to the same
 method and path from all clients in the last minute). The two HTTP rules need `collector.nginx_log`. Other built-in
@@ -286,6 +287,11 @@ volumetric attacks; those need upstream mitigation.
 | `alerts.auto_ban.max_bans` | int | `50` | Maximum number of automatic bans per agent run. `0` removes the cap. |
 | `alerts.auto_ban.allowlist` | list of CIDRs | `[]` | Addresses that are never banned. `ssh.bruteforce.allowlist` also applies. |
 | `alerts.auto_ban.rate_limit` | bool | `false` | Reserved. It currently has no effect. |
+
+Auto-ban runs while `ddos`, `conn_surge` or `conn_flood` fires. Its candidates are inbound connections only (the
+local port is listening) in ESTABLISHED or SYN_RECV state, so outbound connections to a database or an API and
+closing sockets such as TIME_WAIT never make an address a candidate. `collector.conn_allowlist` addresses are never
+candidates either.
 
 Cloudflare edge addresses are never banned automatically: a ban would block every visitor routed through that edge.
 Behind Cloudflare, visitor addresses never reach the host firewall either, so offenders must be blocked in Cloudflare

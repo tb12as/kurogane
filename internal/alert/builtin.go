@@ -41,8 +41,10 @@ var builtins = []builtin{
 	{"disk_full_projected", "Disk projected full", "disk.projected_full_h < %g", "warning", 24, 0},
 	{"high_iowait", "High I/O wait", "cpu.iowait_pct > %g", "warning", 30, 5 * time.Minute},
 	{"high_traffic", "High traffic", "net.rx_baseline_ratio > %g or net.tx_baseline_ratio > %g", "warning", 3, 3 * time.Minute},
-	{"ddos", "Possible DDoS / SYN flood", "net.tcp.syn_recv > %g or net.new_conns_ratio > 10 or net.conns_per_ip_max > 200 or net.anomaly > 0",
-		"critical", 500, 0},
+	// net.conns_per_ip_max counts inbound ESTABLISHED and SYN_RECV sockets only (collector.classify)
+	{"ddos", "Possible SYN flood", "net.tcp.syn_recv > %g", "critical", 500, 0},
+	{"conn_surge", "Possible DDoS: connection surge", "net.new_conns_ratio > %g or net.anomaly > 0", "critical", 10, 0},
+	{"conn_flood", "Connection flood from one client", "net.conns_per_ip_max > %g", "warning", 200, 0},
 	// sliding last-minute counts from the access log tail (collector.nginx_log)
 	{"http_ip_path_burst", "One client hammering a URL", "http.ip_path_max_1m > %g", "warning", 30, 0},
 	{"http_path_burst", "URL request burst", "http.path_max_1m > %g", "warning", 300, 0},
@@ -70,6 +72,15 @@ var builtins = []builtin{
 	{"web_config_invalid", "Web server configuration test fails", "", "warning", 0, 0},
 	{"site_change_rolled_back", "Web site change rolled back", "", "critical", 0, 0},
 }
+
+// retired maps a built-in rule to its earlier default expression; a stored copy of it, at any threshold, is
+// replaced on seed so upgraded agents stop counting outbound connections as an attack.
+var retired = map[string]string{
+	"ddos": "net.tcp.syn_recv > %g or net.new_conns_ratio > 10 or net.conns_per_ip_max > 200 or net.anomaly > 0",
+}
+
+// banRules start auto-ban while firing (AL-6).
+var banRules = map[string]bool{"ddos": true, "conn_surge": true, "conn_flood": true}
 
 // critExpr escalates warning rules to critical (RAM < 5%, disk > 95%).
 var critExpr = map[string]string{
@@ -199,8 +210,8 @@ func describe(r *rule, in inst, s *collector.Snapshot, held time.Duration) (stri
 		rx, _ := s.Value("net.rx_bps_total", nil)
 		tx, _ := s.Value("net.tx_bps_total", nil)
 		text = fmt.Sprintf("Traffic rx %s/s, tx %s/s (%.1fx the usual level for this hour)", bytesH(rx), bytesH(tx), in.v)
-	case "ddos":
-		text, fields = ddosText(s)
+	case "ddos", "conn_surge", "conn_flood":
+		text, fields = ddosText(r.ID, s)
 	case "http_ip_path_burst", "http_path_burst":
 		text, fields = burstText(r.ID, in.v, s)
 	case "service_down":
@@ -307,12 +318,16 @@ func certText(id, name string, s *collector.Snapshot) (string, []notify.Field) {
 	return "Certificate " + name + " is expiring", nil
 }
 
-// ddosText lists top sources/subnets/ports and SYN cookie status (§8.2).
-func ddosText(s *collector.Snapshot) (string, []notify.Field) {
+// ddosText lists top sources/subnets/ports, peers with direction and states, and SYN cookie status (§8.2).
+func ddosText(id string, s *collector.Snapshot) (string, []notify.Field) {
 	syn, _ := s.Value("net.tcp.syn_recv", nil)
 	nc, _ := s.Value("net.new_conns_ps", nil)
-	text := fmt.Sprintf("SYN_RECV %.0f, new connections %.0f/s, max %.0f conns from one IP. Host-level detection only: "+
-		"volumetric attacks need upstream mitigation (provider or CDN).", syn, nc, firstOr(s, "net.conns_per_ip_max"))
+	text := fmt.Sprintf("SYN_RECV %.0f, new connections %.0f/s, max %.0f inbound conns from one IP. Host-level detection "+
+		"only: volumetric attacks need upstream mitigation (provider or CDN).", syn, nc, firstOr(s, "net.conns_per_ip_max"))
+	if f := s.Conns.TopFlows; id == "conn_flood" && len(f) > 0 {
+		text = fmt.Sprintf("%s holds %d inbound connections (ESTABLISHED or SYN_RECV) to %s: usually one abusive "+
+			"client, scraper or misbehaving proxy.", f[0].IP, f[0].Count, f[0].Dest)
+	}
 	var ips, nets, ports, http []string
 	for i, x := range s.Conns.TopIPs {
 		if i >= 10 {
@@ -348,7 +363,21 @@ func ddosText(s *collector.Snapshot) (string, []notify.Field) {
 		{Name: "Top destination ports", Value: join(ports)}, {Name: "SYN cookies", Value: cookies},
 		{Name: "Top HTTP clients (real IP)", Value: join(http)},
 		{Name: "Top TCP flows (source -> port)", Value: flows(s.Conns.TopFlows, "")},
-		{Name: "Top HTTP requests (client -> request)", Value: flows(s.Conns.TopHTTPFlows, " req")}}
+		{Name: "Top HTTP requests (client -> request)", Value: flows(s.Conns.TopHTTPFlows, " req")},
+		{Name: "Top peers (direction, states)", Value: peers(s.Conns.TopPeers)}}
+}
+
+// peers shows whether each busy peer is a client of this host (inbound) or a service it uses (outbound).
+func peers(ps []collector.Peer) string {
+	out := make([]string, 0, len(ps))
+	for _, p := range ps {
+		dir := "outbound"
+		if p.Inbound {
+			dir = "inbound"
+		}
+		out = append(out, fmt.Sprintf("%s -> :%d %s (%s)", p.IP, p.Port, dir, p.States))
+	}
+	return join(out)
 }
 
 // burstText names the client/request behind an http burst rule from the snapshot's last-minute estimates.

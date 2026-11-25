@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math"
+	"net"
 	"net/netip"
 	"os"
 	"path/filepath"
@@ -206,7 +207,7 @@ func TestNet(t *testing.T) {
 func TestConnProc(t *testing.T) {
 	clock(t)
 	root(t, "t1")
-	c := newConn()
+	c := newConn(nil)
 	s, err := c.Collect(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -217,23 +218,23 @@ func TestConnProc(t *testing.T) {
 	near(t, s, "net.tcp.listen", 4)
 	near(t, s, "net.tcp.total", 12)
 	near(t, s, "net.tcp.syn_sent", 0)
-	near(t, s, "net.conns_per_ip_max", 4)
-	near(t, s, "net.conns_per_subnet_max", 5)
+	near(t, s, "net.conns_per_ip_max", 3) // its TIME_WAIT socket is left out
+	near(t, s, "net.conns_per_subnet_max", 4)
 	near(t, s, "net.listening_ports", 3)
 
 	in := c.info
 	if !in.SynCookies || in.States["ESTABLISHED"] != 10 || in.States["LISTEN"] != 4 {
 		t.Errorf("info = %+v", in)
 	}
-	if in.TopIPs[0] != (IPCount{"203.0.113.5", 4}) || in.TopIPs[1] != (IPCount{"198.51.100.7", 2}) {
+	if in.TopIPs[0] != (IPCount{"203.0.113.5", 3}) || in.TopIPs[1] != (IPCount{"198.51.100.7", 2}) {
 		t.Errorf("top ips = %v", in.TopIPs)
 	}
-	if in.TopSubnets[0] != (IPCount{"203.0.113.0/24", 5}) || in.TopSubnets[1] != (IPCount{"198.51.100.0/24", 3}) {
+	if in.TopSubnets[0] != (IPCount{"203.0.113.0/24", 4}) || in.TopSubnets[1] != (IPCount{"198.51.100.0/24", 3}) {
 		t.Errorf("top subnets = %v", in.TopSubnets)
 	}
 	for _, x := range in.TopIPs {
-		if strings.HasPrefix(x.IP, "127.") {
-			t.Errorf("loopback in top ips: %v", in.TopIPs)
+		if strings.HasPrefix(x.IP, "127.") || x.IP == "93.184.216.34" {
+			t.Errorf("loopback or outbound peer in top ips: %v", in.TopIPs)
 		}
 	}
 	// flows pair each source with its local port; v4-mapped tcp6 sockets print as IPv4
@@ -241,7 +242,7 @@ func TestConnProc(t *testing.T) {
 	for _, f := range in.TopFlows {
 		flows[f.IP+">"+f.Dest] = f.Count
 	}
-	if in.TopFlows[0] != (Flow{"203.0.113.5", "80/tcp", 4, false}) || flows["198.51.100.7>80/tcp"] != 1 {
+	if in.TopFlows[0] != (Flow{"203.0.113.5", "80/tcp", 3, false}) || flows["198.51.100.7>80/tcp"] != 1 {
 		t.Errorf("top flows = %v", in.TopFlows)
 	}
 	for k := range flows {
@@ -249,11 +250,11 @@ func TestConnProc(t *testing.T) {
 			t.Errorf("local source in flows: %v", in.TopFlows)
 		}
 	}
-	cf := fkey{netip.MustParseAddr("::ffff:104.16.0.1").As16(), 443}
-	out := fkey{netip.MustParseAddr("::ffff:198.51.100.1").As16(), 40000} // outbound, ephemeral local port
-	f := topFlows(map[fkey]int32{cf: 9, out: 50}, map[uint16]bool{443: true}, 2)
+	cf := pkey{netip.MustParseAddr("::ffff:104.16.0.1").As16(), 443, true}
+	out := pkey{netip.MustParseAddr("::ffff:198.51.100.1").As16(), 3306, false}
+	f := topFlows(map[pkey][13]int32{cf: {tcpEstablished: 9, tcpTimeWait: 40}, out: {tcpEstablished: 50}}, 2)
 	if len(f) != 1 || f[0] != (Flow{"104.16.0.1", "443/tcp", 9, true}) {
-		t.Errorf("flows = %v, want only the inbound Cloudflare one", f)
+		t.Errorf("flows = %v, want only the inbound Cloudflare one, without TIME_WAIT", f)
 	}
 	want := []PortCount{{80, 7}, {22, 2}, {5432, 1}}
 	if len(in.TopPorts) != 3 || in.TopPorts[0] != want[0] || in.TopPorts[1] != want[1] || in.TopPorts[2] != want[2] {
@@ -273,6 +274,98 @@ func TestConnProc(t *testing.T) {
 	// second tick reuses maps and must not double count
 	s, _ = c.Collect(ctx)
 	near(t, s, "net.tcp.established", 10)
+}
+
+// TestConnDirection replays socket tables of real traffic patterns: only inbound ESTABLISHED and SYN_RECV sockets
+// from addresses outside collector.conn_allowlist may count towards the per-IP attack metrics.
+func TestConnDirection(t *testing.T) {
+	collect := func(t *testing.T, fixture string, c *connCollector) ([]Sample, ConnInfo) {
+		t.Helper()
+		root(t, filepath.Join("conn", fixture))
+		s, err := c.Collect(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return s, c.info
+	}
+	clock(t)
+
+	t.Run("outbound database connections", func(t *testing.T) {
+		s, in := collect(t, "outbound_db", newConn(nil))
+		near(t, s, "net.tcp.syn_recv", 0)
+		near(t, s, "net.tcp.time_wait", 477)
+		near(t, s, "net.conns_per_ip_max", 3) // the only inbound client
+		if len(in.TopIPs) != 1 || in.TopIPs[0].IP != "198.51.100.20" {
+			t.Errorf("top ips = %v, want only the inbound client", in.TopIPs)
+		}
+		want := Peer{IP: "203.0.113.50", Port: 3306, States: "20 ESTABLISHED / 477 TIME_WAIT / 1 LAST_ACK", Total: 498}
+		if len(in.TopPeers) != 2 || in.TopPeers[0] != want || !in.TopPeers[1].Inbound {
+			t.Errorf("top peers = %+v", in.TopPeers)
+		}
+	})
+
+	t.Run("syn flood", func(t *testing.T) {
+		s, in := collect(t, "syn_flood", newConn(nil))
+		near(t, s, "net.tcp.syn_recv", 600)
+		near(t, s, "net.conns_per_ip_max", 3)
+		if p := in.TopPeers[0]; !p.Inbound || p.Port != 443 {
+			t.Errorf("top peers = %+v", in.TopPeers)
+		}
+	})
+
+	t.Run("connection flood", func(t *testing.T) {
+		s, in := collect(t, "conn_flood", newConn(nil))
+		near(t, s, "net.conns_per_ip_max", 250) // TIME_WAIT left out
+		near(t, s, "net.conns_per_subnet_max", 253)
+		if in.TopFlows[0] != (Flow{"198.51.100.7", "443/tcp", 250, false}) {
+			t.Errorf("top flows = %v", in.TopFlows)
+		}
+		want := Peer{IP: "198.51.100.7", Port: 443, Inbound: true, States: "250 ESTABLISHED / 5 TIME_WAIT", Total: 255}
+		if in.TopPeers[0] != want {
+			t.Errorf("top peers = %+v", in.TopPeers)
+		}
+	})
+
+	t.Run("allowlist", func(t *testing.T) {
+		addr := "198.51.100.7"
+		lookup = func(_ context.Context, _, host string) ([]netip.Addr, error) {
+			if host != "proxy.internal" {
+				return nil, errors.New("no such host")
+			}
+			return []netip.Addr{netip.MustParseAddr(addr)}, nil
+		}
+		t.Cleanup(func() { lookup = net.DefaultResolver.LookupNetIP })
+		check := func(t *testing.T, c *connCollector) {
+			t.Helper()
+			s, in := collect(t, "conn_flood", c)
+			near(t, s, "net.conns_per_ip_max", 3)
+			for _, x := range in.TopIPs {
+				if x.IP == "198.51.100.7" {
+					t.Errorf("allowlisted ip in top ips: %v", in.TopIPs)
+				}
+			}
+			for _, x := range in.TopPeers {
+				if x.IP == "198.51.100.7" {
+					t.Errorf("allowlisted ip in top peers: %+v", in.TopPeers)
+				}
+			}
+			if in.TopFlows[0].IP == "198.51.100.7" {
+				t.Errorf("allowlisted ip in top flows: %v", in.TopFlows)
+			}
+		}
+		check(t, newConn([]string{"198.51.100.7"}))
+		check(t, newConn([]string{"198.51.100.0/28"}))
+		c := newConn([]string{"proxy.internal"})
+		check(t, c)
+
+		// the hostname moved: the old address counts again once the lookup is refreshed, never cached forever
+		addr = "192.0.2.99"
+		s, _ := collect(t, "conn_flood", c)
+		near(t, s, "net.conns_per_ip_max", 3)
+		now = func() time.Time { return time.Unix(1_700_000_000, 0).Add(allowTTL) }
+		s, _ = collect(t, "conn_flood", c)
+		near(t, s, "net.conns_per_ip_max", 250)
+	})
 }
 
 func TestHexAddr(t *testing.T) {
@@ -296,7 +389,7 @@ func TestConnNetlinkLive(t *testing.T) {
 	if hostfs.Root != "/" {
 		t.Skip("netlink needs the real root")
 	}
-	c := newConn()
+	c := newConn(nil)
 	if _, err := c.Collect(ctx); err != nil {
 		t.Fatal(err)
 	}
