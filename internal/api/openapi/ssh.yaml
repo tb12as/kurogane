@@ -57,8 +57,25 @@ paths:
       responses: {"200": {description: ok, content: {application/json: {schema: {$ref: "#/components/schemas/LoginSummary"}}}}}
   /ssh/bans:
     get:
-      summary: Brute-force bans and firewall backend
+      summary: Active firewall bans (SSH brute force, DDoS auto-ban and manual) and the firewall backend
       responses: {"200": {description: ok, content: {application/json: {schema: {type: object, properties: {backend: {type: string}, bans: {type: array, items: {$ref: "#/components/schemas/Ban"}}}}}}}}
+    post:
+      summary: Ban an IP on the host firewall (ssh:write)
+      description: >-
+        Refuses loopback and allowlisted addresses and the caller's own address. Banning an IP again extends its
+        expiry. Recorded in the audit log as firewall.ban.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ip]
+              properties:
+                ip: {type: string, description: one IPv4 or IPv6 address}
+                duration: {type: string, description: "ban length such as 30m, 24h or 7d (default 24h)"}
+                reason: {type: string, description: "shown as \"manual ban: <reason>\", at most 200 characters"}
+      responses: {"200": {description: ok}, "400": {description: invalid input, own address, exempt address or ban limit reached}}
   /ssh/bans/{ip}:
     delete:
       summary: Unban an IP (ssh:write)

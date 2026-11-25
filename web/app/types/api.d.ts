@@ -2652,7 +2652,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Brute-force bans and firewall backend */
+        /** Active firewall bans (SSH brute force, DDoS auto-ban and manual) and the firewall backend */
         get: {
             parameters: {
                 query?: never;
@@ -2677,7 +2677,46 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /**
+         * Ban an IP on the host firewall (ssh:write)
+         * @description Refuses loopback and allowlisted addresses and the caller's own address. Banning an IP again extends its expiry. Recorded in the audit log as firewall.ban.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description ban length such as 30m, 24h or 7d (default 24h) */
+                        duration?: string;
+                        /** @description one IPv4 or IPv6 address */
+                        ip: string;
+                        /** @description shown as "manual ban: <reason>", at most 200 characters */
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description ok */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description invalid input */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;

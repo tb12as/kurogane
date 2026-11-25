@@ -303,23 +303,42 @@ func init() {
 	}}
 	logins.Flags().StringVar(&since, "since", "24h", "window")
 
-	var unban string
-	bans := &cobra.Command{Use: "bans", Short: "Brute-force bans (--unban ip)", RunE: func(cmd *cobra.Command, _ []string) error {
-		c, err := newClient()
-		if err != nil {
-			return err
-		}
-		if unban != "" {
-			return c.do("DELETE", "/ssh/bans/"+url.PathEscape(unban), nil, nil)
-		}
-		var out any
-		if err := c.get("/ssh/bans", nil, &out); err != nil {
-			return err
-		}
-		printJSON(out)
-		return nil
-	}}
+	var unban, ban, banFor, banReason string
+	bans := &cobra.Command{Use: "bans", Short: "Firewall bans: list, --ban ip [--for 24h --reason text], --unban ip",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			c, err := newClient()
+			if err != nil {
+				return err
+			}
+			if ban != "" && unban != "" {
+				return fmt.Errorf("use either --ban or --unban, not both")
+			}
+			if unban != "" {
+				return c.do("DELETE", "/ssh/bans/"+url.PathEscape(unban), nil, nil)
+			}
+			if ban != "" {
+				body := map[string]string{"ip": ban, "duration": banFor, "reason": banReason}
+				if err := c.do("POST", "/ssh/bans", body, nil); err != nil {
+					return err
+				}
+				if flagJSON {
+					printJSON(map[string]string{"ip": ban, "for": banFor})
+					return nil
+				}
+				fmt.Printf("%s banned for %s\n", ban, banFor)
+				return nil
+			}
+			var out any
+			if err := c.get("/ssh/bans", nil, &out); err != nil {
+				return err
+			}
+			printJSON(out)
+			return nil
+		}}
 	bans.Flags().StringVar(&unban, "unban", "", "IP to unban")
+	bans.Flags().StringVar(&ban, "ban", "", "IP to ban on the host firewall")
+	bans.Flags().StringVar(&banFor, "for", "24h", "ban duration with --ban (30m, 24h, 7d)")
+	bans.Flags().StringVar(&banReason, "reason", "", "reason shown in the ban list, with --ban")
 
 	ca := &cobra.Command{Use: "ca", Short: "SSH certificate authority (short-lived certs)"}
 	ca.AddCommand(&cobra.Command{Use: "init", Short: "Create the CA and trust it in sshd (safe-apply)",

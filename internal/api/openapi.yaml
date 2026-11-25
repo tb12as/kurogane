@@ -3022,7 +3022,35 @@ paths:
                                         type: array
                                 type: object
                     description: ok
-            summary: Brute-force bans and firewall backend
+            summary: Active firewall bans (SSH brute force, DDoS auto-ban and manual) and the firewall backend
+        post:
+            description: Refuses loopback and allowlisted addresses and the caller's own address. Banning an IP again extends its expiry. Recorded in the audit log as firewall.ban.
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                duration:
+                                    description: ban length such as 30m, 24h or 7d (default 24h)
+                                    type: string
+                                ip:
+                                    description: one IPv4 or IPv6 address
+                                    type: string
+                                reason:
+                                    description: 'shown as "manual ban: <reason>", at most 200 characters'
+                                    type: string
+                            required:
+                                - ip
+                            type: object
+                required: true
+            responses:
+                "200":
+                    description: ok
+                "400":
+                    description: invalid input
+                    exempt address or ban limit reached: null
+                    own address: null
+            summary: Ban an IP on the host firewall (ssh:write)
     /ssh/bans/{ip}:
         delete:
             parameters:
