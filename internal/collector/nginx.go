@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"maps"
 	"net"
 	"net/netip"
 	"os"
@@ -28,6 +29,15 @@ type nginxCollector struct {
 	flows    map[string]*int32 // 16-byte IP + request; pointer values so a hit does not allocate
 	kb       []byte
 	topFlows []Flow
+
+	// last-minute sliding window behind the http burst rules (same keys as flows)
+	winT       time.Time
+	cur, prev  map[string]int32
+	est        map[string]int32
+	pathN      map[string]int32
+	pathIPs    map[string]int32
+	burstFlows []Flow
+	burstPaths []PathCount
 }
 
 // maxFlows caps distinct client -> request pairs per interval so a random-path flood cannot grow memory.
@@ -114,10 +124,13 @@ func (c *nginxCollector) Collect(context.Context) ([]Sample, error) {
 	}
 	c.top = topN(c.ips, 10, false)
 	c.topFlows = c.topHTTP(10)
-	out := make([]Sample, 0, 3)
+	pairMax, pathMax := c.window(t)
+	out := make([]Sample, 0, 5)
 	out = add(out, "http.rps", float64(n)/dt)
 	out = add(out, "http.4xx_ps", float64(n4)/dt)
 	out = add(out, "http.5xx_ps", float64(n5)/dt)
+	out = add(out, "http.ip_path_max_1m", pairMax)
+	out = add(out, "http.path_max_1m", pathMax)
 	return out, nil
 }
 
@@ -218,4 +231,67 @@ func request(l []byte) []byte {
 		p = p[:k]
 	}
 	return r[:min(len(m)+1+len(p), 100)]
+}
+
+// window merges this interval into the current minute and estimates every count over the last 60 s as
+// cur + prev * (unexpired share of prev), so the burst rules decay smoothly instead of flapping at each minute.
+func (c *nginxCollector) window(t time.Time) (pairMax, pathMax float64) {
+	if c.cur == nil {
+		c.cur, c.prev, c.est = map[string]int32{}, map[string]int32{}, map[string]int32{}
+		c.pathN, c.pathIPs, c.winT = map[string]int32{}, map[string]int32{}, t
+	}
+	for k, p := range c.flows {
+		// shortcut: new pairs beyond maxFlows per minute are not tracked, raise it if random-path floods hide bursts
+		if _, ok := c.cur[k]; ok || len(c.cur) < maxFlows {
+			c.cur[k] += *p
+		}
+	}
+	if e := t.Sub(c.winT); e >= time.Minute {
+		c.cur, c.prev = c.prev, c.cur
+		clear(c.cur)
+		if e >= 2*time.Minute {
+			clear(c.prev) // the log was idle for a whole minute
+		}
+		c.winT = t
+	}
+
+	w := 1 - float64(t.Sub(c.winT))/float64(time.Minute)
+	clear(c.est)
+	clear(c.pathN)
+	clear(c.pathIPs)
+	put := func(k string, v float64) {
+		n := int32(v + 0.5)
+		if n == 0 {
+			return
+		}
+		c.est[k] = n
+		c.pathN[k[16:]] += n
+		c.pathIPs[k[16:]]++
+	}
+	for k, n := range c.cur {
+		put(k, float64(n)+float64(c.prev[k])*w)
+	}
+	for k, n := range c.prev {
+		if _, ok := c.cur[k]; !ok {
+			put(k, float64(n)*w)
+		}
+	}
+
+	top := topK(maps.All(c.est), 5)
+	c.burstFlows = make([]Flow, len(top))
+	for i, x := range top {
+		c.burstFlows[i] = Flow{IP: net.IP(x.k[:16]).String(), Dest: x.k[16:], Count: int(x.v)}
+	}
+	paths := topK(maps.All(c.pathN), 5)
+	c.burstPaths = make([]PathCount, len(paths))
+	for i, x := range paths {
+		c.burstPaths[i] = PathCount{Path: x.k, Count: int(x.v), IPs: int(c.pathIPs[x.k])}
+	}
+	if len(top) > 0 {
+		pairMax = float64(top[0].v)
+	}
+	if len(paths) > 0 {
+		pathMax = float64(paths[0].v)
+	}
+	return pairMax, pathMax
 }

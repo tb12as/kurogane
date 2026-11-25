@@ -173,6 +173,8 @@ var catalog = []MetricDef{
 	def("http.rps", "Services", "HTTP requests per second", "per_s", "Requests per second from the nginx access log tail (collector.nginx_log).").p(10, 100, 500, 1000),
 	def("http.4xx_ps", "Services", "HTTP 4xx per second", "per_s", "Client error responses per second from the nginx access log tail.").p(1, 10, 50, 100),
 	def("http.5xx_ps", "Services", "HTTP 5xx per second", "per_s", "Server error responses per second from the nginx access log tail.").p(0, 1, 5, 10),
+	def("http.ip_path_max_1m", "Services", "Requests from one IP to one URL", "count", "Most requests one client IP sent to the same method and path (query string ignored) in the last minute, from the nginx access log tail.").p(20, 30, 60, 120),
+	def("http.path_max_1m", "Services", "Requests to one URL", "count", "Most requests to the same method and path (query string ignored) from all clients in the last minute, from the nginx access log tail.").p(100, 300, 600, 1200),
 
 	// Web servers
 	def("web.config_ok", "Web servers", "Web server config test", "bool", "1 when nginx -t / apachectl configtest passes, tested every 15 minutes and after each site change.").l("server").states("passes", "fails"),

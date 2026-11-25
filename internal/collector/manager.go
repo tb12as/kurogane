@@ -163,6 +163,7 @@ func (m *Manager) collect(ctx context.Context, delay time.Duration) *Snapshot {
 	conns := m.conn.info
 	if m.nginx != nil {
 		conns.TopHTTPClients, conns.TopHTTPFlows = m.nginx.top, m.nginx.topFlows
+		conns.BurstHTTPFlows, conns.BurstHTTPPaths = m.nginx.burstFlows, m.nginx.burstPaths
 	}
 	return &Snapshot{TS: start, Samples: all, System: sys, TopCPU: m.proc.topCPU, TopMem: m.proc.topMem,
 		Conns: conns, Services: m.svc.state, Mounts: m.disk.mounts, Certs: cs, Redis: m.Redis(), Lag: lag}

@@ -465,3 +465,46 @@ func TestRedisRules(t *testing.T) {
 		t.Fatal(txt)
 	}
 }
+
+func TestHTTPBurstRules(t *testing.T) {
+	conns := collector.ConnInfo{
+		BurstHTTPFlows: []collector.Flow{{IP: "198.51.100.9", Dest: "POST /login", Count: 412},
+			{IP: "203.0.113.1", Dest: "GET /api", Count: 90}},
+		BurstHTTPPaths: []collector.PathCount{{Path: "GET /api", Count: 1840, IPs: 37}}}
+	for _, tc := range []struct {
+		rule, metric string
+		v            float64
+		want         []string
+	}{
+		{"http_ip_path_burst", "http.ip_path_max_1m", 412, []string{"198.51.100.9 requested POST /login 412 times"}},
+		{"http_path_burst", "http.path_max_1m", 1840,
+			[]string{"GET /api requested 1840 times in the last minute by 37 client IPs", "Top clients for this request", "203.0.113.1"}},
+	} {
+		t.Run(tc.rule, func(t *testing.T) {
+			e, sink, _ := setup(t, nil)
+			ctx := context.Background()
+			snap := func(v float64) *collector.Snapshot {
+				return &collector.Snapshot{Conns: conns, Samples: []collector.Sample{{Metric: tc.metric, Value: v}}}
+			}
+			e.Eval(ctx, snap(10))
+			e.Flush(ctx)
+			if sink.n() != 0 {
+				t.Fatalf("below threshold fired: %v", sink.msgs)
+			}
+			e.Eval(ctx, snap(tc.v))
+			e.Flush(ctx)
+			if sink.n() != 1 || sink.msgs[0]["severity"] != "warning" {
+				t.Fatalf("messages = %v", sink.msgs)
+			}
+			raw, _ := json.Marshal(sink.msgs[0])
+			for _, w := range append(tc.want, tc.rule) {
+				if !strings.Contains(string(raw), w) {
+					t.Errorf("message lacks %q: %s", w, raw)
+				}
+			}
+		})
+	}
+	if txt, f := burstText("http_path_burst", 500, &collector.Snapshot{}); f != nil || !strings.Contains(txt, "500 times") {
+		t.Errorf("fallback = %q %v", txt, f)
+	}
+}

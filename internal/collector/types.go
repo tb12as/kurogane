@@ -131,6 +131,13 @@ type IPCount struct {
 	Count int    `json:"count"`
 }
 
+// PathCount is the requests to one "METHOD /path" and the distinct client IPs behind them.
+type PathCount struct {
+	Path  string `json:"path"`
+	Count int    `json:"count"`
+	IPs   int    `json:"ips"`
+}
+
 type PortCount struct {
 	Port  int `json:"port"`
 	Count int `json:"count"`
@@ -156,9 +163,12 @@ type ConnInfo struct {
 	TopIPs     []IPCount      `json:"top_ips"`
 	TopSubnets []IPCount      `json:"top_subnets"`
 	// TopHTTPClients are real client IPs from the nginx access log (CF-Connecting-IP behind Cloudflare)
-	TopHTTPClients []IPCount   `json:"top_http_clients,omitempty"`
-	TopFlows       []Flow      `json:"top_flows"`                // source IP -> local port
-	TopHTTPFlows   []Flow      `json:"top_http_flows,omitempty"` // client IP -> request, from the nginx log
+	TopHTTPClients []IPCount `json:"top_http_clients,omitempty"`
+	TopFlows       []Flow    `json:"top_flows"`                // source IP -> local port
+	TopHTTPFlows   []Flow    `json:"top_http_flows,omitempty"` // client IP -> request, from the nginx log
+	// last-minute estimates behind the http burst rules; alert detail only, not part of the API
+	BurstHTTPFlows []Flow      `json:"-"`
+	BurstHTTPPaths []PathCount `json:"-"`
 	TopPorts       []PortCount `json:"top_ports"`
 	Listening      []Listener  `json:"listening"`
 	SynCookies     bool        `json:"syn_cookies"`
