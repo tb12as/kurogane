@@ -324,3 +324,7 @@ executor. Distro integration tests (real sshd lockout rollback, every hardening 
 containers in CI (`-tags integration`). `go run ./tools/totpcode <secret>` prints a TOTP code for manual UI testing.
 `node tools/screenshots/capture.mjs` retakes the README screenshots from a running demo agent; its header lists the
 environment variables it needs.
+
+## License
+
+Kurogane is licensed under the [MIT License](LICENSE).
