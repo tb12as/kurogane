@@ -266,7 +266,9 @@ Each entry of `alerts.rules` defines a custom rule, or replaces a built-in rule 
 
 Built-in rules whose threshold can be changed with `alerts.thresholds` (default in parentheses): `high_cpu` (90),
 `mem_available_low` (10), `disk_full` (85), `disk_full_projected` (24 hours), `high_iowait` (30), `high_traffic`
-(3 times the baseline), `ddos` (500 SYN_RECV, titled "Possible SYN flood"), `conn_surge` (10 times the baseline of new connections per second, or a traffic anomaly), `conn_flood` (200 inbound ESTABLISHED or SYN_RECV connections from one IP, warning), `cert_expiring` (14 days), `redis_down` (1), `redis_memory_high`
+(3 times the baseline), `ddos` (500 SYN_RECV, titled "Possible SYN flood"), `conn_surge` (10 times the baseline of new
+connections per second, or a traffic anomaly), `conn_flood` (200 inbound ESTABLISHED or SYN_RECV connections from one
+IP, warning), `cert_expiring` (14 days), `redis_down` (1), `redis_memory_high`
 (90), `redis_evicting` (0), `redis_clients_high` (80), `redis_slow` (50 ms), `http_ip_path_burst` (30 requests
 from one client IP to the same method and path in the last minute) and `http_path_burst` (300 requests to the same
 method and path from all clients in the last minute). The two HTTP rules need `collector.nginx_log`. Other built-in
@@ -286,7 +288,8 @@ mixes `and` with `or` is shown read-only in the builder.
 ### Routing (central server)
 
 `alerts.routing` maps a key to a list of channel names. Supported keys are a severity (`critical`, `warning`,
-`info`), `rule:<id>`, `server:<name>`, `tag:<tag>` and `default`. An alert goes to the union of every matching key.
+`info`), `rule:<id>`, `server:<name>`, `tag:<tag>` and `default`. An alert goes to the union of channels listed under
+every matching key.
 If nothing matches, it goes to `default`. If `routing` is empty, it goes to every channel.
 
 ```yaml
