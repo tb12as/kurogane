@@ -120,18 +120,92 @@ binary).
 Built-in rules for CPU, RAM, OOM kills, disk (including projected-full), I/O wait, traffic anomalies, SYN flood /
 DDoS, SSH brute force and logins, SSH config changes and rollbacks, service down, hardening drift, agent offline and
 pending security updates. Thresholds are editable per server; traffic baselines (EWMA + hour-of-week) are learned
-from 7 days of history. One message per incident plus a resolve message, reminders every 30 min, silences, max 20
-messages/min per channel, and an on-disk queue that survives network outages. Channels: Slack, Discord, Telegram,
-email, PagerDuty, generic webhook. Webhook URLs are encrypted at rest with `/etc/kurogane/secret.key` and never
-logged.
+from 7 days of history. One message per incident plus a resolve message, silences, and an on-disk queue that survives
+network outages. Channels: Slack, Discord, Telegram, email, PagerDuty, generic webhook. Webhook URLs are encrypted
+at rest with `/etc/kurogane/secret.key` and never logged.
 
 Host-level detection cannot stop volumetric DDoS: that needs upstream mitigation (provider or CDN). Optional
 auto-ban (`alerts.auto_ban`) is off by default.
 
-With `collector.nginx_log` set, two rules watch the access log over a sliding one-minute window:
-`http_ip_path_burst` fires when one client IP requests the same method and path more than 30 times, and
-`http_path_burst` fires when one method and path receives more than 300 requests from all clients. Both thresholds
-are set with `alerts.thresholds` or in the UI.
+### Alert messages
+
+Messages contain a state and severity header, the server and rule title, a description with optional diagnostic
+fields, and a time and rule footer. For example, `mem_available_low` on a host using WIB, with no dashboard URL:
+
+```text
+🔴 CRITICAL · web-01 · RAM almost full
+Available memory 4.0% (163.8 MB of 4.0 GB) for 5 min, swap 0.0% used
+Top processes: java 2.0 GB, mysqld 1.0 GB, node 300.0 MB
+Firing since 23:41 WIB · Rule: mem_available_low
+```
+
+Reminders append a suffix to the header. A resolved message has a new header and footer and no description or fields:
+
+```text
+🔴 CRITICAL · web-01 · RAM almost full (still firing)
+
+✅ RESOLVED · web-01 · RAM almost full
+Resolved 23:51 WIB · Firing since 23:41 WIB · Rule: mem_available_low
+```
+
+Times use the sending host's local timezone; timestamps from another day also include the month and day. Slack uses
+an attachment colored by severity with action buttons; Discord uses a colored embed with links. Critical is red,
+warning amber, info blue, and resolved green. Telegram sends text with a bold header, italic footer, and links.
+Email uses the header as its subject and the full plain-text message as its body. PagerDuty sends Events API v2
+trigger or resolve events, deduplicated by alert ID. Webhooks send JSON containing the `notify.Alert` fields
+(`id`, `rule`, `server`, `severity`, `state`, `title`, `text`, `fields`, `started_at`, `resolved_at`, `dashboard_url`,
+`silence_url`, with optional values omitted) and a formatted `message`.
+
+Kurogane adds dashboard and one-hour silence links only when `dashboard_url` is set. Resolved messages omit the
+silence action. For ongoing alerts, reminders default to every 30 min (`alerts.repeat_interval`);
+acknowledgement stops reminders, but severity escalation still sends a message. Kurogane defaults to 20 messages
+per minute per channel and collapses overflow into a count summary when capacity returns.
+
+### Alert rules
+
+The table lists message titles and defaults. The For column shows how long a condition must remain true before
+an alert fires; `-` means no waiting period beyond the condition itself.
+Change supported thresholds with `alerts.thresholds` or in the UI; see [configuration](docs/configuration.md#alerts).
+
+| Rule ID | Message title | What triggers it | For | Default severity |
+|---------|---------------|------------------|-----|------------------|
+| `high_cpu` | High CPU | CPU usage > 90%. | 5 min | warning |
+| `mem_available_low` | RAM almost full | Available RAM < 10% or swap usage > 50%. | 5 min | warning |
+| `oom_kill` | OOM kill | OOM kill count increases by > 0. | - | critical |
+| `disk_full` | Disk almost full | A mount uses > 85% of its capacity. | - | warning |
+| `disk_full_projected` | Disk projected full | A mount is projected to fill in < 24 h from its last 6 h of usage. | - | warning |
+| `high_iowait` | High I/O wait | CPU I/O wait > 30%. | 5 min | warning |
+| `high_traffic` | High traffic | Receive or transmit rate > 3 times its baseline. | 3 min | warning |
+| `ddos` | Possible SYN flood | > 500 TCP connections in SYN_RECV. | - | critical |
+| `conn_surge` | Possible DDoS: connection surge | New connection rate > 10 times its baseline, or a learned traffic anomaly. | - | critical |
+| `conn_flood` | Connection flood from one client | One IP holds > 200 inbound ESTABLISHED or SYN_RECV connections. | - | warning |
+| `http_ip_path_burst` | One client hammering a URL | One client IP requests the same method and path > 30 times in the sliding last minute. Requires `collector.nginx_log`. | - | warning |
+| `http_path_burst` | URL request burst | One method and path receives > 300 requests from all clients in the sliding last minute. Requires `collector.nginx_log`. | - | warning |
+| `service_down` | Service down | A monitored service has active status < 1. | - | critical |
+| `updates_pending` | Reboot required / security updates pending | > 0 pending security updates or a required reboot. | - | info |
+| `cert_expiring` | TLS certificate expiring | Certificate validity remaining < 14 days. | - | warning |
+| `cert_stale_served` | Renewed TLS certificate not served | Stale-served flag > 0: the server still serves an old certificate after renewal on disk. | 1 h | warning |
+| `redis_down` | Redis down | Redis up status < 1. | 1 min | critical |
+| `redis_persistence_failing` | Redis cannot save to disk | Redis RDB or AOF success status < 1. | - | critical |
+| `redis_memory_high` | Redis memory almost full | Redis memory usage > 90% of maxmemory. | 5 min | warning |
+| `redis_evicting` | Redis is evicting keys | Redis eviction rate > 0 keys/s. | 5 min | warning |
+| `redis_clients_high` | Redis connections almost full | Redis client connections > 80% of the limit, or rejected connection rate > 0/s. | - | warning |
+| `redis_replication_broken` | Redis replica disconnected | Redis replica link status < 1. | 2 min | critical |
+| `redis_slow` | Redis slow to answer | Redis ping latency > 50 ms. | 5 min | warning |
+| `ssh_bruteforce` | SSH brute force | > 20 failed SSH logins from one IP within 5 min, with > 1 h since its last alert. | - | warning |
+| `ssh_login` | New SSH login | A successful SSH login, subject to optional new-IP-per-user and root-only filters. | - | info |
+| `ssh_config_changed` | SSH config changed | Kurogane applies and reloads an SSH configuration change and persists it pending confirmation. | - | info |
+| `ssh_rolled_back` | SSH config rolled back | An SSH change misses its confirmation deadline, including during agent downtime. | - | critical |
+| `hardening_drift` | `Hardening drift: <check ID>` | A previously passing hardening check fails in a subsequent scan. | - | warning |
+| `agent_offline` | `Agent offline: no heartbeat from <server> for <duration>` | An online agent has no heartbeat for `server.offline_after` (default 2 min). | - | critical |
+| `web_config_invalid` | `nginx configuration test fails` or `apache configuration test fails` | Two consecutive configuration tests fail for a web server. | - | warning |
+| `site_change_rolled_back` | `Enable of <site> rolled back`, `Disable of <site> rolled back`, or `Site change of <site> rolled back` | A site toggle causes reload failure, an inactive service, or loss of a previously answering site; or an interrupted change is undone on restart. | - | critical |
+
+RAM escalates to critical below 5% available, disk above 95% used, and certificate expiry below 3 days remaining.
+`oom_kill` and the one-shot events `ssh_bruteforce`, `ssh_login`, `ssh_config_changed`, `ssh_rolled_back`, and
+`site_change_rolled_back` send firing messages only, without resolve messages. `updates_pending`, `cert_expiring`,
+and `cert_stale_served` override the reminder interval to 24 h. `ddos`, `conn_surge`, and `conn_flood` start auto-ban
+when `alerts.auto_ban.enabled` is on, subject to its safety filters and limits.
 
 ## TLS certificates
 
