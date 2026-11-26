@@ -24,7 +24,20 @@ export default defineNuxtConfig({
       title: 'Kurogane',
       htmlAttrs: { lang: 'en' },
       meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1' }],
-      link: [{ rel: 'icon', type: 'image/png', sizes: '64x64', href: '/favicon.png' }],
+      link: [
+        {
+          rel: 'icon',
+          type: 'image/svg+xml',
+          media: '(prefers-color-scheme: light)',
+          href: '/kurogane-icon-light-aligned.svg',
+        },
+        {
+          rel: 'icon',
+          type: 'image/svg+xml',
+          media: '(prefers-color-scheme: dark)',
+          href: '/kurogane-icon-dark-aligned.svg',
+        },
+      ],
     },
   },
   experimental: { appManifest: false },

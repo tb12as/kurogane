@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 16 68 68" width="68" height="68" role="img" aria-label="Kurogane">
+  <circle cx="42" cy="50" r="29" stroke="#141416" stroke-width="4.5" fill="none" />
+  <path d="M32 61 A16 16 0 1 1 52 61 L52 78 L32 78 Z" fill="#141416" />
+  <path d="M33 45 L40 51 L33 57 M44 57 H53" stroke="#FAF6F1" stroke-width="3" fill="none" />
+  <circle cx="42" cy="50" r="29" stroke="#F65F0A" stroke-width="4.5" fill="none" stroke-dasharray="14.172073526 168.040300382" transform="rotate(-52 42 50)" />
+</svg>

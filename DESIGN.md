@@ -92,8 +92,8 @@ record it in this table.
   change must work in both.
 - The sidebar and the mobile header follow the active theme like the rest of the page, separated from the work area
   by a border. Do not add `--sidebar-*` variables.
-- `Logo` shows the light emblem in light mode and the dark icon in dark mode (`dark:` variant). The favicon is
-  the dark icon in both, since it sits on the browser tab strip rather than the page.
+- `Logo` shows the light-theme SVG in light mode and the dark-theme SVG in dark mode (`dark:` variant). The favicon
+  follows the operating system theme through `prefers-color-scheme` media queries.
 
 ## 5. Status colors
 
@@ -115,15 +115,16 @@ close to `warn` amber to tell a normal meter from a warning one.
 
 ### Logo files
 
-`Logo` and the favicon use the delivered round icons as is, without resizing:
+`Logo` and the favicon use the delivered SVG icons unchanged, with transparent backgrounds:
 
-- Light mode: `public/logo-light-128.png` and `public/logo-light-256.png` (the 2x source in `srcset`) are copies of
-  the 128x128 and 256x256 `Circular-Kurogane-Terminal-Emblem` files.
-- Dark mode: `public/logo-128.png` and `public/logo-256.png` are copies of the 128x128 and 256x256
-  `kurogane-dark-minimal-1080` files.
-- Favicon: `public/favicon.png` is the 64x64 `kurogane-dark-minimal-1080` file.
+- Light mode: `web/public/kurogane-icon-light-aligned.svg` uses a dark `#141416` fill.
+- Dark mode: `web/public/kurogane-icon-dark-aligned.svg` uses a light `#EFEAE4` fill.
+- `Logo` selects the icon through the `dark:` variant and scales it with the caller's size classes.
+- The favicon uses the same files through two `image/svg+xml` links in `web/nuxt.config.ts`. Their
+  `prefers-color-scheme` media queries follow the operating system theme independently of the application toggle.
 
-Replace them by copying new files over these names.
+Each icon is stored once in `web/public/` and served from the site root. Replace the files at these paths to
+update them.
 
 ### Background dither
 
