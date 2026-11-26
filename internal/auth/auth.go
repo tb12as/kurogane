@@ -31,11 +31,12 @@ var Roles = map[string][]string{
 }
 
 const (
-	MaxFailures   = 5
-	LockDuration  = 15 * time.Minute
-	SessionCookie = "krgn_session"
-	CSRFCookie    = "krgn_csrf"
-	CSRFHeader    = "X-CSRF-Token"
+	MaxFailures     = 5
+	LockDuration    = 15 * time.Minute
+	SessionCookie   = "krgn_session"
+	CSRFCookie      = "krgn_csrf"
+	OIDCStateCookie = "krgn_oidc_state"
+	CSRFHeader      = "X-CSRF-Token"
 )
 
 var (
@@ -161,7 +162,7 @@ func (a *Service) CreateToken(ctx context.Context, name string, scopes []string,
 			return "", db.APIToken{}, fmt.Errorf("unknown scope %q (read, ssh:write, harden:write, web:write, admin)", s)
 		}
 	}
-	raw := "sk_" + RandomToken(32)
+	raw := "krgn_" + RandomToken(32)
 	t := db.APIToken{ID: db.NewID(), Name: name, Hash: HashToken(raw), Scopes: scopes, CreatedBy: by, CreatedAt: a.now()}
 	if ttl > 0 {
 		t.ExpiresAt = a.now().Add(ttl)

@@ -113,13 +113,13 @@ func (s *Server) oidcLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	state := auth.RandomToken(16)
-	http.SetCookie(w, &http.Cookie{Name: "sk_oidc_state", Value: state, Path: "/", HttpOnly: true, Secure: r.TLS != nil, // #nosec G124 -- Secure is set whenever TLS is used; plain HTTP is loopback-only
+	http.SetCookie(w, &http.Cookie{Name: auth.OIDCStateCookie, Value: state, Path: "/", HttpOnly: true, Secure: r.TLS != nil, // #nosec G124 -- Secure is set whenever TLS is used; plain HTTP is loopback-only
 		SameSite: http.SameSiteLaxMode, MaxAge: 600})
 	http.Redirect(w, r, s.Auth.OIDC.AuthURL(state), http.StatusFound)
 }
 
 func (s *Server) oidcCallback(w http.ResponseWriter, r *http.Request) {
-	c, err := r.Cookie("sk_oidc_state")
+	c, err := r.Cookie(auth.OIDCStateCookie)
 	if err != nil || c.Value == "" || c.Value != r.URL.Query().Get("state") {
 		http.Error(w, "invalid OIDC state: start the login again", http.StatusBadRequest)
 		return

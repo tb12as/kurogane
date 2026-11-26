@@ -106,7 +106,7 @@ func IsSealed(s string) bool { return strings.HasPrefix(s, prefix) }
 
 var secretPatterns = regexp.MustCompile(
 	`https://hooks\.slack\.com/[^\s"']+|https://(?:canary\.|ptb\.)?discord(?:app)?\.com/api/webhooks/[^\s"']+|` +
-		`https://api\.telegram\.org/bot[^\s"']+|sk_[A-Za-z0-9_]{20,}|enc:[A-Za-z0-9_-]{16,}`)
+		`https://api\.telegram\.org/bot[^\s"']+|krgn_[A-Za-z0-9_-]{20,}|enc:[A-Za-z0-9_-]{16,}`)
 
 var secretKeys = []string{"webhook", "token", "password", "secret", "totp", "url_env_value", "authorization", "cookie"}
 
