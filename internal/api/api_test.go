@@ -208,7 +208,7 @@ func TestAuthAndCore(t *testing.T) {
 	}
 
 	b = s.do("POST", "/api/v1/tokens", s.admin, map[string]any{"name": "ci", "scopes": []string{"read"}, "ttl": "24h"}, 200)
-	if !strings.HasPrefix(decode[map[string]any](t, b)["token"].(string), "sk_") {
+	if !strings.HasPrefix(decode[map[string]any](t, b)["token"].(string), "krgn_") {
 		t.Fatal("token format")
 	}
 	s.do("POST", "/api/v1/tokens", s.admin, map[string]any{"name": "x", "scopes": []string{"root"}}, 400)

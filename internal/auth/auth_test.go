@@ -96,7 +96,7 @@ func TestTokensAndEdges(t *testing.T) {
 	if same, _ := a.EnsureLocalToken(ctx, tok); same != tok {
 		t.Fatal("existing valid token must be kept")
 	}
-	if rotated, _ := a.EnsureLocalToken(ctx, "sk_stale"); rotated == tok {
+	if rotated, _ := a.EnsureLocalToken(ctx, "krgn_stale"); rotated == tok {
 		t.Fatal("stale token must be rotated")
 	}
 	raw, _, _ := a.CreateToken(ctx, "short", []string{ScopeRead}, "t", time.Millisecond)

@@ -2,6 +2,7 @@ package secret
 
 import (
 	"bytes"
+	"encoding/json"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -40,6 +41,22 @@ func TestRedactLogs(t *testing.T) {
 	if strings.Contains(buf.String(), "discord.com/api") || strings.Contains(buf.String(), "hooks.slack.com") ||
 		strings.Contains(buf.String(), `"webhook_url":"x"`) {
 		t.Fatal(buf.String())
+	}
+}
+
+func TestRedactAPITokenLogs(t *testing.T) {
+	var buf bytes.Buffer
+	l := slog.New(RedactHandler{slog.NewJSONHandler(&buf, nil)})
+	const token = "krgn_ab-cdEFghij_klmnopqrstuvwxyz0123456789"
+	l.Info(token, "value", token)
+	var record map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &record); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"msg", "value"} {
+		if record[key] != "[REDACTED]" {
+			t.Errorf("%s = %q, want [REDACTED]", key, record[key])
+		}
 	}
 }
 
