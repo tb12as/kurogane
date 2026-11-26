@@ -47,28 +47,6 @@ From a demo server, in the dark theme. Click an image for the full size.
   </tr>
 </table>
 
-## Moving from ServerKeeper
-
-Kurogane is ServerKeeper renamed, as a clean break: paths, the system user, units, environment variables (`SK_` is
-now `KRGN_`), cookies, the Prometheus prefix (`kurogane_`) and the fleet protocol all changed, and nothing is
-migrated automatically. On each server:
-
-1. Keep a copy of `/etc/serverkeeper/config.yaml`, then remove the old agent: `sudo serverkeeper uninstall` (add
-   `--purge` to also delete its data and the `serverkeeper` user once you no longer need them).
-2. Install Kurogane and run `sudo krgn init`.
-3. Copy your settings into `/etc/kurogane/config.yaml`, changing `/etc/serverkeeper` to `/etc/kurogane` and any
-   `SK_` environment variable names to `KRGN_`. Restart with `sudo systemctl restart kurogane`.
-4. Clean up what the old version deliberately left behind: once `sshd -T` shows Kurogane's settings from
-   `/etc/ssh/sshd_config.d/99-kurogane.conf`, delete `99-serverkeeper.conf` (and `/etc/ssh/serverkeeper_ca.pub` if
-   you used the SSH CA, after re-running `krgn ssh ca init`). Delete the old ban table with
-   `sudo nft delete table inet serverkeeper` if it still exists; on iptables hosts, delete the old
-   `SERVERKEEPER` chain (`iptables -D INPUT -j SERVERKEEPER; iptables -F SERVERKEEPER; iptables -X SERVERKEEPER`, and
-   the same with `ip6tables`).
-5. Fleets: ServerKeeper agents cannot talk to a Kurogane central server. Move the central server and every agent
-   together, then re-enroll each agent with a new token (`krgn server token create`).
-
-Prometheus scrapers and dashboards need their metric names updated from `serverkeeper_*` to `kurogane_*`.
-
 ## CLI
 
 ```sh

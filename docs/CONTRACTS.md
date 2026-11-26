@@ -48,10 +48,11 @@ Details that are not numbers live in `collector.Snapshot` (`System`, `TopCPU`, `
 - `collector.NewManager(cfg config.Collector, ex) *Manager`; `Run(ctx, sink func(*Snapshot))`; `Latest() *Snapshot`;
   `Certs()` / `RescanCerts(ctx)` return the certificate scan and its time.
 - `certs.Scan(ctx, r certs.Reader, certs.Options) []certs.Cert`: discovery (Let's Encrypt renewal configs and `live/`,
-  nginx `ssl_certificate` and Apache `SSLCertificateFile` via `internal/webconf`, extra paths), leaf inspection and local TLS probes. Reads go through the
-  executor so root-only certbot directories work under privsep. Only `CERTIFICATE` PEM blocks are decoded; paths
-  naming private keys are never read.
-- `redisinfo.Dial(ctx, Target) (*Conn, error)` (`ErrNoAuth` = needs a password we lack, `ErrAuth` = rejected);
+  nginx `ssl_certificate` and Apache `SSLCertificateFile` via `internal/webconf`, extra paths), leaf inspection and
+  local TLS probes. Reads go through the executor so root-only certbot directories work under privsep.
+  Only `CERTIFICATE` PEM blocks are decoded; paths naming private keys are never read.
+- `redisinfo.Dial(ctx, Target) (*Conn, error)` (`ErrNoAuth` = needs a password the agent does not have,
+  `ErrAuth` = rejected);
   `Conn.Ping`, `Info`, `SlowLog(n)` (command names only); `ParseConfig(r, file)` reads redis.conf (bind, port, tls,
   socket, requirepass, protected-mode, rename-command, ACL users with passwords masked).
 - `webconf.ParseNginx(r)` / `ParseApache(r) *Config` (nil when not configured): sites (`Block`) and every directive
@@ -63,7 +64,7 @@ Details that are not numbers live in `collector.Snapshot` (`System`, `TopCPU`, `
 - `firewall.New(ex) *Manager`; `Ban(ctx, ip, d, reason)`, `Unban(ctx, ip)`, `Bans() []Ban`, `Backend() string`.
 - `alert.NewEngine(Deps) (*Engine, error)`; `Run(ctx)`; `Eval(ctx, *collector.Snapshot)`; `Fire(ctx, alert.Event)`.
   One-shot events set `Once: true`; conditions detected elsewhere fire and later send `Resolve: true` with the same
-  `Rule` + `Labels`. Rule ids for externally fired events: `ssh_bruteforce`, `ssh_login`, `ssh_config_changed`,
+  `Rule` + `Labels`. Rule IDs for externally fired events: `ssh_bruteforce`, `ssh_login`, `ssh_config_changed`,
   `ssh_rolled_back`, `hardening_drift`, `agent_offline`, `updates_pending`, `ddos`, `web_config_invalid`,
   `site_change_rolled_back`.
 - Alert history: `GET /alerts/events` and `GET /alerts/events/export` accept `from`, `to`, and `since`.
