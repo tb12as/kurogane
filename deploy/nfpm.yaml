@@ -10,8 +10,11 @@ description: |
   Single-binary Linux server monitoring, SSH key management, hardening and
   Slack/Discord alerts.
 homepage: https://github.com/tb12as/kurogane
-license: TBD
+license: MIT
 contents:
+  - src: LICENSE
+    dst: /usr/share/doc/kurogane/LICENSE
+    file_info: {mode: 0644}
   - src: dist/kurogane-linux-${ARCH}
     dst: /usr/bin/kurogane
     expand: true
